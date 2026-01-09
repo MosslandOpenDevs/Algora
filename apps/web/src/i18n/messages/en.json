@@ -95,6 +95,35 @@
       "DECISION_PACKET": "Decision Packet"
     }
   },
+  "Proposals": {
+    "title": "Proposals",
+    "subtitle": "Vote on governance proposals",
+    "createProposal": "Create Proposal",
+    "searchPlaceholder": "Search proposals...",
+    "noProposals": "No proposals found",
+    "noProposalsDesc": "Proposals will appear here when created from issues",
+    "viewDetails": "View Details",
+    "for": "For",
+    "against": "Against",
+    "abstain": "Abstain",
+    "quorum": "Quorum",
+    "endsIn": "Ends in",
+    "ended": "Ended",
+    "stats": {
+      "active": "Active",
+      "passed": "Passed",
+      "rejected": "Rejected",
+      "executed": "Executed"
+    },
+    "status": {
+      "all": "All",
+      "draft": "Draft",
+      "active": "Active",
+      "passed": "Passed",
+      "rejected": "Rejected",
+      "executed": "Executed"
+    }
+  },
   "Issues": {
     "title": "Issues",
     "subtitle": "Track and manage governance issues",

@@ -95,6 +95,35 @@
       "DECISION_PACKET": "Decision Packet"
     }
   },
+  "Proposals": {
+    "title": "제안",
+    "subtitle": "거버넌스 제안에 투표하세요",
+    "createProposal": "제안 생성",
+    "searchPlaceholder": "제안 검색...",
+    "noProposals": "제안 없음",
+    "noProposalsDesc": "이슈에서 생성된 제안이 여기에 표시됩니다",
+    "viewDetails": "상세 보기",
+    "for": "찬성",
+    "against": "반대",
+    "abstain": "기권",
+    "quorum": "정족수",
+    "endsIn": "종료까지",
+    "ended": "종료됨",
+    "stats": {
+      "active": "진행 중",
+      "passed": "통과",
+      "rejected": "거부",
+      "executed": "실행됨"
+    },
+    "status": {
+      "all": "전체",
+      "draft": "초안",
+      "active": "진행 중",
+      "passed": "통과",
+      "rejected": "거부",
+      "executed": "실행됨"
+    }
+  },
   "Issues": {
     "title": "이슈",
     "subtitle": "거버넌스 이슈 추적 및 관리",
