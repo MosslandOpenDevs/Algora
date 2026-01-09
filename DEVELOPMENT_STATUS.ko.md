@@ -7,7 +7,7 @@
 
 ---
 
-## 현재 단계: 휴먼 거버넌스 (v0.6.0)
+## 현재 단계: 결과 증명 (v0.7.0)
 
 ### 완료된 기능
 
@@ -136,6 +136,36 @@
   - [x] 의사결정 패킷 엔드포인트 (get, generate, versions)
   - [x] 위임 엔드포인트 (create, revoke, get)
 
+#### 결과 증명 (100%)
+- [x] ProofOfOutcomeService (services/proof-of-outcome/index.ts)
+  - [x] 결과, 신뢰 점수, 분석 통합 서비스
+  - [x] 제안 완료 처리 편의 메서드
+- [x] OutcomeService (outcome.ts)
+  - [x] 통과/거부된 제안에서 결과 생성
+  - [x] 실행 계획 및 단계 관리
+  - [x] 실행 라이프사이클: pending → executing → completed/failed → verified
+  - [x] 신뢰도 점수가 포함된 검증 시스템
+  - [x] 이의 제기된 결과에 대한 분쟁 처리
+- [x] TrustScoringService (trust-scoring.ts)
+  - [x] 에이전트 신뢰 점수 추적 (0-100 척도)
+  - [x] 예측 기록 및 해결
+  - [x] 승인 정확도 추적
+  - [x] 참여율 모니터링
+  - [x] 신뢰 점수 히스토리 및 업데이트
+  - [x] 비활성 에이전트 점수 자동 감소
+- [x] AnalyticsService (analytics.ts)
+  - [x] 거버넌스 지표 (통과율, 참여율, 투표)
+  - [x] 제안, 투표, 결과 시계열 데이터
+  - [x] 에이전트 성과 순위
+  - [x] 신호-결과 상관관계 분석
+  - [x] 카테고리 분석
+  - [x] 내보내기 가능한 거버넌스 리포트
+- [x] 포괄적인 API 엔드포인트 (/api/outcomes/*)
+  - [x] 결과 CRUD 및 실행 관리
+  - [x] 검증 및 분쟁 엔드포인트
+  - [x] 신뢰 점수 엔드포인트
+  - [x] 분석 대시보드 및 지표 엔드포인트
+
 #### 공유 패키지
 - [x] packages/core - TypeScript 타입
 - [ ] packages/reality-oracle - 신호 수집
@@ -156,12 +186,6 @@
 ---
 
 ## 다음 단계 (우선순위 순)
-
-### 6단계: 결과 증명
-1. 의사결정 추적 및 실행
-2. 결과 검증
-3. 에이전트 신뢰 점수 업데이트
-4. 히스토리 분석
 
 ### 7단계: 토큰 통합
 1. MOC 토큰 홀더 검증

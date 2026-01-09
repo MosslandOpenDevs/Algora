@@ -15,6 +15,7 @@ import { llmService } from './services/llm';
 import { SignalCollectorService } from './services/collectors';
 import { IssueDetectionService } from './services/issue-detection';
 import { GovernanceService } from './services/governance';
+import { ProofOfOutcomeService } from './services/proof-of-outcome';
 
 const PORT = process.env.PORT || 3201;
 const NODE_ENV = process.env.NODE_ENV || 'development';
@@ -105,6 +106,10 @@ async function bootstrap() {
     // Initialize governance service
     const governance = new GovernanceService(db, io);
     app.locals.governance = governance;
+
+    // Initialize proof of outcome service
+    const proofOfOutcome = new ProofOfOutcomeService(db, io);
+    app.locals.proofOfOutcome = proofOfOutcome;
 
     // Log LLM availability
     console.info(`[LLM] Tier 1 (Ollama): ${llmService.isTier1Available() ? 'Available' : 'Not Available'}`);
