@@ -9,87 +9,17 @@ import {
   Plus,
   Search,
   CheckCircle,
-  MessageSquare,
-  ArrowUpRight,
+  PlayCircle,
+  Eye,
 } from 'lucide-react';
 
+import { fetchIssues, type Issue } from '@/lib/api';
 import { IssueCard } from '@/components/issues/IssueCard';
 import { IssueDetailModal } from '@/components/issues/IssueDetailModal';
 import { HelpTooltip } from '@/components/guide/HelpTooltip';
 
-interface Issue {
-  id: string;
-  title: string;
-  description: string;
-  status: 'open' | 'discussing' | 'voting' | 'resolved' | 'rejected';
-  priority: 'low' | 'medium' | 'high' | 'critical';
-  signalCount: number;
-  commentCount: number;
-  created_at: string;
-  updated_at: string;
-}
-
-const STATUSES = ['all', 'open', 'discussing', 'voting', 'resolved', 'rejected'] as const;
+const STATUSES = ['all', 'detected', 'confirmed', 'in_progress', 'resolved', 'dismissed'] as const;
 const PRIORITIES = ['all', 'critical', 'high', 'medium', 'low'] as const;
-
-// Mock data for demo
-const mockIssues: Issue[] = [
-  {
-    id: '1',
-    title: 'Gas Fee Optimization Strategy Required',
-    description: 'Recent spike in gas fees affecting user transactions. Need to evaluate L2 solutions and batch transaction strategies.',
-    status: 'discussing',
-    priority: 'high',
-    signalCount: 5,
-    commentCount: 12,
-    created_at: new Date(Date.now() - 86400000).toISOString(),
-    updated_at: new Date(Date.now() - 3600000).toISOString(),
-  },
-  {
-    id: '2',
-    title: 'Security Vulnerability in Token Approval',
-    description: 'Critical security update needed. v2.5.1 patch addresses vulnerability in approval mechanism.',
-    status: 'voting',
-    priority: 'critical',
-    signalCount: 2,
-    commentCount: 8,
-    created_at: new Date(Date.now() - 172800000).toISOString(),
-    updated_at: new Date(Date.now() - 7200000).toISOString(),
-  },
-  {
-    id: '3',
-    title: 'Treasury Diversification Proposal',
-    description: 'Proposal to diversify treasury holdings across multiple stable assets to reduce risk exposure.',
-    status: 'open',
-    priority: 'medium',
-    signalCount: 3,
-    commentCount: 15,
-    created_at: new Date(Date.now() - 259200000).toISOString(),
-    updated_at: new Date(Date.now() - 14400000).toISOString(),
-  },
-  {
-    id: '4',
-    title: 'Community Rewards Program Update',
-    description: 'Review and update the current staking rewards structure based on community feedback.',
-    status: 'resolved',
-    priority: 'medium',
-    signalCount: 7,
-    commentCount: 23,
-    created_at: new Date(Date.now() - 604800000).toISOString(),
-    updated_at: new Date(Date.now() - 86400000).toISOString(),
-  },
-  {
-    id: '5',
-    title: 'Partnership Integration Timeline',
-    description: 'Establish timeline and milestones for upcoming DeFi protocol partnership integration.',
-    status: 'open',
-    priority: 'low',
-    signalCount: 1,
-    commentCount: 4,
-    created_at: new Date(Date.now() - 432000000).toISOString(),
-    updated_at: new Date(Date.now() - 21600000).toISOString(),
-  },
-];
 
 export default function IssuesPage() {
   const t = useTranslations('Issues');
@@ -101,10 +31,8 @@ export default function IssuesPage() {
 
   const { data: issues, isLoading } = useQuery({
     queryKey: ['issues'],
-    queryFn: async () => {
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      return mockIssues;
-    },
+    queryFn: () => fetchIssues(100),
+    refetchInterval: 10000,
   });
 
   const filteredIssues = issues?.filter((issue) => {
@@ -118,9 +46,9 @@ export default function IssuesPage() {
   });
 
   const stats = {
-    open: issues?.filter((i) => i.status === 'open').length || 0,
-    discussing: issues?.filter((i) => i.status === 'discussing').length || 0,
-    voting: issues?.filter((i) => i.status === 'voting').length || 0,
+    detected: issues?.filter((i) => i.status === 'detected').length || 0,
+    confirmed: issues?.filter((i) => i.status === 'confirmed').length || 0,
+    in_progress: issues?.filter((i) => i.status === 'in_progress').length || 0,
     resolved: issues?.filter((i) => i.status === 'resolved').length || 0,
   };
 
@@ -146,23 +74,23 @@ export default function IssuesPage() {
         <div className="rounded-lg border border-agora-border bg-agora-card p-4">
           <div className="flex items-center gap-2 text-agora-warning">
             <AlertCircle className="h-4 w-4" />
-            <span className="text-sm">{t('stats.open')}</span>
+            <span className="text-sm">{t('stats.detected')}</span>
           </div>
-          <p className="mt-2 text-2xl font-bold text-white">{stats.open}</p>
+          <p className="mt-2 text-2xl font-bold text-white">{stats.detected}</p>
         </div>
         <div className="rounded-lg border border-agora-border bg-agora-card p-4">
           <div className="flex items-center gap-2 text-agora-accent">
-            <MessageSquare className="h-4 w-4" />
-            <span className="text-sm">{t('stats.discussing')}</span>
+            <Eye className="h-4 w-4" />
+            <span className="text-sm">{t('stats.confirmed')}</span>
           </div>
-          <p className="mt-2 text-2xl font-bold text-white">{stats.discussing}</p>
+          <p className="mt-2 text-2xl font-bold text-white">{stats.confirmed}</p>
         </div>
         <div className="rounded-lg border border-agora-border bg-agora-card p-4">
           <div className="flex items-center gap-2 text-agora-primary">
-            <ArrowUpRight className="h-4 w-4" />
-            <span className="text-sm">{t('stats.voting')}</span>
+            <PlayCircle className="h-4 w-4" />
+            <span className="text-sm">{t('stats.in_progress')}</span>
           </div>
-          <p className="mt-2 text-2xl font-bold text-white">{stats.voting}</p>
+          <p className="mt-2 text-2xl font-bold text-white">{stats.in_progress}</p>
         </div>
         <div className="rounded-lg border border-agora-border bg-agora-card p-4">
           <div className="flex items-center gap-2 text-agora-success">

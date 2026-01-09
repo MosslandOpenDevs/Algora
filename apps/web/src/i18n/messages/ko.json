@@ -255,18 +255,18 @@
     "updated": "업데이트",
     "viewDetails": "상세 보기",
     "stats": {
-      "open": "미해결",
-      "discussing": "토론 중",
-      "voting": "투표 중",
+      "detected": "감지됨",
+      "confirmed": "확인됨",
+      "in_progress": "진행 중",
       "resolved": "해결됨"
     },
     "status": {
       "all": "전체",
-      "open": "미해결",
-      "discussing": "토론 중",
-      "voting": "투표 중",
+      "detected": "감지됨",
+      "confirmed": "확인됨",
+      "in_progress": "진행 중",
       "resolved": "해결됨",
-      "rejected": "거부됨"
+      "dismissed": "기각됨"
     },
     "priority": {
       "label": "우선순위",

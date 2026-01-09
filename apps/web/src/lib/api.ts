@@ -55,6 +55,23 @@ export interface Signal {
   created_at: string;
 }
 
+export interface Issue {
+  id: string;
+  title: string;
+  description: string;
+  category: string;
+  priority: 'critical' | 'high' | 'medium' | 'low';
+  status: 'detected' | 'confirmed' | 'in_progress' | 'resolved' | 'dismissed';
+  detected_at: string;
+  resolved_at: string | null;
+  signal_ids: string | null;
+  evidence: string | null;
+  suggested_actions: string | null;
+  decision_packet: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 async function fetchAPI<T>(endpoint: string, options?: RequestInit): Promise<T> {
   const response = await fetch(`${API_BASE}${endpoint}`, {
     ...options,
@@ -104,4 +121,18 @@ export async function fetchSignals(limit = 50, source?: string, severity?: strin
   if (severity && severity !== 'all') params.append('severity', severity);
   const response = await fetchAPI<{ signals: Signal[]; total: number }>(`/api/signals?${params}`);
   return response.signals || [];
+}
+
+export async function fetchIssues(
+  limit = 50,
+  status?: string,
+  priority?: string,
+  category?: string
+): Promise<Issue[]> {
+  const params = new URLSearchParams({ limit: limit.toString() });
+  if (status && status !== 'all') params.append('status', status);
+  if (priority && priority !== 'all') params.append('priority', priority);
+  if (category && category !== 'all') params.append('category', category);
+  const response = await fetchAPI<{ issues: Issue[] }>(`/api/issues?${params}`);
+  return response.issues || [];
 }

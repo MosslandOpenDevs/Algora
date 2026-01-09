@@ -255,18 +255,18 @@
     "updated": "Updated",
     "viewDetails": "View Details",
     "stats": {
-      "open": "Open",
-      "discussing": "Discussing",
-      "voting": "Voting",
+      "detected": "Detected",
+      "confirmed": "Confirmed",
+      "in_progress": "In Progress",
       "resolved": "Resolved"
     },
     "status": {
       "all": "All",
-      "open": "Open",
-      "discussing": "Discussing",
-      "voting": "Voting",
+      "detected": "Detected",
+      "confirmed": "Confirmed",
+      "in_progress": "In Progress",
       "resolved": "Resolved",
-      "rejected": "Rejected"
+      "dismissed": "Dismissed"
     },
     "priority": {
       "label": "Priority",

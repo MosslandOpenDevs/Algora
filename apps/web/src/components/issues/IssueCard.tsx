@@ -4,26 +4,16 @@ import { useTranslations } from 'next-intl';
 import { formatDistanceToNow } from 'date-fns';
 import {
   AlertCircle,
-  MessageSquare,
   Radio,
   CheckCircle,
   Clock,
-  Vote,
   XCircle,
   ArrowRight,
+  PlayCircle,
+  Eye,
 } from 'lucide-react';
 
-interface Issue {
-  id: string;
-  title: string;
-  description: string;
-  status: 'open' | 'discussing' | 'voting' | 'resolved' | 'rejected';
-  priority: 'low' | 'medium' | 'high' | 'critical';
-  signalCount: number;
-  commentCount: number;
-  created_at: string;
-  updated_at: string;
-}
+import type { Issue } from '@/lib/api';
 
 interface IssueCardProps {
   issue: Issue;
@@ -31,20 +21,20 @@ interface IssueCardProps {
 }
 
 const statusConfig = {
-  open: {
+  detected: {
     icon: AlertCircle,
     color: 'text-agora-warning',
     bg: 'bg-agora-warning/10',
     border: 'border-agora-warning/30',
   },
-  discussing: {
-    icon: MessageSquare,
+  confirmed: {
+    icon: Eye,
     color: 'text-agora-accent',
     bg: 'bg-agora-accent/10',
     border: 'border-agora-accent/30',
   },
-  voting: {
-    icon: Vote,
+  in_progress: {
+    icon: PlayCircle,
     color: 'text-agora-primary',
     bg: 'bg-agora-primary/10',
     border: 'border-agora-primary/30',
@@ -55,7 +45,7 @@ const statusConfig = {
     bg: 'bg-agora-success/10',
     border: 'border-agora-success/30',
   },
-  rejected: {
+  dismissed: {
     icon: XCircle,
     color: 'text-gray-500',
     bg: 'bg-gray-500/10',
@@ -70,19 +60,31 @@ const priorityConfig = {
   critical: { color: 'text-agora-error', bg: 'bg-agora-error/10' },
 };
 
+function getSignalCount(signalIds: string | null): number {
+  if (!signalIds) return 0;
+  try {
+    const parsed = JSON.parse(signalIds);
+    return Array.isArray(parsed) ? parsed.length : 0;
+  } catch {
+    return 0;
+  }
+}
+
 export function IssueCard({ issue, onClick }: IssueCardProps) {
   const t = useTranslations('Issues');
-  const StatusIcon = statusConfig[issue.status].icon;
+  const config = statusConfig[issue.status] || statusConfig.detected;
+  const StatusIcon = config.icon;
+  const signalCount = getSignalCount(issue.signal_ids);
 
   return (
     <div
       onClick={onClick}
-      className={`group cursor-pointer rounded-lg border bg-agora-card p-5 transition-all hover:shadow-lg hover:bg-agora-card/80 ${statusConfig[issue.status].border}`}
+      className={`group cursor-pointer rounded-lg border bg-agora-card p-5 transition-all hover:shadow-lg hover:bg-agora-card/80 ${config.border}`}
     >
       <div className="flex items-start gap-4">
         {/* Status Icon */}
-        <div className={`rounded-lg p-2 ${statusConfig[issue.status].bg}`}>
-          <StatusIcon className={`h-5 w-5 ${statusConfig[issue.status].color}`} />
+        <div className={`rounded-lg p-2 ${config.bg}`}>
+          <StatusIcon className={`h-5 w-5 ${config.color}`} />
         </div>
 
         {/* Content */}
@@ -109,23 +111,26 @@ export function IssueCard({ issue, onClick }: IssueCardProps) {
           <div className="mt-4 flex flex-wrap items-center gap-4 text-xs">
             {/* Status */}
             <span
-              className={`flex items-center gap-1 rounded-full px-2 py-0.5 ${statusConfig[issue.status].bg} ${statusConfig[issue.status].color}`}
+              className={`flex items-center gap-1 rounded-full px-2 py-0.5 ${config.bg} ${config.color}`}
             >
               <StatusIcon className="h-3 w-3" />
               {t(`status.${issue.status}`)}
             </span>
 
-            {/* Signals */}
-            <span className="flex items-center gap-1 text-agora-muted">
-              <Radio className="h-3 w-3" />
-              {issue.signalCount} {t('signals')}
-            </span>
+            {/* Category */}
+            {issue.category && (
+              <span className="flex items-center gap-1 text-agora-muted capitalize">
+                {issue.category}
+              </span>
+            )}
 
-            {/* Comments */}
-            <span className="flex items-center gap-1 text-agora-muted">
-              <MessageSquare className="h-3 w-3" />
-              {issue.commentCount} {t('comments')}
-            </span>
+            {/* Signals */}
+            {signalCount > 0 && (
+              <span className="flex items-center gap-1 text-agora-muted">
+                <Radio className="h-3 w-3" />
+                {signalCount} {t('signals')}
+              </span>
+            )}
 
             {/* Updated */}
             <span className="flex items-center gap-1 text-agora-muted">

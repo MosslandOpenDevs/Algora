@@ -5,7 +5,6 @@ import { formatDistanceToNow, format } from 'date-fns';
 import {
   X,
   AlertCircle,
-  MessageSquare,
   Radio,
   CheckCircle,
   Clock,
@@ -17,19 +16,11 @@ import {
   ArrowRight,
   Users,
   TrendingUp,
+  Eye,
+  PlayCircle,
 } from 'lucide-react';
 
-interface Issue {
-  id: string;
-  title: string;
-  description: string;
-  status: 'open' | 'discussing' | 'voting' | 'resolved' | 'rejected';
-  priority: 'low' | 'medium' | 'high' | 'critical';
-  signalCount: number;
-  commentCount: number;
-  created_at: string;
-  updated_at: string;
-}
+import type { Issue } from '@/lib/api';
 
 interface IssueDetailModalProps {
   issue: Issue;
@@ -37,20 +28,20 @@ interface IssueDetailModalProps {
 }
 
 const statusConfig = {
-  open: {
+  detected: {
     icon: AlertCircle,
     color: 'text-agora-warning',
     bg: 'bg-agora-warning/10',
     border: 'border-agora-warning/30',
   },
-  discussing: {
-    icon: MessageSquare,
+  confirmed: {
+    icon: Eye,
     color: 'text-agora-accent',
     bg: 'bg-agora-accent/10',
     border: 'border-agora-accent/30',
   },
-  voting: {
-    icon: Vote,
+  in_progress: {
+    icon: PlayCircle,
     color: 'text-agora-primary',
     bg: 'bg-agora-primary/10',
     border: 'border-agora-primary/30',
@@ -61,7 +52,7 @@ const statusConfig = {
     bg: 'bg-agora-success/10',
     border: 'border-agora-success/30',
   },
-  rejected: {
+  dismissed: {
     icon: XCircle,
     color: 'text-gray-500',
     bg: 'bg-gray-500/10',
@@ -75,6 +66,16 @@ const priorityConfig = {
   high: { color: 'text-orange-500', bg: 'bg-orange-500/10', border: 'border-orange-500/30' },
   critical: { color: 'text-agora-error', bg: 'bg-agora-error/10', border: 'border-agora-error/30' },
 };
+
+function getSignalCount(signalIds: string | null): number {
+  if (!signalIds) return 0;
+  try {
+    const parsed = JSON.parse(signalIds);
+    return Array.isArray(parsed) ? parsed.length : 0;
+  } catch {
+    return 0;
+  }
+}
 
 export function IssueDetailModal({ issue, onClose }: IssueDetailModalProps) {
   const t = useTranslations('Issues');
@@ -152,18 +153,17 @@ export function IssueDetailModal({ issue, onClose }: IssueDetailModalProps) {
                   <Radio className="h-4 w-4" />
                   <span>{t('detail.relatedSignals')}</span>
                 </div>
-                <p className="text-2xl font-bold text-white">{issue.signalCount}</p>
+                <p className="text-2xl font-bold text-white">{getSignalCount(issue.signal_ids)}</p>
                 <p className="text-xs text-agora-muted mt-1">{t('signals')}</p>
               </div>
 
-              {/* Comments */}
+              {/* Category */}
               <div className="rounded-lg border border-agora-border bg-agora-card p-4">
                 <div className="flex items-center gap-2 mb-2 text-sm text-agora-muted">
-                  <MessageSquare className="h-4 w-4" />
-                  <span>{t('detail.comments')}</span>
+                  <Tag className="h-4 w-4" />
+                  <span>Category</span>
                 </div>
-                <p className="text-2xl font-bold text-white">{issue.commentCount}</p>
-                <p className="text-xs text-agora-muted mt-1">{t('comments')}</p>
+                <p className="text-lg font-bold text-white capitalize">{issue.category || 'General'}</p>
               </div>
             </div>
 
@@ -198,16 +198,16 @@ export function IssueDetailModal({ issue, onClose }: IssueDetailModalProps) {
               </div>
             </div>
 
-            {/* Progress Indicator - only for non-resolved/rejected */}
-            {(issue.status === 'open' || issue.status === 'discussing' || issue.status === 'voting') && (
+            {/* Progress Indicator - only for non-resolved/dismissed */}
+            {(issue.status === 'detected' || issue.status === 'confirmed' || issue.status === 'in_progress') && (
               <div className="mt-4 rounded-lg border border-agora-border bg-agora-card p-4">
                 <div className="flex items-center gap-2 mb-3 text-sm text-agora-muted">
                   <TrendingUp className="h-4 w-4" />
                   <span>{t('detail.progress')}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  {['open', 'discussing', 'voting', 'resolved'].map((step, index) => {
-                    const stepIndex = ['open', 'discussing', 'voting', 'resolved'].indexOf(issue.status);
+                  {['detected', 'confirmed', 'in_progress', 'resolved'].map((step, index) => {
+                    const stepIndex = ['detected', 'confirmed', 'in_progress', 'resolved'].indexOf(issue.status);
                     const isCompleted = index <= stepIndex;
                     const isCurrent = step === issue.status;
 
@@ -232,9 +232,9 @@ export function IssueDetailModal({ issue, onClose }: IssueDetailModalProps) {
                   })}
                 </div>
                 <div className="flex justify-between mt-2 text-xs text-agora-muted">
-                  <span>{t('status.open')}</span>
-                  <span>{t('status.discussing')}</span>
-                  <span>{t('status.voting')}</span>
+                  <span>{t('status.detected')}</span>
+                  <span>{t('status.confirmed')}</span>
+                  <span>{t('status.in_progress')}</span>
                   <span>{t('status.resolved')}</span>
                 </div>
               </div>
@@ -249,24 +249,24 @@ export function IssueDetailModal({ issue, onClose }: IssueDetailModalProps) {
             </div>
 
             <div className="flex items-center gap-3">
-              {issue.status === 'open' && (
+              {issue.status === 'detected' && (
                 <button className="flex items-center gap-2 rounded-lg bg-agora-accent px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-agora-accent/80">
+                  <Eye className="h-4 w-4" />
+                  Confirm Issue
+                </button>
+              )}
+
+              {issue.status === 'confirmed' && (
+                <button className="flex items-center gap-2 rounded-lg bg-agora-primary px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-agora-primary/80">
                   <Users className="h-4 w-4" />
                   {t('detail.startDiscussion')}
                 </button>
               )}
 
-              {issue.status === 'discussing' && (
+              {issue.status === 'in_progress' && (
                 <button className="flex items-center gap-2 rounded-lg bg-agora-primary px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-agora-primary/80">
                   <Vote className="h-4 w-4" />
                   {t('detail.createProposal')}
-                </button>
-              )}
-
-              {issue.status === 'voting' && (
-                <button className="flex items-center gap-2 rounded-lg bg-agora-primary px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-agora-primary/80">
-                  <ArrowRight className="h-4 w-4" />
-                  {t('detail.viewProposal')}
                 </button>
               )}
             </div>
