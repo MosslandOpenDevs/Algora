@@ -71,12 +71,15 @@ This file tracks the current development progress for continuity between session
   - [x] Tier 1: Ollama (local LLM)
   - [x] Tier 2: Anthropic, OpenAI, Gemini
   - [x] Automatic fallback between tiers
+  - [x] Global LLM request queue (rate limiting)
+  - [x] 10s minimum delay between concurrent calls
 - [x] ChatterService - Agent idle message generation (chatter.ts)
 - [x] SummoningService - Dynamic agent summoning (summoning.ts)
 - [x] AgoraService - Session management with LLM responses (agora.ts)
   - [x] Auto-start discussion when session created with autoSummon
   - [x] Random intervals (30s-2min) for natural conversation pacing
   - [x] Auto-update summoned_agents when participants added
+  - [x] LLM queue status monitoring (/api/agora/llm-queue)
 - [x] Real-time WebSocket events for all services
 - [x] API endpoints for chatter (/api/chatter)
 - [x] Enhanced Agora API with automated discussions

@@ -342,11 +342,12 @@ agoraRouter.post('/sessions/:id/automated/start', (req, res) => {
   }
 
   const { id } = req.params;
-  const { intervalMs } = req.body;
+  const { minInterval, maxInterval } = req.body;
 
   try {
-    agoraService.startAutomatedDiscussion(id, intervalMs || 15000);
-    res.json({ success: true, message: 'Automated discussion started' });
+    // Default: 30s to 2min intervals with global LLM queue rate limiting
+    agoraService.startAutomatedDiscussion(id, minInterval || 30000, maxInterval || 120000);
+    res.json({ success: true, message: 'Automated discussion started (rate-limited by global LLM queue)' });
   } catch (error) {
     console.error('Failed to start automated discussion:', error);
     res.status(500).json({ error: 'Failed to start automated discussion' });
@@ -369,4 +370,16 @@ agoraRouter.post('/sessions/:id/automated/stop', (req, res) => {
     console.error('Failed to stop automated discussion:', error);
     res.status(500).json({ error: 'Failed to stop automated discussion' });
   }
+});
+
+// GET /api/agora/llm-queue - Get LLM queue status
+agoraRouter.get('/llm-queue', (req, res) => {
+  const { AgoraService } = require('../services/agora');
+  const queueSize = AgoraService.getLLMQueueSize();
+  res.json({
+    queueSize,
+    message: queueSize > 0
+      ? `${queueSize} LLM requests pending (10s min delay between calls)`
+      : 'No pending LLM requests'
+  });
 });

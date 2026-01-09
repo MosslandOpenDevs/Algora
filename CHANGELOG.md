@@ -27,6 +27,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Auto-start discussion when session is created with `autoSummon`
   - Random intervals between 30 seconds to 2 minutes (more natural pacing)
   - First message after 5-10 second delay
+- **LLM Rate Limiting**:
+  - Global LLM request queue to prevent local LLM overload
+  - Minimum 10 second delay between LLM calls
+  - Queue status monitoring endpoint (`/api/agora/llm-queue`)
+  - Sequential processing of concurrent requests from multiple sessions
 - **Disclosure Page**: New transparency reports page with mock data
 
 ### Fixed

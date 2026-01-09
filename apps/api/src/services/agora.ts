@@ -48,16 +48,110 @@ interface SessionParticipant {
   status: 'active' | 'speaking' | 'listening';
 }
 
+// Global LLM request queue to prevent overloading local LLM
+interface LLMRequest {
+  sessionId: string;
+  agentId: string;
+  resolve: (message: AgoraMessage | null) => void;
+  reject: (error: Error) => void;
+}
+
+class LLMRequestQueue {
+  private queue: LLMRequest[] = [];
+  private isProcessing: boolean = false;
+  private minDelayMs: number = 10000; // Minimum 10 seconds between LLM calls
+  private lastProcessedTime: number = 0;
+  private processor: ((request: LLMRequest) => Promise<AgoraMessage | null>) | null = null;
+
+  setProcessor(processor: (request: LLMRequest) => Promise<AgoraMessage | null>) {
+    this.processor = processor;
+  }
+
+  setMinDelay(delayMs: number) {
+    this.minDelayMs = delayMs;
+  }
+
+  enqueue(sessionId: string, agentId: string): Promise<AgoraMessage | null> {
+    return new Promise((resolve, reject) => {
+      this.queue.push({ sessionId, agentId, resolve, reject });
+      console.log(`[LLM Queue] Added request for session ${sessionId.slice(0, 8)}... (queue size: ${this.queue.length})`);
+      this.processNext();
+    });
+  }
+
+  private async processNext() {
+    if (this.isProcessing || this.queue.length === 0 || !this.processor) {
+      return;
+    }
+
+    // Calculate delay since last processing
+    const now = Date.now();
+    const timeSinceLast = now - this.lastProcessedTime;
+    const waitTime = Math.max(0, this.minDelayMs - timeSinceLast);
+
+    if (waitTime > 0) {
+      console.log(`[LLM Queue] Waiting ${(waitTime / 1000).toFixed(1)}s before next request...`);
+      setTimeout(() => this.processNext(), waitTime);
+      return;
+    }
+
+    this.isProcessing = true;
+    const request = this.queue.shift()!;
+
+    console.log(`[LLM Queue] Processing request for session ${request.sessionId.slice(0, 8)}... (remaining: ${this.queue.length})`);
+
+    try {
+      const result = await this.processor(request);
+      this.lastProcessedTime = Date.now();
+      request.resolve(result);
+    } catch (error) {
+      request.reject(error as Error);
+    } finally {
+      this.isProcessing = false;
+      // Process next request after a short delay
+      if (this.queue.length > 0) {
+        setTimeout(() => this.processNext(), 100);
+      }
+    }
+  }
+
+  getQueueSize(): number {
+    return this.queue.length;
+  }
+
+  clear() {
+    this.queue = [];
+  }
+}
+
+// Singleton instance for global rate limiting
+const globalLLMQueue = new LLMRequestQueue();
+
 export class AgoraService {
   private db: Database.Database;
   private io: SocketServer;
   private summoningService: SummoningService;
   private activeDiscussions: Map<string, NodeJS.Timeout> = new Map();
+  private static instance: AgoraService | null = null;
 
   constructor(db: Database.Database, io: SocketServer) {
     this.db = db;
     this.io = io;
     this.summoningService = new SummoningService(db, io);
+
+    // Store the latest instance for the queue processor
+    AgoraService.instance = this;
+
+    // Initialize the global LLM queue processor (only once, but always update reference)
+    globalLLMQueue.setProcessor(async (request) => {
+      if (!AgoraService.instance) {
+        throw new Error('AgoraService not initialized');
+      }
+      return AgoraService.instance.processAgentResponse(request.sessionId, request.agentId);
+    });
+    // Set minimum delay between LLM calls (10 seconds)
+    globalLLMQueue.setMinDelay(10000);
+    console.log('[Agora] Global LLM request queue initialized (10s min delay between calls)');
   }
 
   // Create a new Agora session
@@ -303,8 +397,22 @@ export class AgoraService {
     return message;
   }
 
-  // Generate agent response for the discussion
+  // Generate agent response for the discussion (uses global queue)
   async generateAgentResponse(
+    sessionId: string,
+    agentId: string
+  ): Promise<AgoraMessage | null> {
+    // Use the global queue to rate-limit LLM calls
+    return globalLLMQueue.enqueue(sessionId, agentId);
+  }
+
+  // Get the current LLM queue size (for monitoring)
+  static getLLMQueueSize(): number {
+    return globalLLMQueue.getQueueSize();
+  }
+
+  // Internal method to process agent response (called by queue)
+  private async processAgentResponse(
     sessionId: string,
     agentId: string
   ): Promise<AgoraMessage | null> {

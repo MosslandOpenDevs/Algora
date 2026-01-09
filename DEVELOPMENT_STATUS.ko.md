@@ -60,9 +60,15 @@
   - [x] Tier 1: Ollama (로컬 LLM)
   - [x] Tier 2: Anthropic, OpenAI, Gemini
   - [x] tier 간 자동 폴백
+  - [x] 전역 LLM 요청 큐 (rate limiting)
+  - [x] 동시 호출 간 최소 10초 지연
 - [x] ChatterService - 에이전트 유휴 메시지 생성 (chatter.ts)
 - [x] SummoningService - 동적 에이전트 소환 (summoning.ts)
 - [x] AgoraService - LLM 응답 세션 관리 (agora.ts)
+  - [x] autoSummon 세션 생성 시 자동 토론 시작
+  - [x] 자연스러운 대화를 위한 랜덤 간격 (30초-2분)
+  - [x] 참가자 추가 시 summoned_agents 자동 업데이트
+  - [x] LLM 큐 상태 모니터링 (/api/agora/llm-queue)
 - [x] 모든 서비스 실시간 WebSocket 이벤트
 - [x] chatter API 엔드포인트 (/api/chatter)
 - [x] 자동 토론 기능 아고라 API 확장
