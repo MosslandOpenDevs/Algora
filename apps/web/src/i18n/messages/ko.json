@@ -94,5 +94,41 @@
       "AGORA_SESSION_START": "세션 시작됨",
       "DECISION_PACKET": "Decision Packet"
     }
+  },
+  "Signals": {
+    "title": "신호",
+    "subtitle": "다양한 소스에서 실시간 신호 모니터링",
+    "refresh": "새로고침",
+    "noSignals": "신호 없음",
+    "noSignalsDesc": "다양한 소스에서 수집된 신호가 여기에 표시됩니다",
+    "viewSource": "소스 보기",
+    "stats": {
+      "total": "전체 신호",
+      "processed": "처리됨",
+      "pending": "대기 중",
+      "highPriority": "높은 우선순위"
+    },
+    "sources": {
+      "all": "전체 소스",
+      "rss": "RSS 피드",
+      "github": "GitHub",
+      "blockchain": "블록체인",
+      "api": "외부 API",
+      "manual": "수동"
+    },
+    "filter": {
+      "all": "전체",
+      "processed": "처리됨",
+      "unprocessed": "대기 중"
+    },
+    "priority": {
+      "low": "낮음",
+      "medium": "보통",
+      "high": "높음"
+    },
+    "status": {
+      "processed": "처리됨",
+      "pending": "대기 중"
+    }
   }
 }

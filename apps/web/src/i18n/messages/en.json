@@ -94,5 +94,41 @@
       "AGORA_SESSION_START": "Session Started",
       "DECISION_PACKET": "Decision Packet"
     }
+  },
+  "Signals": {
+    "title": "Signals",
+    "subtitle": "Real-time signal monitoring from multiple sources",
+    "refresh": "Refresh",
+    "noSignals": "No signals found",
+    "noSignalsDesc": "Signals will appear here when collected from various sources",
+    "viewSource": "View Source",
+    "stats": {
+      "total": "Total Signals",
+      "processed": "Processed",
+      "pending": "Pending",
+      "highPriority": "High Priority"
+    },
+    "sources": {
+      "all": "All Sources",
+      "rss": "RSS Feed",
+      "github": "GitHub",
+      "blockchain": "Blockchain",
+      "api": "External API",
+      "manual": "Manual"
+    },
+    "filter": {
+      "all": "All",
+      "processed": "Processed",
+      "unprocessed": "Pending"
+    },
+    "priority": {
+      "low": "Low",
+      "medium": "Medium",
+      "high": "High"
+    },
+    "status": {
+      "processed": "Processed",
+      "pending": "Pending"
+    }
   }
 }
