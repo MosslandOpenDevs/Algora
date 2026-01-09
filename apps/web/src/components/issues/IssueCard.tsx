@@ -27,6 +27,7 @@ interface Issue {
 
 interface IssueCardProps {
   issue: Issue;
+  onClick?: () => void;
 }
 
 const statusConfig = {
@@ -69,13 +70,14 @@ const priorityConfig = {
   critical: { color: 'text-agora-error', bg: 'bg-agora-error/10' },
 };
 
-export function IssueCard({ issue }: IssueCardProps) {
+export function IssueCard({ issue, onClick }: IssueCardProps) {
   const t = useTranslations('Issues');
   const StatusIcon = statusConfig[issue.status].icon;
 
   return (
     <div
-      className={`group cursor-pointer rounded-lg border bg-agora-card p-5 transition-all hover:shadow-lg ${statusConfig[issue.status].border}`}
+      onClick={onClick}
+      className={`group cursor-pointer rounded-lg border bg-agora-card p-5 transition-all hover:shadow-lg hover:bg-agora-card/80 ${statusConfig[issue.status].border}`}
     >
       <div className="flex items-start gap-4">
         {/* Status Icon */}

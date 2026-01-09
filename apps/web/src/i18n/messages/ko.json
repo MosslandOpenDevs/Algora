@@ -209,6 +209,17 @@
       "medium": "보통",
       "high": "높음",
       "critical": "긴급"
+    },
+    "detail": {
+      "description": "설명",
+      "relatedSignals": "관련 신호",
+      "comments": "토론",
+      "created": "생성일",
+      "lastUpdated": "최근 업데이트",
+      "progress": "진행 상황",
+      "startDiscussion": "토론 시작",
+      "createProposal": "제안 생성",
+      "viewProposal": "제안 보기"
     }
   },
   "Signals": {

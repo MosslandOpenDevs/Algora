@@ -209,6 +209,17 @@
       "medium": "Medium",
       "high": "High",
       "critical": "Critical"
+    },
+    "detail": {
+      "description": "Description",
+      "relatedSignals": "Related Signals",
+      "comments": "Discussion",
+      "created": "Created",
+      "lastUpdated": "Last Updated",
+      "progress": "Progress",
+      "startDiscussion": "Start Discussion",
+      "createProposal": "Create Proposal",
+      "viewProposal": "View Proposal"
     }
   },
   "Signals": {

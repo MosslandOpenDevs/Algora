@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 
 import { IssueCard } from '@/components/issues/IssueCard';
+import { IssueDetailModal } from '@/components/issues/IssueDetailModal';
 
 interface Issue {
   id: string;
@@ -94,6 +95,7 @@ export default function IssuesPage() {
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [selectedPriority, setSelectedPriority] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
 
   const { data: issues, isLoading } = useQuery({
     queryKey: ['issues'],
@@ -240,9 +242,21 @@ export default function IssuesPage() {
       ) : (
         <div className="space-y-4">
           {filteredIssues?.map((issue) => (
-            <IssueCard key={issue.id} issue={issue} />
+            <IssueCard
+              key={issue.id}
+              issue={issue}
+              onClick={() => setSelectedIssue(issue)}
+            />
           ))}
         </div>
+      )}
+
+      {/* Issue Detail Modal */}
+      {selectedIssue && (
+        <IssueDetailModal
+          issue={selectedIssue}
+          onClose={() => setSelectedIssue(null)}
+        />
       )}
     </div>
   );
