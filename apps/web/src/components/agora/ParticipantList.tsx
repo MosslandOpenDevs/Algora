@@ -16,8 +16,19 @@ const statusColors: Record<string, string> = {
   listening: 'bg-agora-primary',
 };
 
+const groupColors: Record<string, string> = {
+  visionaries: 'text-purple-400',
+  builders: 'text-blue-400',
+  investors: 'text-green-400',
+  guardians: 'text-red-400',
+  operatives: 'text-yellow-400',
+  moderators: 'text-pink-400',
+  advisors: 'text-cyan-400',
+};
+
 export function ParticipantList({ agents, participants }: ParticipantListProps) {
   const t = useTranslations('Agora');
+  const tAgents = useTranslations('Agents.groups');
 
   const participantAgents = agents.filter((a) => participants.includes(a.id));
   const availableAgents = agents.filter(
@@ -28,7 +39,7 @@ export function ParticipantList({ agents, participants }: ParticipantListProps) 
     <div className="rounded-lg border border-agora-border bg-agora-card p-4">
       <h3 className="flex items-center gap-2 font-semibold text-white">
         <Users className="h-4 w-4" />
-        Participants
+        Participants ({participantAgents.length})
       </h3>
 
       {/* Active Participants */}
@@ -54,8 +65,8 @@ export function ParticipantList({ agents, participants }: ParticipantListProps) 
                 <p className="text-sm font-medium text-white truncate">
                   {agent.display_name || agent.name}
                 </p>
-                <p className="text-xs text-agora-muted">
-                  {t(`status.${agent.status || 'idle'}`)}
+                <p className={`text-xs ${groupColors[agent.group_name] || 'text-agora-muted'}`}>
+                  {tAgents(agent.group_name)}
                 </p>
               </div>
             </div>
