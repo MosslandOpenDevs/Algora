@@ -207,12 +207,17 @@ function createSchema(db: Database.Database): void {
 
     CREATE TABLE IF NOT EXISTS agent_trust_scores (
       agent_id TEXT PRIMARY KEY,
-      agent_role TEXT NOT NULL,
-      overall_score REAL DEFAULT 50,
-      total_decisions INTEGER DEFAULT 0,
-      correct_decisions INTEGER DEFAULT 0,
-      accuracy_by_category TEXT,
-      last_updated TEXT DEFAULT CURRENT_TIMESTAMP
+      overall_score REAL DEFAULT 50.0,
+      prediction_accuracy REAL DEFAULT 50.0,
+      endorsement_accuracy REAL DEFAULT 50.0,
+      participation_rate REAL DEFAULT 50.0,
+      consistency_score REAL DEFAULT 50.0,
+      total_predictions INTEGER DEFAULT 0,
+      correct_predictions INTEGER DEFAULT 0,
+      total_endorsements INTEGER DEFAULT 0,
+      accurate_endorsements INTEGER DEFAULT 0,
+      last_updated TEXT DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (agent_id) REFERENCES agents(id)
     );
 
     -- ========================================
