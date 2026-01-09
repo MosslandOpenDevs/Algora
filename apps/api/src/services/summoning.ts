@@ -208,6 +208,7 @@ Only return the JSON array, no other text.`;
       maxTokens: 500,
       temperature: 0.3,
       tier: 1,
+      complexity: 'balanced', // Use balanced model for reasoning about agent selection
     });
 
     try {

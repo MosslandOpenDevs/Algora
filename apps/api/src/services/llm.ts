@@ -4,7 +4,11 @@ import { EventEmitter } from 'events';
 export interface LLMConfig {
   tier1: {
     endpoint: string;
-    model: string;
+    models: {
+      fast: string;      // Quick responses, simple tasks
+      balanced: string;  // General purpose
+      quality: string;   // Complex reasoning
+    };
     timeout: number;
   };
   tier2: {
@@ -23,12 +27,15 @@ export interface LLMConfig {
   };
 }
 
+export type ModelComplexity = 'fast' | 'balanced' | 'quality';
+
 export interface LLMRequest {
   prompt: string;
   systemPrompt?: string;
   maxTokens?: number;
   temperature?: number;
   tier?: 0 | 1 | 2;
+  complexity?: ModelComplexity; // Model selection hint
 }
 
 export interface LLMResponse {
@@ -48,8 +55,12 @@ export class LLMService extends EventEmitter {
     this.config = {
       tier1: {
         endpoint: process.env.LOCAL_LLM_ENDPOINT || 'http://localhost:11434',
-        model: process.env.LOCAL_LLM_MODEL || 'llama3.2:3b',
-        timeout: 30000,
+        models: {
+          fast: process.env.LOCAL_LLM_MODEL_FAST || 'llama3.2:3b',
+          balanced: process.env.LOCAL_LLM_MODEL_BALANCED || 'qwen2.5:32b',
+          quality: process.env.LOCAL_LLM_MODEL_QUALITY || 'llama3.3:70b',
+        },
+        timeout: 60000, // Increased for larger models
       },
       tier2: {
         anthropic: process.env.ANTHROPIC_API_KEY
@@ -133,14 +144,21 @@ export class LLMService extends EventEmitter {
     };
   }
 
+  private selectModel(complexity: ModelComplexity = 'fast'): string {
+    return this.config.tier1.models[complexity];
+  }
+
   private async generateTier1(request: LLMRequest): Promise<LLMResponse> {
     const startTime = Date.now();
+    const model = this.selectModel(request.complexity);
+
+    console.log(`[LLM] Using model: ${model} (complexity: ${request.complexity || 'fast'})`);
 
     const response = await fetch(`${this.config.tier1.endpoint}/api/generate`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: this.config.tier1.model,
+        model,
         prompt: request.systemPrompt
           ? `${request.systemPrompt}\n\nUser: ${request.prompt}\n\nAssistant:`
           : request.prompt,
@@ -161,14 +179,14 @@ export class LLMService extends EventEmitter {
 
     this.emit('generation', {
       tier: 1,
-      model: this.config.tier1.model,
+      model,
       tokensUsed: data.eval_count,
     });
 
     return {
       content: data.response.trim(),
       tier: 1,
-      model: this.config.tier1.model,
+      model,
       tokensUsed: data.eval_count,
       latencyMs: Date.now() - startTime,
     };

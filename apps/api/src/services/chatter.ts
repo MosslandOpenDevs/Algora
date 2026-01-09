@@ -129,7 +129,8 @@ export class ChatterService {
           prompt: this.buildChatterPrompt(agent),
           maxTokens: 100,
           temperature: 0.8,
-          tier: 1, // Prefer local LLM for chatter
+          tier: 1,
+          complexity: 'fast', // Use fast model for simple idle chatter
         });
 
         if (response.content) {

@@ -471,6 +471,7 @@ export class AgoraService {
           maxTokens: 200,
           temperature: 0.7,
           tier: 1,
+          complexity: 'balanced', // Use balanced model for thoughtful discussions
         });
 
         if (response.content) {
