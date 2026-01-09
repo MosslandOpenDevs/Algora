@@ -95,6 +95,58 @@
       "DECISION_PACKET": "Decision Packet"
     }
   },
+  "Engine": {
+    "title": "엔진룸",
+    "subtitle": "시스템 모니터링 및 설정",
+    "refresh": "새로고침",
+    "uptime": "가동시간",
+    "status": {
+      "running": "모든 시스템 정상 작동 중",
+      "degraded": "시스템 성능 저하됨",
+      "maintenance": "시스템 유지보수 중"
+    },
+    "stats": {
+      "apiCalls": "API 호출",
+      "llmCalls": "LLM 호출",
+      "dbSize": "DB 크기",
+      "activeAgents": "활성 에이전트",
+      "today": "오늘",
+      "agents": "에이전트"
+    },
+    "budget": {
+      "title": "예산 현황",
+      "daily": "일일 예산",
+      "monthly": "월간 예산",
+      "remaining": "남음",
+      "lowBudgetWarning": "일일 예산이 부족합니다. Tier 2 호출을 줄이는 것을 고려하세요."
+    },
+    "tiers": {
+      "title": "Tier 사용량",
+      "tier0": "Tier 0",
+      "tier0Desc": "무료 작업 (RSS, GitHub)",
+      "tier1": "Tier 1",
+      "tier1Desc": "로컬 LLM (Ollama)",
+      "tier2": "Tier 2",
+      "tier2Desc": "외부 LLM (Claude/GPT)"
+    },
+    "scheduler": {
+      "title": "스케줄러",
+      "nextTier2": "다음 Tier 2",
+      "queueLength": "대기열",
+      "pendingTasks": "대기 중인 작업",
+      "lastRun": "마지막 실행",
+      "interval": "간격",
+      "tier2Interval": "Tier 2 간격"
+    },
+    "health": {
+      "title": "시스템 상태",
+      "uptime": "가동시간",
+      "memory": "메모리",
+      "database": "데이터베이스",
+      "agents": "에이전트",
+      "systemInfo": "시스템 스택"
+    }
+  },
   "Proposals": {
     "title": "제안",
     "subtitle": "거버넌스 제안에 투표하세요",

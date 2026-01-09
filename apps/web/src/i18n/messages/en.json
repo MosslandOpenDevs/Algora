@@ -95,6 +95,58 @@
       "DECISION_PACKET": "Decision Packet"
     }
   },
+  "Engine": {
+    "title": "Engine Room",
+    "subtitle": "System monitoring and configuration",
+    "refresh": "Refresh",
+    "uptime": "Uptime",
+    "status": {
+      "running": "All systems operational",
+      "degraded": "System performance degraded",
+      "maintenance": "System under maintenance"
+    },
+    "stats": {
+      "apiCalls": "API Calls",
+      "llmCalls": "LLM Calls",
+      "dbSize": "DB Size",
+      "activeAgents": "Active Agents",
+      "today": "Today",
+      "agents": "Agents"
+    },
+    "budget": {
+      "title": "Budget Overview",
+      "daily": "Daily Budget",
+      "monthly": "Monthly Budget",
+      "remaining": "remaining",
+      "lowBudgetWarning": "Daily budget running low. Consider reducing Tier 2 calls."
+    },
+    "tiers": {
+      "title": "Tier Usage",
+      "tier0": "Tier 0",
+      "tier0Desc": "Free operations (RSS, GitHub)",
+      "tier1": "Tier 1",
+      "tier1Desc": "Local LLM (Ollama)",
+      "tier2": "Tier 2",
+      "tier2Desc": "External LLM (Claude/GPT)"
+    },
+    "scheduler": {
+      "title": "Scheduler",
+      "nextTier2": "Next Tier 2",
+      "queueLength": "Queue",
+      "pendingTasks": "pending tasks",
+      "lastRun": "Last Run",
+      "interval": "Interval",
+      "tier2Interval": "Tier 2 interval"
+    },
+    "health": {
+      "title": "System Health",
+      "uptime": "Uptime",
+      "memory": "Memory",
+      "database": "Database",
+      "agents": "Agents",
+      "systemInfo": "System Stack"
+    }
+  },
   "Proposals": {
     "title": "Proposals",
     "subtitle": "Vote on governance proposals",
