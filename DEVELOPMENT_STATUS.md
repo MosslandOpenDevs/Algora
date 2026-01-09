@@ -3,11 +3,11 @@
 This file tracks the current development progress for continuity between sessions.
 
 **Last Updated**: 2026-01-09
-**Current Version**: 0.1.0
+**Current Version**: 0.2.0
 
 ---
 
-## Current Phase: Frontend Complete (v0.2.0)
+## Current Phase: Agent System (v0.3.0)
 
 ### Completed Features
 
@@ -55,6 +55,18 @@ This file tracks the current development progress for continuity between session
 - [x] **Proposals page** - Voting progress, quorum tracking, filters
 - [x] **Engine Room page** - Budget, tier usage, scheduler, system health
 
+#### Agent System (100%)
+- [x] LLM Service with 3-tier support (llm.ts)
+  - [x] Tier 1: Ollama (local LLM)
+  - [x] Tier 2: Anthropic, OpenAI, Gemini
+  - [x] Automatic fallback between tiers
+- [x] ChatterService - Agent idle message generation (chatter.ts)
+- [x] SummoningService - Dynamic agent summoning (summoning.ts)
+- [x] AgoraService - Session management with LLM responses (agora.ts)
+- [x] Real-time WebSocket events for all services
+- [x] API endpoints for chatter (/api/chatter)
+- [x] Enhanced Agora API with automated discussions
+
 #### Shared Packages
 - [x] packages/core - TypeScript types
 - [ ] packages/reality-oracle - Signal collection
@@ -76,17 +88,16 @@ This file tracks the current development progress for continuity between session
 
 ## Next Steps (Priority Order)
 
-### Phase 2: Agent System
-1. Implement local LLM integration (Ollama)
-2. Agent chatter generation
-3. Dynamic summoning engine
-4. Agora session management
-
 ### Phase 3: Signal Collection
 1. RSS feed collector
 2. GitHub webhook integration
 3. On-chain data collector
 4. Signal processing pipeline
+
+### Phase 4: Issue Detection
+1. Pattern recognition for governance issues
+2. Alert thresholds and notifications
+3. Issue lifecycle management
 
 ---
 
@@ -127,7 +138,7 @@ e413b1b fix(web): Fix API response handling
 
 1. Next.js 14.1.0 is outdated (minor warning)
 2. Agent states not being persisted on server restart (need initialization)
-3. No real LLM integration yet (only heartbeat activity)
+3. Database requires re-initialization after schema changes (delete algora.db and run db:init)
 
 ---
 

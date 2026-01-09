@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import type Database from 'better-sqlite3';
 import { v4 as uuidv4 } from 'uuid';
+import { getAgoraService, getSummoningService } from '../services/socket';
 
 export const agoraRouter = Router();
 
@@ -203,5 +204,168 @@ agoraRouter.post('/sessions/:id/conclude', (req, res) => {
   } catch (error) {
     console.error('Failed to conclude session:', error);
     res.status(500).json({ error: 'Failed to conclude session' });
+  }
+});
+
+// POST /api/agora/sessions/create - Create session with AgoraService
+agoraRouter.post('/sessions/create', async (req, res) => {
+  const agoraService = getAgoraService();
+  if (!agoraService) {
+    return res.status(503).json({ error: 'Agora service not available' });
+  }
+
+  const { title, description, issueId, topic, maxRounds, autoSummon } = req.body;
+
+  try {
+    const session = await agoraService.createSession({
+      title,
+      description,
+      issueId,
+      topic,
+      maxRounds,
+      autoSummon,
+    });
+
+    res.status(201).json({ session });
+  } catch (error) {
+    console.error('Failed to create session:', error);
+    res.status(500).json({ error: 'Failed to create session' });
+  }
+});
+
+// GET /api/agora/sessions/:id/participants - Get session participants
+agoraRouter.get('/sessions/:id/participants', (req, res) => {
+  const agoraService = getAgoraService();
+  if (!agoraService) {
+    return res.status(503).json({ error: 'Agora service not available' });
+  }
+
+  const { id } = req.params;
+
+  try {
+    const participants = agoraService.getParticipants(id);
+    res.json({ participants });
+  } catch (error) {
+    console.error('Failed to get participants:', error);
+    res.status(500).json({ error: 'Failed to get participants' });
+  }
+});
+
+// POST /api/agora/sessions/:id/participants - Add participant to session
+agoraRouter.post('/sessions/:id/participants', async (req, res) => {
+  const agoraService = getAgoraService();
+  if (!agoraService) {
+    return res.status(503).json({ error: 'Agora service not available' });
+  }
+
+  const { id } = req.params;
+  const { agentId } = req.body;
+
+  try {
+    const success = await agoraService.addParticipant(id, agentId);
+    res.json({ success });
+  } catch (error) {
+    console.error('Failed to add participant:', error);
+    res.status(500).json({ error: 'Failed to add participant' });
+  }
+});
+
+// DELETE /api/agora/sessions/:id/participants/:agentId - Remove participant
+agoraRouter.delete('/sessions/:id/participants/:agentId', (req, res) => {
+  const agoraService = getAgoraService();
+  if (!agoraService) {
+    return res.status(503).json({ error: 'Agora service not available' });
+  }
+
+  const { id, agentId } = req.params;
+
+  try {
+    const success = agoraService.removeParticipant(id, agentId);
+    res.json({ success });
+  } catch (error) {
+    console.error('Failed to remove participant:', error);
+    res.status(500).json({ error: 'Failed to remove participant' });
+  }
+});
+
+// POST /api/agora/sessions/:id/generate - Generate agent response
+agoraRouter.post('/sessions/:id/generate', async (req, res) => {
+  const agoraService = getAgoraService();
+  if (!agoraService) {
+    return res.status(503).json({ error: 'Agora service not available' });
+  }
+
+  const { id } = req.params;
+  const { agentId } = req.body;
+
+  try {
+    const message = await agoraService.generateAgentResponse(id, agentId);
+    if (message) {
+      res.json({ message });
+    } else {
+      res.status(404).json({ error: 'Session or agent not found' });
+    }
+  } catch (error) {
+    console.error('Failed to generate response:', error);
+    res.status(500).json({ error: 'Failed to generate response' });
+  }
+});
+
+// POST /api/agora/sessions/:id/advance - Advance to next round
+agoraRouter.post('/sessions/:id/advance', (req, res) => {
+  const agoraService = getAgoraService();
+  if (!agoraService) {
+    return res.status(503).json({ error: 'Agora service not available' });
+  }
+
+  const { id } = req.params;
+
+  try {
+    const session = agoraService.advanceRound(id);
+    if (session) {
+      res.json({ session });
+    } else {
+      res.status(404).json({ error: 'Session not found' });
+    }
+  } catch (error) {
+    console.error('Failed to advance round:', error);
+    res.status(500).json({ error: 'Failed to advance round' });
+  }
+});
+
+// POST /api/agora/sessions/:id/automated/start - Start automated discussion
+agoraRouter.post('/sessions/:id/automated/start', (req, res) => {
+  const agoraService = getAgoraService();
+  if (!agoraService) {
+    return res.status(503).json({ error: 'Agora service not available' });
+  }
+
+  const { id } = req.params;
+  const { intervalMs } = req.body;
+
+  try {
+    agoraService.startAutomatedDiscussion(id, intervalMs || 15000);
+    res.json({ success: true, message: 'Automated discussion started' });
+  } catch (error) {
+    console.error('Failed to start automated discussion:', error);
+    res.status(500).json({ error: 'Failed to start automated discussion' });
+  }
+});
+
+// POST /api/agora/sessions/:id/automated/stop - Stop automated discussion
+agoraRouter.post('/sessions/:id/automated/stop', (req, res) => {
+  const agoraService = getAgoraService();
+  if (!agoraService) {
+    return res.status(503).json({ error: 'Agora service not available' });
+  }
+
+  const { id } = req.params;
+
+  try {
+    agoraService.stopAutomatedDiscussion(id);
+    res.json({ success: true, message: 'Automated discussion stopped' });
+  } catch (error) {
+    console.error('Failed to stop automated discussion:', error);
+    res.status(500).json({ error: 'Failed to stop automated discussion' });
   }
 });

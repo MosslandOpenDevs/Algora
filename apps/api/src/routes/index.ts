@@ -8,6 +8,7 @@ import { proposalsRouter } from './proposals';
 import { budgetRouter } from './budget';
 import { activityRouter } from './activity';
 import { statsRouter } from './stats';
+import { chatterRouter } from './chatter';
 
 export function setupRoutes(app: Express): void {
   const apiRouter = Router();
@@ -22,6 +23,7 @@ export function setupRoutes(app: Express): void {
   apiRouter.use('/budget', budgetRouter);
   apiRouter.use('/activity', activityRouter);
   apiRouter.use('/stats', statsRouter);
+  apiRouter.use('/chatter', chatterRouter);
 
   // Mount API router
   app.use('/api', apiRouter);

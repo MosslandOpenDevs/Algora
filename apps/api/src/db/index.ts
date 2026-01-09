@@ -171,6 +171,7 @@ function createSchema(db: Database.Database): void {
       group_name TEXT NOT NULL,
       persona_prompt TEXT NOT NULL,
       speaking_style TEXT,
+      expertise TEXT,
       idle_messages TEXT,
       summoning_tags TEXT,
       tier_preference TEXT DEFAULT 'tier1',
@@ -194,8 +195,9 @@ function createSchema(db: Database.Database): void {
     CREATE TABLE IF NOT EXISTS agent_chatter (
       id TEXT PRIMARY KEY,
       agent_id TEXT NOT NULL,
-      message TEXT NOT NULL,
+      content TEXT NOT NULL,
       context TEXT,
+      tier INTEGER DEFAULT 0,
       tier_used TEXT,
       created_at TEXT DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (agent_id) REFERENCES agents(id)
@@ -221,14 +223,31 @@ function createSchema(db: Database.Database): void {
       id TEXT PRIMARY KEY,
       issue_id TEXT,
       title TEXT NOT NULL,
+      description TEXT,
       status TEXT DEFAULT 'active',
+      current_round INTEGER DEFAULT 1,
+      max_rounds INTEGER DEFAULT 5,
       summoned_agents TEXT,
       human_participants TEXT,
       consensus_score REAL,
       created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
       concluded_at TEXT,
       FOREIGN KEY (issue_id) REFERENCES issues(id)
     );
+
+    CREATE TABLE IF NOT EXISTS agora_participants (
+      id TEXT PRIMARY KEY,
+      session_id TEXT NOT NULL,
+      agent_id TEXT NOT NULL,
+      joined_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      status TEXT DEFAULT 'active',
+      FOREIGN KEY (session_id) REFERENCES agora_sessions(id),
+      FOREIGN KEY (agent_id) REFERENCES agents(id),
+      UNIQUE(session_id, agent_id)
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_agora_participants_session ON agora_participants(session_id);
 
     CREATE TABLE IF NOT EXISTS agora_messages (
       id TEXT PRIMARY KEY,
@@ -237,7 +256,9 @@ function createSchema(db: Database.Database): void {
       human_id TEXT,
       message_type TEXT NOT NULL,
       content TEXT NOT NULL,
+      round INTEGER DEFAULT 1,
       evidence TEXT,
+      tier INTEGER DEFAULT 0,
       tier_used TEXT,
       created_at TEXT DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (session_id) REFERENCES agora_sessions(id),
