@@ -1,0 +1,89 @@
+{
+  "Common": {
+    "loading": "로딩 중...",
+    "error": "오류",
+    "save": "저장",
+    "cancel": "취소",
+    "confirm": "확인",
+    "delete": "삭제",
+    "edit": "수정",
+    "view": "보기",
+    "search": "검색",
+    "filter": "필터",
+    "status": "상태",
+    "actions": "작업"
+  },
+  "Navigation": {
+    "dashboard": "대시보드",
+    "agora": "아고라",
+    "agents": "에이전트",
+    "signals": "신호",
+    "issues": "이슈",
+    "proposals": "제안",
+    "disclosure": "공시",
+    "engine": "엔진 룸"
+  },
+  "Dashboard": {
+    "title": "대시보드",
+    "subtitle": "거버넌스 활동 개요",
+    "activityFeed": "최근 활동",
+    "agentLobby": "에이전트 로비",
+    "stats": {
+      "activeAgents": "활성 에이전트",
+      "activeSessions": "활성 세션",
+      "signalsToday": "오늘의 신호",
+      "openIssues": "미해결 이슈"
+    }
+  },
+  "Header": {
+    "systemStatus": "시스템 상태",
+    "running": "실행 중",
+    "degraded": "저하됨",
+    "maintenance": "유지보수",
+    "budget": "예산",
+    "nextTier2": "다음 Tier2",
+    "queue": "대기열"
+  },
+  "Agents": {
+    "title": "AI 에이전트",
+    "subtitle": "동적 페르소나 스펙트럼",
+    "groups": {
+      "visionaries": "비저너리",
+      "builders": "빌더",
+      "investors": "투자자",
+      "guardians": "가디언",
+      "operatives": "오퍼러티브",
+      "moderators": "모더레이터",
+      "advisors": "어드바이저"
+    },
+    "status": {
+      "idle": "유휴",
+      "active": "활성",
+      "speaking": "발언 중",
+      "listening": "청취 중"
+    },
+    "summon": "소환",
+    "dismiss": "퇴장"
+  },
+  "Agora": {
+    "title": "아고라",
+    "subtitle": "라이브 숙의 아레나",
+    "lobby": "로비",
+    "discussion": "토론",
+    "evidence": "증거",
+    "summonAgent": "에이전트 소환",
+    "sendMessage": "메시지 보내기",
+    "noActiveSession": "활성 세션 없음",
+    "startSession": "세션 시작"
+  },
+  "Activity": {
+    "types": {
+      "HEARTBEAT": "하트비트",
+      "COLLECTOR": "신호 수집",
+      "AGENT_CHATTER": "에이전트 잡담",
+      "AGENT_SUMMONED": "에이전트 소환됨",
+      "AGORA_SESSION_START": "세션 시작됨",
+      "DECISION_PACKET": "Decision Packet"
+    }
+  }
+}

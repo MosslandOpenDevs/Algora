@@ -1,0 +1,89 @@
+{
+  "Common": {
+    "loading": "Loading...",
+    "error": "Error",
+    "save": "Save",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "delete": "Delete",
+    "edit": "Edit",
+    "view": "View",
+    "search": "Search",
+    "filter": "Filter",
+    "status": "Status",
+    "actions": "Actions"
+  },
+  "Navigation": {
+    "dashboard": "Dashboard",
+    "agora": "Agora",
+    "agents": "Agents",
+    "signals": "Signals",
+    "issues": "Issues",
+    "proposals": "Proposals",
+    "disclosure": "Disclosure",
+    "engine": "Engine Room"
+  },
+  "Dashboard": {
+    "title": "Dashboard",
+    "subtitle": "Overview of governance activities",
+    "activityFeed": "Recent Activity",
+    "agentLobby": "Agent Lobby",
+    "stats": {
+      "activeAgents": "Active Agents",
+      "activeSessions": "Active Sessions",
+      "signalsToday": "Signals Today",
+      "openIssues": "Open Issues"
+    }
+  },
+  "Header": {
+    "systemStatus": "System Status",
+    "running": "Running",
+    "degraded": "Degraded",
+    "maintenance": "Maintenance",
+    "budget": "Budget",
+    "nextTier2": "Next Tier2",
+    "queue": "Queue"
+  },
+  "Agents": {
+    "title": "AI Agents",
+    "subtitle": "Dynamic Persona Spectrum",
+    "groups": {
+      "visionaries": "Visionaries",
+      "builders": "Builders",
+      "investors": "Investors",
+      "guardians": "Guardians",
+      "operatives": "Operatives",
+      "moderators": "Moderators",
+      "advisors": "Advisors"
+    },
+    "status": {
+      "idle": "Idle",
+      "active": "Active",
+      "speaking": "Speaking",
+      "listening": "Listening"
+    },
+    "summon": "Summon",
+    "dismiss": "Dismiss"
+  },
+  "Agora": {
+    "title": "Agora",
+    "subtitle": "Live Deliberation Arena",
+    "lobby": "Lobby",
+    "discussion": "Discussion",
+    "evidence": "Evidence",
+    "summonAgent": "Summon Agent",
+    "sendMessage": "Send Message",
+    "noActiveSession": "No active session",
+    "startSession": "Start Session"
+  },
+  "Activity": {
+    "types": {
+      "HEARTBEAT": "Heartbeat",
+      "COLLECTOR": "Signal Collection",
+      "AGENT_CHATTER": "Agent Chatter",
+      "AGENT_SUMMONED": "Agent Summoned",
+      "AGORA_SESSION_START": "Session Started",
+      "DECISION_PACKET": "Decision Packet"
+    }
+  }
+}
