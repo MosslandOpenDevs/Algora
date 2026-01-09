@@ -3,13 +3,8 @@
 import { useTranslations } from 'next-intl';
 import { useQuery } from '@tanstack/react-query';
 import {
-  Settings,
-  Activity,
-  Wallet,
-  Clock,
   Cpu,
   Database,
-  Zap,
   Server,
   RefreshCw,
   AlertTriangle,

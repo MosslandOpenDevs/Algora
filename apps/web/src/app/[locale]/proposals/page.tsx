@@ -9,7 +9,6 @@ import {
   Plus,
   Search,
   CheckCircle,
-  Clock,
   XCircle,
   Vote,
   TrendingUp,

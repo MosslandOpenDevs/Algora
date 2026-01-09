@@ -2,16 +2,15 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   MessageSquare,
   Users,
   Send,
   Plus,
-  Loader2,
 } from 'lucide-react';
 
-import { fetchAgents, fetchAgoraSessions, type Agent, type AgoraSession } from '@/lib/api';
+import { fetchAgents, fetchAgoraSessions, type AgoraSession } from '@/lib/api';
 import { SessionCard } from '@/components/agora/SessionCard';
 import { ChatMessage } from '@/components/agora/ChatMessage';
 import { ParticipantList } from '@/components/agora/ParticipantList';
@@ -78,8 +77,7 @@ export default function AgoraPage() {
 
   const handleSendMessage = () => {
     if (!message.trim()) return;
-    // TODO: Implement actual message sending
-    console.log('Sending message:', message);
+    // TODO: Implement actual message sending via WebSocket
     setMessage('');
   };
 

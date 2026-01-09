@@ -12,6 +12,7 @@ import {
   Shield,
   Settings,
   MessageSquare,
+  Coins,
 } from 'lucide-react';
 
 const navItems = [
@@ -21,6 +22,7 @@ const navItems = [
   { key: 'signals', href: '/signals', icon: Radio },
   { key: 'issues', href: '/issues', icon: AlertCircle },
   { key: 'proposals', href: '/proposals', icon: FileText },
+  { key: 'treasury', href: '/treasury', icon: Coins },
   { key: 'disclosure', href: '/disclosure', icon: Shield },
   { key: 'engine', href: '/engine', icon: Settings },
 ];

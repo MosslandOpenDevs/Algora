@@ -20,6 +20,7 @@
     "signals": "Signals",
     "issues": "Issues",
     "proposals": "Proposals",
+    "treasury": "Treasury",
     "disclosure": "Disclosure",
     "engine": "Engine Room"
   },
@@ -245,5 +246,50 @@
       "processed": "Processed",
       "pending": "Pending"
     }
+  },
+  "Wallet": {
+    "connectWallet": "Connect Wallet",
+    "connecting": "Connecting...",
+    "selectWallet": "Select Wallet",
+    "connectedWith": "Connected with",
+    "address": "Address",
+    "balance": "Balance",
+    "copy": "Copy Address",
+    "viewOnEtherscan": "View on Etherscan",
+    "disconnect": "Disconnect"
+  },
+  "Treasury": {
+    "title": "Treasury",
+    "subtitle": "Governance treasury and token management",
+    "overview": "Overview",
+    "allocations": "Allocations",
+    "transactions": "Transactions",
+    "holders": "Token Holders",
+    "stats": {
+      "totalBalance": "Total Balance",
+      "mocBalance": "MOC Balance",
+      "ethBalance": "ETH Balance",
+      "holders": "Verified Holders",
+      "activeVoting": "Active Voting",
+      "allocations": "Allocations"
+    },
+    "allocation": {
+      "pending": "Pending",
+      "approved": "Approved",
+      "disbursed": "Disbursed",
+      "cancelled": "Cancelled"
+    },
+    "transaction": {
+      "deposit": "Deposit",
+      "withdrawal": "Withdrawal",
+      "transfer": "Transfer",
+      "allocation": "Allocation"
+    },
+    "votingPower": "Voting Power",
+    "tokenBalance": "Token Balance",
+    "verifiedAt": "Verified At",
+    "noHolders": "No verified token holders yet",
+    "noAllocations": "No allocations yet",
+    "noTransactions": "No transactions yet"
   }
 }

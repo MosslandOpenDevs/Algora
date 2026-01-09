@@ -20,6 +20,7 @@
     "signals": "신호",
     "issues": "이슈",
     "proposals": "제안",
+    "treasury": "트레저리",
     "disclosure": "공시",
     "engine": "엔진 룸"
   },
@@ -245,5 +246,50 @@
       "processed": "처리됨",
       "pending": "대기 중"
     }
+  },
+  "Wallet": {
+    "connectWallet": "지갑 연결",
+    "connecting": "연결 중...",
+    "selectWallet": "지갑 선택",
+    "connectedWith": "연결됨",
+    "address": "주소",
+    "balance": "잔액",
+    "copy": "주소 복사",
+    "viewOnEtherscan": "Etherscan에서 보기",
+    "disconnect": "연결 해제"
+  },
+  "Treasury": {
+    "title": "트레저리",
+    "subtitle": "거버넌스 트레저리 및 토큰 관리",
+    "overview": "개요",
+    "allocations": "할당",
+    "transactions": "거래",
+    "holders": "토큰 홀더",
+    "stats": {
+      "totalBalance": "총 잔액",
+      "mocBalance": "MOC 잔액",
+      "ethBalance": "ETH 잔액",
+      "holders": "인증된 홀더",
+      "activeVoting": "진행 중인 투표",
+      "allocations": "할당"
+    },
+    "allocation": {
+      "pending": "대기 중",
+      "approved": "승인됨",
+      "disbursed": "지급됨",
+      "cancelled": "취소됨"
+    },
+    "transaction": {
+      "deposit": "입금",
+      "withdrawal": "출금",
+      "transfer": "전송",
+      "allocation": "할당"
+    },
+    "votingPower": "투표권",
+    "tokenBalance": "토큰 잔액",
+    "verifiedAt": "인증 일시",
+    "noHolders": "인증된 토큰 홀더가 없습니다",
+    "noAllocations": "할당 내역이 없습니다",
+    "noTransactions": "거래 내역이 없습니다"
   }
 }

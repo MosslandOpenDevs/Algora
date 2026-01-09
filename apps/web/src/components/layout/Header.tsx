@@ -5,6 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Globe, Activity, Clock, Wallet } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { WalletConnect } from '@/components/wallet/WalletConnect';
 
 export function Header() {
   const t = useTranslations('Header');
@@ -89,14 +90,19 @@ export function Header() {
         </div>
       </div>
 
-      {/* Language Toggle */}
-      <Link
-        href={`/${otherLocale}${pathWithoutLocale}`}
-        className="flex items-center gap-2 rounded-md px-3 py-1.5 text-sm text-agora-muted transition-colors hover:bg-agora-card hover:text-white"
-      >
-        <Globe className="h-4 w-4" />
-        <span>{otherLocale === 'en' ? 'EN' : '한국어'}</span>
-      </Link>
+      <div className="flex items-center gap-4">
+        {/* Wallet Connect */}
+        <WalletConnect />
+
+        {/* Language Toggle */}
+        <Link
+          href={`/${otherLocale}${pathWithoutLocale}`}
+          className="flex items-center gap-2 rounded-md px-3 py-1.5 text-sm text-agora-muted transition-colors hover:bg-agora-card hover:text-white"
+        >
+          <Globe className="h-4 w-4" />
+          <span>{otherLocale === 'en' ? 'EN' : '한국어'}</span>
+        </Link>
+      </div>
     </header>
   );
 }

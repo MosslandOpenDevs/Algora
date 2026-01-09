@@ -9,7 +9,6 @@ import {
   Plus,
   Search,
   CheckCircle,
-  Clock,
   MessageSquare,
   ArrowUpRight,
 } from 'lucide-react';

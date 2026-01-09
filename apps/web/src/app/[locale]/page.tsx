@@ -50,7 +50,7 @@ export default function DashboardPage() {
           title={t('stats.openIssues')}
           value={stats?.openIssues ?? 0}
           icon={<AlertTriangle className="h-5 w-5" />}
-          variant={stats?.openIssues > 5 ? 'warning' : 'default'}
+          variant={(stats?.openIssues ?? 0) > 5 ? 'warning' : 'default'}
         />
       </div>
 
