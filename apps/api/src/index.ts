@@ -13,6 +13,7 @@ import { SchedulerService } from './scheduler';
 import { ChatterService } from './services/chatter';
 import { llmService } from './services/llm';
 import { SignalCollectorService } from './services/collectors';
+import { IssueDetectionService } from './services/issue-detection';
 
 const PORT = process.env.PORT || 3201;
 const NODE_ENV = process.env.NODE_ENV || 'development';
@@ -93,6 +94,13 @@ async function bootstrap() {
     // Start signal collectors
     signalCollector.start();
 
+    // Initialize issue detection service
+    const issueDetection = new IssueDetectionService(db, io);
+    app.locals.issueDetection = issueDetection;
+
+    // Start issue detection (runs after signal collectors have initial data)
+    setTimeout(() => issueDetection.start(), 60000); // Start after 1 minute
+
     // Log LLM availability
     console.info(`[LLM] Tier 1 (Ollama): ${llmService.isTier1Available() ? 'Available' : 'Not Available'}`);
     console.info(`[LLM] Tier 2 configured: ${llmService.getConfig().tier2.anthropic ? 'Anthropic' : ''} ${llmService.getConfig().tier2.openai ? 'OpenAI' : ''} ${llmService.getConfig().tier2.gemini ? 'Gemini' : ''}`.trim());
@@ -130,6 +138,9 @@ function gracefulShutdown(signal: string) {
   console.info(`${signal} received, shutting down...`);
 
   // Stop services
+  if (app.locals.issueDetection) {
+    app.locals.issueDetection.stop();
+  }
   if (app.locals.signalCollector) {
     app.locals.signalCollector.stop();
   }

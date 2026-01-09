@@ -7,7 +7,7 @@
 
 ---
 
-## 현재 단계: 신호 수집 (v0.4.0)
+## 현재 단계: 이슈 탐지 (v0.5.0)
 
 ### 완료된 기능
 
@@ -71,18 +71,39 @@
 - [x] RSS 수집기 서비스 (rss.ts)
   - [x] 설정 가능한 RSS 피드 관리
   - [x] 자동 심각도 감지
-  - [x] 기본 피드: Ethereum Blog, CoinDesk, The Block
+  - [x] 5개 카테고리 17개 피드: AI, Crypto, Finance, Security, Dev
 - [x] GitHub 수집기 서비스 (github.ts)
   - [x] 저장소 이벤트 모니터링
   - [x] 이슈 및 PR 추적
-  - [x] 기본 저장소: ethereum/EIPs, ethereum/pm, MakerDAO/community
+  - [x] 41개 저장소: ethereum, Uniswap, Aave, OpenZeppelin, AI 프로젝트
+  - [x] mossland 전체 27개 public 저장소 모니터링
 - [x] 블록체인 수집기 서비스 (blockchain.ts)
-  - [x] 가격 모니터링 (CoinGecko)
-  - [x] DeFi TVL 추적 (DeFiLlama)
+  - [x] 가격 모니터링 (CoinGecko 멀티코인)
+  - [x] DeFi TVL 추적 (DeFiLlama 프로토콜, 체인, 스테이블코인)
+  - [x] Fear & Greed Index
+  - [x] 옵션: CoinMarketCap, Etherscan, OpenSea (API 키 필요)
 - [x] 신호 프로세서 (index.ts)
   - [x] 통합 수집기 관리
   - [x] 통계 및 리포팅
 - [x] 수집기 API 엔드포인트 (/api/collectors/*)
+
+#### 이슈 탐지 (100%)
+- [x] IssueDetectionService (issue-detection.ts)
+  - [x] 패턴 기반 탐지 (10개 사전 정의 패턴)
+  - [x] Security, Market, Governance, DeFi, Mossland, AI 카테고리
+  - [x] 중복 방지 쿨다운 메커니즘
+- [x] 알림 임계값
+  - [x] 빈도 기반 알림
+  - [x] 중요 신호 급증 탐지
+  - [x] 카테고리별 임계값
+- [x] 이슈 라이프사이클 관리
+  - [x] 상태 워크플로우: detected → confirmed → in_progress → resolved
+  - [x] 신호-이슈 상관관계
+  - [x] 증거 추적
+- [x] LLM 강화 분석
+  - [x] 고우선순위 항목 AI 분석
+  - [x] 권장 조치 생성
+- [x] API 엔드포인트 (/api/issues/detection/*)
 
 #### 공유 패키지
 - [x] packages/core - TypeScript 타입
@@ -105,16 +126,16 @@
 
 ## 다음 단계 (우선순위 순)
 
-### 4단계: 이슈 탐지
-1. 거버넌스 이슈 패턴 인식
-2. 알림 임계값 및 알림
-3. 이슈 라이프사이클 관리
-4. 신호-이슈 상관관계
-
 ### 5단계: 휴먼 거버넌스
 1. 제안 생성 워크플로우
 2. 투표 메커니즘
 3. 의사결정 패킷 생성
+4. MOC 토큰 통합
+
+### 6단계: 결과 증명
+1. 의사결정 추적
+2. 결과 검증
+3. 에이전트 신뢰 점수
 
 ---
 

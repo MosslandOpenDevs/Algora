@@ -138,21 +138,44 @@ export class GitHubCollectorService {
       enabled: true,
       fetchInterval: 60,
     },
-    // === Mossland / Metaverse ===
-    {
-      owner: 'mossland',
-      repo: 'mossverse',
-      category: 'metaverse',
-      enabled: true,
-      fetchInterval: 60,
-    },
-    {
-      owner: 'mossland',
-      repo: 'mossland-contracts',
-      category: 'metaverse',
-      enabled: true,
-      fetchInterval: 60,
-    },
+    // === Mossland - All Public Repos (27 repos) ===
+    // AI & Research
+    { owner: 'mossland', repo: 'MosslandAI', category: 'mossland-ai', enabled: true, fetchInterval: 60 },
+    { owner: 'mossland', repo: 'MossCoin_AI_NFT_Research', category: 'mossland-ai', enabled: true, fetchInterval: 60 },
+    { owner: 'mossland', repo: 'agentic-orchestrator', category: 'mossland-ai', enabled: true, fetchInterval: 60 },
+    // Governance & Platform
+    { owner: 'mossland', repo: 'MossDAO', category: 'mossland-governance', enabled: true, fetchInterval: 30 },
+    { owner: 'mossland', repo: 'Agora', category: 'mossland-governance', enabled: true, fetchInterval: 30 },
+    { owner: 'mossland', repo: 'Algora', category: 'mossland-governance', enabled: true, fetchInterval: 30 },
+    // Metaverse & XR
+    { owner: 'mossland', repo: 'mossverse', category: 'mossland-metaverse', enabled: true, fetchInterval: 60 },
+    { owner: 'mossland', repo: 'MosslandXR', category: 'mossland-metaverse', enabled: true, fetchInterval: 60 },
+    // Token & Coin
+    { owner: 'mossland', repo: 'MossCoin', category: 'mossland-token', enabled: true, fetchInterval: 60 },
+    { owner: 'mossland', repo: 'MossCoin-ERC20-2025', category: 'mossland-token', enabled: true, fetchInterval: 60 },
+    { owner: 'mossland', repo: 'MossCoinForMachine', category: 'mossland-token', enabled: true, fetchInterval: 60 },
+    // Bridge & DeFi
+    { owner: 'mossland', repo: 'bridge-2026', category: 'mossland-defi', enabled: true, fetchInterval: 60 },
+    { owner: 'mossland', repo: 'mossland_swap', category: 'mossland-defi', enabled: true, fetchInterval: 60 },
+    { owner: 'mossland', repo: 'doubleDice', category: 'mossland-defi', enabled: true, fetchInterval: 60 },
+    // Games
+    { owner: 'mossland', repo: 'basebat_game', category: 'mossland-game', enabled: true, fetchInterval: 60 },
+    { owner: 'mossland', repo: 'MocoRush', category: 'mossland-game', enabled: true, fetchInterval: 60 },
+    { owner: 'mossland', repo: 'you-quiz-moss-meta', category: 'mossland-game', enabled: true, fetchInterval: 60 },
+    { owner: 'mossland', repo: 'zendog', category: 'mossland-game', enabled: true, fetchInterval: 60 },
+    // Infrastructure
+    { owner: 'mossland', repo: 'mossland-nexus', category: 'mossland-infra', enabled: true, fetchInterval: 60 },
+    // Disclosure & Materials
+    { owner: 'mossland', repo: 'Disclosure-and-Materials', category: 'mossland-disclosure', enabled: true, fetchInterval: 120 },
+    { owner: 'mossland', repo: 'mossland_disclosure_web', category: 'mossland-disclosure', enabled: true, fetchInterval: 120 },
+    // Developer & Community
+    { owner: 'mossland', repo: 'MosslandDeveloperSupportProgram', category: 'mossland-dev', enabled: true, fetchInterval: 120 },
+    { owner: 'mossland', repo: 'Hackathon', category: 'mossland-dev', enabled: true, fetchInterval: 120 },
+    { owner: 'mossland', repo: 'Projects', category: 'mossland-dev', enabled: true, fetchInterval: 120 },
+    // Brand & Art
+    { owner: 'mossland', repo: 'Brand-Identity', category: 'mossland-brand', enabled: true, fetchInterval: 120 },
+    { owner: 'mossland', repo: 'art_resource', category: 'mossland-brand', enabled: true, fetchInterval: 120 },
+    { owner: 'mossland', repo: 'The-Story-of-CyberTHUG', category: 'mossland-brand', enabled: true, fetchInterval: 120 },
   ];
 
   constructor(db: Database.Database, io: SocketServer) {

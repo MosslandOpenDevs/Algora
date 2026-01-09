@@ -7,7 +7,7 @@ This file tracks the current development progress for continuity between session
 
 ---
 
-## Current Phase: Signal Collection (v0.4.0)
+## Current Phase: Issue Detection (v0.5.0)
 
 ### Completed Features
 
@@ -71,18 +71,39 @@ This file tracks the current development progress for continuity between session
 - [x] RSS Collector Service (rss.ts)
   - [x] Configurable RSS feed management
   - [x] Automatic severity detection
-  - [x] Default feeds: Ethereum Blog, CoinDesk, The Block
+  - [x] 17 feeds across 5 categories: AI, Crypto, Finance, Security, Dev
 - [x] GitHub Collector Service (github.ts)
   - [x] Repository events monitoring
   - [x] Issues and PRs tracking
-  - [x] Default repos: ethereum/EIPs, ethereum/pm, MakerDAO/community
+  - [x] 41 repos: ethereum, Uniswap, Aave, OpenZeppelin, AI projects
+  - [x] All 27 mossland public repos monitored
 - [x] Blockchain Collector Service (blockchain.ts)
-  - [x] Price monitoring (CoinGecko)
-  - [x] DeFi TVL tracking (DeFiLlama)
+  - [x] Price monitoring (CoinGecko multi-coin)
+  - [x] DeFi TVL tracking (DeFiLlama protocols, chains, stablecoins)
+  - [x] Fear & Greed Index
+  - [x] Optional: CoinMarketCap, Etherscan, OpenSea (API keys)
 - [x] Signal Processor (index.ts)
   - [x] Unified collector management
   - [x] Statistics and reporting
 - [x] Collectors API endpoints (/api/collectors/*)
+
+#### Issue Detection (100%)
+- [x] IssueDetectionService (issue-detection.ts)
+  - [x] Pattern-based detection (10 predefined patterns)
+  - [x] Security, Market, Governance, DeFi, Mossland, AI categories
+  - [x] Cooldown mechanism to prevent duplicates
+- [x] Alert Thresholds
+  - [x] Frequency-based alerts
+  - [x] Critical signal surge detection
+  - [x] Category-specific thresholds
+- [x] Issue Lifecycle Management
+  - [x] Status workflow: detected → confirmed → in_progress → resolved
+  - [x] Signal-to-issue correlation
+  - [x] Evidence tracking
+- [x] LLM-Enhanced Analysis
+  - [x] AI-powered signal analysis for high-priority items
+  - [x] Suggested actions generation
+- [x] API endpoints (/api/issues/detection/*)
 
 #### Shared Packages
 - [x] packages/core - TypeScript types
@@ -105,16 +126,16 @@ This file tracks the current development progress for continuity between session
 
 ## Next Steps (Priority Order)
 
-### Phase 4: Issue Detection
-1. Pattern recognition for governance issues
-2. Alert thresholds and notifications
-3. Issue lifecycle management
-4. Signal-to-issue correlation
-
 ### Phase 5: Human Governance
 1. Proposal creation workflow
 2. Voting mechanism
 3. Decision packet generation
+4. MOC token integration
+
+### Phase 6: Proof of Outcome
+1. Decision tracking
+2. Outcome verification
+3. Agent trust scoring
 
 ---
 
