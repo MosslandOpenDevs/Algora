@@ -75,9 +75,15 @@
     "discussion": "토론",
     "evidence": "증거",
     "summonAgent": "에이전트 소환",
-    "sendMessage": "메시지 보내기",
+    "sendMessage": "메시지를 입력하세요...",
     "noActiveSession": "활성 세션 없음",
-    "startSession": "세션 시작"
+    "startSession": "세션 시작",
+    "status": {
+      "idle": "유휴",
+      "active": "활성",
+      "speaking": "발언 중",
+      "listening": "청취 중"
+    }
   },
   "Activity": {
     "types": {
