@@ -28,8 +28,8 @@ signalsRouter.get('/', (req, res) => {
       params.push(severity);
     }
     if (source) {
-      query += ' AND source = ?';
-      params.push(source);
+      query += ' AND source LIKE ?';
+      params.push(`${source}:%`);
     }
 
     query += ' ORDER BY timestamp DESC LIMIT ? OFFSET ?';
@@ -49,8 +49,8 @@ signalsRouter.get('/', (req, res) => {
       countParams.push(severity);
     }
     if (source) {
-      countQuery += ' AND source = ?';
-      countParams.push(source);
+      countQuery += ' AND source LIKE ?';
+      countParams.push(`${source}:%`);
     }
 
     const { count } = db.prepare(countQuery).get(...countParams) as { count: number };
