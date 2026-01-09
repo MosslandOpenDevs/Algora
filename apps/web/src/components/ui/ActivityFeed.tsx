@@ -18,6 +18,7 @@ import {
   Target,
   Loader,
   Trophy,
+  Zap,
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 
@@ -33,6 +34,7 @@ const activityIcons: Record<string, React.ReactNode> = {
   AGENT_CHATTER: <MessageCircle className="h-4 w-4 text-agora-accent" />,
   AGENT_SUMMONED: <UserPlus className="h-4 w-4 text-agora-warning" />,
   AGORA_SESSION_START: <Play className="h-4 w-4 text-agora-primary" />,
+  AGORA_SESSION_AUTO_CREATED: <Zap className="h-4 w-4 text-agora-warning" />,
   DECISION_PACKET: <FileText className="h-4 w-4 text-agora-success" />,
   ISSUE_DETECTED: <AlertTriangle className="h-4 w-4 text-agora-warning" />,
   VOTE_CAST: <Vote className="h-4 w-4 text-agora-accent" />,

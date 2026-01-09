@@ -243,6 +243,53 @@ Decision Packet ────────────WebSocket: 'agora:consensus'
 인간 제안
 ```
 
+### 자동 아고라 세션 생성
+
+높은 우선순위 이슈는 자동으로 아고라 토론 세션을 생성합니다:
+
+```
+이슈 감지
+      │
+      ▼
+우선순위 확인 ─────────────────┐
+      │                         │
+      │ (critical/high)         │ (medium/low)
+      ▼                         ▼
+┌─────────────────┐      수동 프로세스
+│ 자동 아고라     │      (필요시)
+│ 세션 생성       │
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────┐
+│ 카테고리별      │
+│ 에이전트 선택   │
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────┐
+│ 에이전트 자동   │
+│ 소환            │
+└────────┬────────┘
+         │
+         ▼
+WebSocket: 'agora:session-created'
+```
+
+**카테고리-에이전트 매핑**:
+| 이슈 카테고리 | 자동 소환 에이전트 |
+|---------------|-------------------|
+| Security | Nova, Marcus |
+| Market | Sophia, Marcus |
+| Governance | Nova, Sophia |
+| DeFi | Marcus, Sophia |
+| Protocol | Marcus, Nova |
+| Mossland | Nova, Sophia, Marcus |
+
+**쿨다운 규칙**:
+- Critical 이슈: 자동 세션 간 30분 간격
+- High 우선순위 이슈: 자동 세션 간 60분 간격
+
 ---
 
 ## 프론트엔드 아키텍처
@@ -251,6 +298,7 @@ Decision Packet ────────────WebSocket: 'agora:consensus'
 
 ```
 /                     # 대시보드 - 개요
+/guide                # 시스템 흐름 가이드 (신규 사용자)
 /agora                # 토론장 (핵심)
 /agents               # 에이전트 관리
 /signals              # 신호 모니터링
@@ -259,6 +307,35 @@ Decision Packet ────────────WebSocket: 'agora:consensus'
 /disclosure           # 공개 보고서
 /engine               # 시스템 활동 로그
 ```
+
+### UX 가이드 시스템
+
+```
+첫 방문 감지
+      │
+      ▼
+┌─────────────────┐
+│ 웰컴 투어       │───▶ 투어 단계 (5단계)
+│ 모달 표시       │         │
+└────────┬────────┘         ▼
+         │              1. 환영
+         │              2. 신호
+         │              3. 이슈
+         │              4. 아고라
+         │              5. 제안
+         ▼
+┌─────────────────┐
+│ localStorage:   │
+│ algora_has_     │
+│ seen_tour=true  │
+└─────────────────┘
+```
+
+**컴포넌트**:
+- `WelcomeTour`: 첫 방문 시 다단계 가이드 투어
+- `SystemFlowDiagram`: /guide 페이지의 시각적 파이프라인 다이어그램
+- `HelpTooltip`: 각 페이지의 맥락별 도움말 아이콘
+- `HelpMenu`: 헤더의 빠른 접근 메뉴
 
 ### 컴포넌트 계층
 

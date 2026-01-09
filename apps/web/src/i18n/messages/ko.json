@@ -116,6 +116,7 @@
       "AGENT_CHATTER": "에이전트 잡담",
       "AGENT_SUMMONED": "에이전트 소환됨",
       "AGORA_SESSION_START": "세션 시작됨",
+      "AGORA_SESSION_AUTO_CREATED": "자동 세션 생성됨",
       "DECISION_PACKET": "의사결정 패킷",
       "ISSUE_DETECTED": "이슈 감지됨",
       "VOTE_CAST": "투표 완료",

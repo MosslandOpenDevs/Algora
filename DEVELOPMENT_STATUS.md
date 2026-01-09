@@ -54,6 +54,13 @@ This file tracks the current development progress for continuity between session
 - [x] **Issues page** - Status workflow, priority filter, search
 - [x] **Proposals page** - Voting progress, quorum tracking, filters
 - [x] **Engine Room page** - Budget, tier usage, scheduler, system health
+- [x] **Guide page** - System flow visualization
+- [x] **UX Guide System**
+  - [x] WelcomeTour component (multi-step guided tour)
+  - [x] SystemFlowDiagram component (visual pipeline)
+  - [x] HelpTooltip component (contextual help icons)
+  - [x] HelpMenu component (header quick access menu)
+  - [x] localStorage persistence for tour completion
 
 #### Agent System (100%)
 - [x] LLM Service with 3-tier support (llm.ts)
@@ -103,6 +110,11 @@ This file tracks the current development progress for continuity between session
 - [x] LLM-Enhanced Analysis
   - [x] AI-powered signal analysis for high-priority items
   - [x] Suggested actions generation
+- [x] Automatic Agora Session Creation
+  - [x] Auto-create Agora sessions for Critical/High priority issues
+  - [x] Category-based agent auto-summoning
+  - [x] Cooldown mechanism (30min for critical, 60min for high)
+  - [x] AGORA_SESSION_AUTO_CREATED activity type
 - [x] API endpoints (/api/issues/detection/*)
 
 #### Human Governance (100%)
@@ -215,6 +227,7 @@ This file tracks the current development progress for continuity between session
 - [x] ARCHITECTURE.md / ARCHITECTURE.ko.md
 - [x] CONTRIBUTING.md / CONTRIBUTING.ko.md
 - [x] ALGORA_PROJECT_SPEC.md / ALGORA_PROJECT_SPEC.ko.md
+- [x] USER_GUIDE.md / USER_GUIDE.ko.md
 - [x] CLAUDE.md
 - [x] CHANGELOG.md
 - [x] DEVELOPMENT_STATUS.md (this file)

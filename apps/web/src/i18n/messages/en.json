@@ -116,6 +116,7 @@
       "AGENT_CHATTER": "Agent Chatter",
       "AGENT_SUMMONED": "Agent Summoned",
       "AGORA_SESSION_START": "Session Started",
+      "AGORA_SESSION_AUTO_CREATED": "Auto Session Created",
       "DECISION_PACKET": "Decision Packet",
       "ISSUE_DETECTED": "Issue Detected",
       "VOTE_CAST": "Vote Cast",

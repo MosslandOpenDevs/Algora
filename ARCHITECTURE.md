@@ -243,6 +243,53 @@ Decision Packet ────────────────WebSocket: 'agor
 Human Proposal
 ```
 
+### Automatic Agora Session Creation
+
+High-priority issues automatically trigger Agora discussion sessions:
+
+```
+Issue Detected
+      │
+      ▼
+Priority Check ─────────────────┐
+      │                         │
+      │ (critical/high)         │ (medium/low)
+      ▼                         ▼
+┌─────────────────┐      Manual Process
+│ Auto-Create     │      (if needed)
+│ Agora Session   │
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────┐
+│ Select Agents   │
+│ by Category     │
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────┐
+│ Agent Auto-     │
+│ Summoning       │
+└────────┬────────┘
+         │
+         ▼
+WebSocket: 'agora:session-created'
+```
+
+**Category-Agent Mapping**:
+| Issue Category | Auto-Summoned Agents |
+|----------------|---------------------|
+| Security | Nova, Marcus |
+| Market | Sophia, Marcus |
+| Governance | Nova, Sophia |
+| DeFi | Marcus, Sophia |
+| Protocol | Marcus, Nova |
+| Mossland | Nova, Sophia, Marcus |
+
+**Cooldown Rules**:
+- Critical issues: 30 minutes between auto-sessions
+- High priority issues: 60 minutes between auto-sessions
+
 ---
 
 ## Frontend Architecture
@@ -251,6 +298,7 @@ Human Proposal
 
 ```
 /                     # Dashboard - Overview
+/guide                # System Flow Guide (New Users)
 /agora                # Discussion Arena (Core)
 /agents               # Agent Management
 /signals              # Signal Monitoring
@@ -259,6 +307,35 @@ Human Proposal
 /disclosure           # Public Reports
 /engine               # System Activity Log
 ```
+
+### UX Guide System
+
+```
+First Visit Detection
+      │
+      ▼
+┌─────────────────┐
+│ Welcome Tour    │───▶ Tour Steps (5 stages)
+│ Modal Appears   │         │
+└────────┬────────┘         ▼
+         │              1. Welcome
+         │              2. Signals
+         │              3. Issues
+         │              4. Agora
+         │              5. Proposals
+         ▼
+┌─────────────────┐
+│ localStorage:   │
+│ algora_has_     │
+│ seen_tour=true  │
+└─────────────────┘
+```
+
+**Components**:
+- `WelcomeTour`: Multi-step guided tour on first visit
+- `SystemFlowDiagram`: Visual pipeline diagram on /guide page
+- `HelpTooltip`: Contextual help icons on each page
+- `HelpMenu`: Quick access menu in header
 
 ### Component Hierarchy
 

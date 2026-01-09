@@ -2,6 +2,7 @@ import type Database from 'better-sqlite3';
 import { Server as SocketServer } from 'socket.io';
 import { v4 as uuidv4 } from 'uuid';
 import { llmService, type ModelComplexity } from './llm';
+import { AgoraService } from './agora';
 
 // Issue detection patterns
 interface DetectionPattern {
@@ -61,9 +62,11 @@ interface AlertThreshold {
 export class IssueDetectionService {
   private db: Database.Database;
   private io: SocketServer;
+  private agoraService: AgoraService;
   private isRunning: boolean = false;
   private checkIntervalId: NodeJS.Timeout | null = null;
   private lastPatternTrigger: Map<string, Date> = new Map();
+  private lastAutoAgoraSession: Map<string, Date> = new Map();
 
   // Predefined detection patterns
   private patterns: DetectionPattern[] = [
@@ -231,6 +234,7 @@ export class IssueDetectionService {
   constructor(db: Database.Database, io: SocketServer) {
     this.db = db;
     this.io = io;
+    this.agoraService = new AgoraService(db, io);
     this.initializeTables();
   }
 
@@ -451,6 +455,11 @@ export class IssueDetectionService {
     });
 
     console.log(`[IssueDetection] Created issue: ${title} (${signals.length} signals)`);
+
+    // Auto-create Agora session for critical/high priority issues
+    if (pattern.priority === 'critical' || pattern.priority === 'high') {
+      await this.createAutoAgoraSession(issueId, title, pattern.category, pattern.priority);
+    }
   }
 
   private generateIssueDescription(pattern: DetectionPattern, signals: Signal[]): string {
@@ -643,6 +652,16 @@ Respond in JSON format:
     });
 
     console.log(`[IssueDetection] AI detected issue: ${analysis.suggestedTitle}`);
+
+    // Auto-create Agora session for critical/high priority issues
+    if (analysis.priority === 'critical' || analysis.priority === 'high') {
+      await this.createAutoAgoraSession(
+        issueId,
+        `[AI] ${analysis.suggestedTitle}`,
+        analysis.category,
+        analysis.priority as 'critical' | 'high'
+      );
+    }
   }
 
   private getRecentSignals(minutesAgo: number): Signal[] {
@@ -662,6 +681,75 @@ Respond in JSON format:
       INSERT INTO activity_log (id, type, severity, timestamp, message, details)
       VALUES (?, ?, ?, ?, ?, ?)
     `).run(uuidv4(), type, severity, new Date().toISOString(), message, JSON.stringify(details));
+  }
+
+  /**
+   * Automatically create an Agora discussion session for high-priority issues
+   */
+  private async createAutoAgoraSession(
+    issueId: string,
+    issueTitle: string,
+    category: string,
+    priority: 'critical' | 'high'
+  ): Promise<void> {
+    // Check cooldown - don't create sessions too frequently for the same issue
+    const cooldownKey = `${issueId}`;
+    const lastSession = this.lastAutoAgoraSession.get(cooldownKey);
+    const cooldownMinutes = priority === 'critical' ? 30 : 60;
+
+    if (lastSession) {
+      const elapsed = (Date.now() - lastSession.getTime()) / 1000 / 60;
+      if (elapsed < cooldownMinutes) {
+        console.log(`[IssueDetection] Skipping auto Agora session (cooldown): ${issueTitle}`);
+        return;
+      }
+    }
+
+    try {
+      const maxRounds = priority === 'critical' ? 7 : 5;
+
+      // Create session via AgoraService
+      const session = await this.agoraService.createSession({
+        title: `[Auto] ${issueTitle}`,
+        description: `Automated discussion for ${priority} priority issue.\n\nThis session was automatically created because a ${priority} priority issue was detected. The AI agents will analyze the issue and discuss potential solutions.`,
+        issueId,
+        topic: category,
+        maxRounds,
+        autoSummon: true,
+      });
+
+      if (session) {
+        this.lastAutoAgoraSession.set(cooldownKey, new Date());
+
+        // Log activity
+        this.logActivity(
+          'AGORA_SESSION_AUTO_CREATED',
+          priority,
+          `Auto-created Agora session for issue: ${issueTitle}`,
+          {
+            sessionId: session.id,
+            issueId,
+            category,
+            priority,
+            maxRounds,
+          }
+        );
+
+        // Emit WebSocket event
+        this.io.emit('agora:session-created', {
+          session: {
+            id: session.id,
+            title: session.title,
+            issueId,
+            autoCreated: true,
+          },
+        });
+
+        console.log(`[IssueDetection] Auto-created Agora session: ${session.id} for issue: ${issueTitle}`);
+      }
+    } catch (error) {
+      console.error(`[IssueDetection] Failed to create auto Agora session:`, error);
+    }
   }
 
   // === Issue Lifecycle Management ===

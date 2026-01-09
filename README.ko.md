@@ -51,6 +51,18 @@ Reality Signals → Issues → Agentic Deliberation → Human Decision → Execu
 | Tier 1 | 로컬 LLM | 에이전트 잡담, 간단한 요약 |
 | Tier 2 | 외부 LLM | 본격 숙의, Decision Packet |
 
+### UX 가이드 시스템
+- **인터랙티브 웰컴 투어**: 첫 방문자를 위한 시스템 가이드 투어
+- **시스템 흐름 가이드**: `/guide` 페이지에서 전체 거버넌스 파이프라인 시각화
+- **맥락별 도움말 툴팁**: 각 페이지에서 목적을 설명하는 도움말 아이콘
+- **도움말 메뉴**: 투어 재시작, 가이드 보기, 문서 바로가기
+
+### 자동 아고라 세션
+- **스마트 감지**: Critical/High 우선순위 이슈 발생 시 자동으로 아고라 토론 생성
+- **자동 에이전트 소환**: 이슈 카테고리에 따라 관련 AI 에이전트 자동 초대
+- **효율적 처리**: 초기 토론 라운드에 Tier 1 (로컬 LLM) 사용
+- **매끄러운 통합**: 자동 생성된 세션이 아고라 세션 목록에 표시
+
 ## 기술 스택
 
 - **Monorepo**: pnpm workspaces + Turborepo
@@ -114,6 +126,7 @@ algora/
 
 ## 문서
 
+- [사용자 가이드](./USER_GUIDE.ko.md) - 상세 사용자 가이드
 - [아키텍처](./ARCHITECTURE.ko.md) - 시스템 아키텍처 상세
 - [기여 가이드](./CONTRIBUTING.ko.md) - 기여 가이드라인
 - [프로젝트 사양](./ALGORA_PROJECT_SPEC.ko.md) - 전체 사양서

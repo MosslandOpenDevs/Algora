@@ -10,10 +10,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Planned
-- Dynamic summoning engine implementation
-- Signal collection adapters (RSS, GitHub, On-chain)
-- Real-time agent chatter
-- MOC token governance integration
+- WebSocket real-time updates for auto-sessions
+- Advanced agent personality tuning
+
+---
+
+## [0.2.1] - 2026-01-09
+
+### Added
+- **UX Guide System**:
+  - `WelcomeTour` component for first-time visitors
+  - `SystemFlowDiagram` component for visual pipeline explanation
+  - `HelpTooltip` component for contextual help on each page
+  - `HelpMenu` component in header for quick access
+  - `/guide` page with complete governance flow visualization
+  - localStorage persistence for tour completion status
+  - Full i18n support (English/Korean) for guide system
+- **Automatic Agora Session Creation**:
+  - Auto-create Agora sessions for Critical/High priority issues
+  - Category-based agent auto-summoning (Security, Market, Governance, etc.)
+  - Cooldown mechanism (30min for critical, 60min for high priority)
+  - `AGORA_SESSION_AUTO_CREATED` activity type in ActivityFeed
+- **User Documentation**:
+  - `USER_GUIDE.md` - Complete English user guide
+  - `USER_GUIDE.ko.md` - Complete Korean user guide
+
+### Changed
+- Updated `README.md` / `README.ko.md` with new features
+- Updated `ARCHITECTURE.md` / `ARCHITECTURE.ko.md` with auto-session flow diagrams
+- Updated `DEVELOPMENT_STATUS.md` with completed features
+- Added `Zap` icon for auto-created session activity type
 
 ---
 
@@ -97,35 +123,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [x] Basic Socket.IO setup
 - [x] AgentLobby component
 
-### v0.2.0 - Agora Core (Planned)
-- [ ] Dynamic summoning engine
-- [ ] Agora session management
-- [ ] Discussion arena UI
-- [ ] Human summoning interface
+### v0.2.0 - Agora Core (Completed)
+- [x] Dynamic summoning engine
+- [x] Agora session management
+- [x] Discussion arena UI
+- [x] Human summoning interface
 
-### v0.3.0 - Signal Intelligence (Planned)
-- [ ] Signal collection adapters
-- [ ] Issue detection system
-- [ ] Signals/Issues pages
+### v0.2.1 - UX & Auto-Sessions (Completed)
+- [x] UX Guide System (Welcome Tour, Help Tooltips)
+- [x] Automatic Agora session creation
+- [x] User Guide documentation (EN/KO)
+- [x] System flow visualization
 
-### v0.4.0 - System Operations (Planned)
-- [ ] Activity log service
-- [ ] StatusBar component
-- [ ] Engine room page
-- [ ] Budget manager
+### v0.3.0 - Signal Intelligence (Completed)
+- [x] Signal collection adapters (RSS, GitHub, Blockchain)
+- [x] Issue detection system
+- [x] Signals/Issues pages
 
-### v0.5.0 - Governance (Planned)
-- [ ] Proposal system
-- [ ] Voting mechanism
-- [ ] Delegation support
-- [ ] Disclosure reports
+### v0.4.0 - System Operations (Completed)
+- [x] Activity log service
+- [x] StatusBar component
+- [x] Engine room page
+- [x] Budget manager
+
+### v0.5.0 - Governance (Completed)
+- [x] Proposal system
+- [x] Voting mechanism
+- [x] Delegation support
+- [x] Disclosure reports
+
+### v0.8.0 - Token Integration (Completed)
+- [x] MOC token integration
+- [x] Token-weighted voting
+- [x] Treasury management
+- [x] Wallet verification
 
 ### v1.0.0 - Production Release (Planned)
-- [ ] Full i18n (en/ko)
-- [ ] Responsive design
+- [ ] Full responsive design
 - [ ] Integration tests
 - [ ] Performance optimization
 - [ ] Security audit
+- [ ] Mainnet deployment
 
 ---
 

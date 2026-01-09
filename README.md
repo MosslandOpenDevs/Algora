@@ -51,6 +51,18 @@ Only relevant agents are summoned based on issue type, preventing chaos while ma
 | Tier 1 | Local LLM | Agent chatter, simple summaries |
 | Tier 2 | External LLM | Serious deliberation, Decision Packets |
 
+### UX Guide System
+- **Interactive Welcome Tour**: First-time visitors get a guided walkthrough of the system
+- **System Flow Guide**: Visual diagram at `/guide` showing the complete governance pipeline
+- **Contextual Help Tooltips**: Each page has help icons explaining the purpose
+- **Help Menu**: Quick access to restart tour, view guide, and documentation
+
+### Automatic Agora Sessions
+- **Smart Detection**: Critical/High priority issues automatically trigger Agora discussions
+- **Auto Agent Summoning**: Relevant AI agents are automatically invited based on issue category
+- **Efficient Processing**: Uses Tier 1 (local LLM) for initial discussion rounds
+- **Seamless Integration**: Auto-created sessions appear in the Agora session list
+
 ## Technology Stack
 
 - **Monorepo**: pnpm workspaces + Turborepo
@@ -114,6 +126,7 @@ algora/
 
 ## Documentation
 
+- [User Guide](./USER_GUIDE.md) - Detailed user guide
 - [Architecture](./ARCHITECTURE.md) - System architecture details
 - [Contributing](./CONTRIBUTING.md) - Contribution guidelines
 - [Project Specification](./ALGORA_PROJECT_SPEC.md) - Full specification
