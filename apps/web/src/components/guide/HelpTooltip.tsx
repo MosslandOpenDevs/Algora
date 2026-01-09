@@ -92,7 +92,7 @@ export function HelpTooltip({ content, title, position = 'bottom' }: HelpTooltip
         onClick={() => isOpen ? setIsOpen(false) : handleOpen()}
         onMouseEnter={handleOpen}
         onMouseLeave={() => setIsOpen(false)}
-        className="rounded-full p-1 text-agora-muted transition-colors hover:bg-agora-card hover:text-white focus:outline-none focus:ring-2 focus:ring-agora-primary"
+        className="rounded-full p-1 text-agora-muted transition-colors hover:bg-agora-card hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-agora-primary"
         aria-label="Help"
       >
         <HelpCircle className="h-4 w-4" />
@@ -110,10 +110,10 @@ export function HelpTooltip({ content, title, position = 'bottom' }: HelpTooltip
         >
           {title && (
             <div className="mb-2 flex items-center justify-between">
-              <h4 className="text-sm font-medium text-white">{title}</h4>
+              <h4 className="text-sm font-medium text-slate-900">{title}</h4>
               <button
                 onClick={() => setIsOpen(false)}
-                className="text-agora-muted hover:text-white"
+                className="text-agora-muted hover:text-slate-900"
               >
                 <X className="h-3 w-3" />
               </button>

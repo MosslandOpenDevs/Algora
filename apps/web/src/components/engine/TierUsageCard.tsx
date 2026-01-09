@@ -48,7 +48,7 @@ export function TierUsageCard({ usage }: TierUsageCardProps) {
 
   return (
     <div className="rounded-lg border border-agora-border bg-agora-card p-5">
-      <div className="flex items-center gap-2 text-white">
+      <div className="flex items-center gap-2 text-slate-900">
         <Layers className="h-5 w-5 text-agora-primary" />
         <h3 className="font-semibold">{t('title')}</h3>
       </div>
@@ -77,12 +77,12 @@ export function TierUsageCard({ usage }: TierUsageCardProps) {
                   <Icon className={`h-4 w-4 ${tier.color}`} />
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-white">{tier.label}</p>
+                  <p className="text-sm font-medium text-slate-900">{tier.label}</p>
                   <p className="text-xs text-agora-muted">{tier.desc}</p>
                 </div>
               </div>
               <div className="text-right">
-                <p className="text-sm font-medium text-white">
+                <p className="text-sm font-medium text-slate-900">
                   {tier.calls.toLocaleString()}
                 </p>
                 <p className="text-xs text-agora-muted">{percent}%</p>

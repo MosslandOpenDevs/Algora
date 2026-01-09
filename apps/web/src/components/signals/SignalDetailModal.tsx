@@ -113,15 +113,23 @@ export function SignalDetailModal({ signal, onClose }: SignalDetailModalProps) {
 
       {/* Modal */}
       <div className="fixed inset-4 z-50 flex items-center justify-center sm:inset-10">
-        <div className="w-full max-w-2xl max-h-full overflow-hidden rounded-xl border border-agora-border bg-agora-dark shadow-2xl">
+        <div className="animate-scale-in w-full max-w-2xl max-h-full overflow-hidden rounded-xl border border-agora-border bg-agora-dark shadow-2xl">
           {/* Header */}
-          <div className="flex items-start justify-between border-b border-agora-border p-6">
+          <div
+            className="animate-slide-up flex items-start justify-between border-b border-agora-border p-6"
+            style={{ animationDelay: '0ms', animationFillMode: 'backwards' }}
+          >
             <div className="flex items-start gap-4">
-              <div className={`rounded-lg border p-3 ${sourceColors[sourceType] || sourceColors.api}`}>
+              <div
+                className={`
+                  rounded-lg border p-3 transition-transform duration-300 hover:scale-110 hover:rotate-6
+                  ${sourceColors[sourceType] || sourceColors.api}
+                `}
+              >
                 {sourceIcons[sourceType] || sourceIcons.api}
               </div>
               <div>
-                <h2 className="text-xl font-bold text-white pr-8">{title}</h2>
+                <h2 className="text-xl font-bold text-slate-900 pr-8">{title}</h2>
                 <div className="mt-2 flex flex-wrap items-center gap-3">
                   {/* Source Badge */}
                   <span className={`flex items-center gap-1.5 text-sm ${(sourceColors[sourceType] || sourceColors.api).split(' ')[0]}`}>
@@ -147,7 +155,7 @@ export function SignalDetailModal({ signal, onClose }: SignalDetailModalProps) {
 
             <button
               onClick={onClose}
-              className="rounded-lg p-2 text-agora-muted transition-colors hover:bg-agora-card hover:text-white"
+              className="rounded-lg p-2 text-agora-muted transition-colors hover:bg-agora-card hover:text-slate-900"
             >
               <X className="h-5 w-5" />
             </button>
@@ -156,25 +164,31 @@ export function SignalDetailModal({ signal, onClose }: SignalDetailModalProps) {
           {/* Content */}
           <div className="max-h-[60vh] overflow-y-auto p-6">
             {/* Main Content */}
-            <div className="rounded-lg border border-agora-border bg-agora-card p-4">
+            <div
+              className="animate-slide-up rounded-lg border border-agora-border bg-agora-card p-4"
+              style={{ animationDelay: '50ms', animationFillMode: 'backwards' }}
+            >
               <div className="flex items-center gap-2 mb-3 text-sm text-agora-muted">
                 <FileText className="h-4 w-4" />
                 <span>{t('detail.content')}</span>
               </div>
-              <p className="text-white whitespace-pre-wrap leading-relaxed">
+              <p className="text-slate-900 whitespace-pre-wrap leading-relaxed">
                 {signal.description}
               </p>
             </div>
 
             {/* Metadata */}
-            <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div
+              className="animate-slide-up mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2"
+              style={{ animationDelay: '100ms', animationFillMode: 'backwards' }}
+            >
               {/* Timestamp */}
-              <div className="rounded-lg border border-agora-border bg-agora-card p-4">
+              <div className="rounded-lg border border-agora-border bg-agora-card p-4 transition-all hover:border-agora-primary/30">
                 <div className="flex items-center gap-2 mb-2 text-sm text-agora-muted">
                   <Calendar className="h-4 w-4" />
                   <span>{t('detail.timestamp')}</span>
                 </div>
-                <p className="text-white font-medium">
+                <p className="text-slate-900 font-medium">
                   {format(new Date(signal.timestamp || signal.created_at), 'PPpp')}
                 </p>
                 <p className="text-sm text-agora-muted mt-1">
@@ -183,12 +197,12 @@ export function SignalDetailModal({ signal, onClose }: SignalDetailModalProps) {
               </div>
 
               {/* Signal ID */}
-              <div className="rounded-lg border border-agora-border bg-agora-card p-4">
+              <div className="rounded-lg border border-agora-border bg-agora-card p-4 transition-all hover:border-agora-primary/30">
                 <div className="flex items-center gap-2 mb-2 text-sm text-agora-muted">
                   <Tag className="h-4 w-4" />
                   <span>{t('detail.signalId')}</span>
                 </div>
-                <p className="text-white font-mono text-sm break-all">
+                <p className="text-slate-900 font-mono text-sm break-all">
                   {signal.id}
                 </p>
               </div>
@@ -196,7 +210,10 @@ export function SignalDetailModal({ signal, onClose }: SignalDetailModalProps) {
 
             {/* Additional Metadata */}
             {metadata && Object.keys(metadata).length > 0 && (
-              <div className="mt-4 rounded-lg border border-agora-border bg-agora-card p-4">
+              <div
+                className="animate-slide-up mt-4 rounded-lg border border-agora-border bg-agora-card p-4"
+                style={{ animationDelay: '150ms', animationFillMode: 'backwards' }}
+              >
                 <div className="flex items-center gap-2 mb-3 text-sm text-agora-muted">
                   <Database className="h-4 w-4" />
                   <span>{t('detail.metadata')}</span>
@@ -205,7 +222,7 @@ export function SignalDetailModal({ signal, onClose }: SignalDetailModalProps) {
                   {Object.entries(metadata).map(([key, value]) => (
                     <div key={key} className="flex items-start gap-2 text-sm">
                       <span className="text-agora-muted min-w-[100px]">{key}:</span>
-                      <span className="text-white font-mono break-all">
+                      <span className="text-slate-900 font-mono break-all">
                         {typeof value === 'object' ? JSON.stringify(value) : String(value)}
                       </span>
                     </div>
@@ -216,7 +233,10 @@ export function SignalDetailModal({ signal, onClose }: SignalDetailModalProps) {
           </div>
 
           {/* Footer */}
-          <div className="flex items-center justify-between border-t border-agora-border p-4">
+          <div
+            className="animate-slide-up flex items-center justify-between border-t border-agora-border p-4"
+            style={{ animationDelay: '200ms', animationFillMode: 'backwards' }}
+          >
             <div className="text-sm text-agora-muted">
               {t('detail.source')}: {signal.source}
             </div>
@@ -227,15 +247,15 @@ export function SignalDetailModal({ signal, onClose }: SignalDetailModalProps) {
                   href={url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-2 rounded-lg bg-agora-card px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-agora-border"
+                  className="flex items-center gap-2 rounded-lg bg-agora-card px-4 py-2 text-sm font-medium text-slate-900 transition-all duration-200 hover:bg-agora-border hover:scale-105"
                 >
                   <ExternalLink className="h-4 w-4" />
                   {t('viewSource')}
                 </a>
               )}
 
-              <button className="flex items-center gap-2 rounded-lg bg-agora-primary px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-agora-primary/80">
-                <ArrowRight className="h-4 w-4" />
+              <button className="flex items-center gap-2 rounded-lg bg-agora-primary px-4 py-2 text-sm font-medium text-slate-900 transition-all duration-200 hover:bg-agora-primary/80 hover:scale-105 hover:shadow-lg hover:shadow-agora-primary/30">
+                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
                 {t('detail.createIssue')}
               </button>
             </div>

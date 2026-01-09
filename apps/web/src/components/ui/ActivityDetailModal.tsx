@@ -108,7 +108,7 @@ export function ActivityDetailModal({ activity, onClose }: ActivityDetailModalPr
                 </span>
               </div>
               <div>
-                <h2 className="text-xl font-bold text-white">
+                <h2 className="text-xl font-bold text-slate-900">
                   {t(`types.${activity.type}`)}
                 </h2>
                 <p className="mt-1 text-sm text-agora-muted">
@@ -119,7 +119,7 @@ export function ActivityDetailModal({ activity, onClose }: ActivityDetailModalPr
 
             <button
               onClick={onClose}
-              className="rounded-lg p-2 text-agora-muted transition-colors hover:bg-agora-card hover:text-white"
+              className="rounded-lg p-2 text-agora-muted transition-colors hover:bg-agora-card hover:text-slate-900"
             >
               <X className="h-5 w-5" />
             </button>
@@ -146,7 +146,7 @@ export function ActivityDetailModal({ activity, onClose }: ActivityDetailModalPr
                   <Calendar className="h-4 w-4" />
                   <span>{t('detail.timestamp')}</span>
                 </div>
-                <p className="text-white font-medium text-sm">
+                <p className="text-slate-900 font-medium text-sm">
                   {format(new Date(timestamp), 'PPp')}
                 </p>
                 <p className="text-xs text-agora-muted mt-1">
@@ -162,7 +162,7 @@ export function ActivityDetailModal({ activity, onClose }: ActivityDetailModalPr
                   <MessageCircle className="h-4 w-4" />
                   <span>{t('detail.message')}</span>
                 </div>
-                <p className="text-white text-sm leading-relaxed">
+                <p className="text-slate-900 text-sm leading-relaxed">
                   {activity.message}
                 </p>
               </div>
@@ -175,7 +175,7 @@ export function ActivityDetailModal({ activity, onClose }: ActivityDetailModalPr
                   <FileText className="h-4 w-4" />
                   <span>{t('detail.details')}</span>
                 </div>
-                <p className="text-white text-sm leading-relaxed whitespace-pre-wrap">
+                <p className="text-slate-900 text-sm leading-relaxed whitespace-pre-wrap">
                   {activity.details}
                 </p>
               </div>
@@ -188,7 +188,7 @@ export function ActivityDetailModal({ activity, onClose }: ActivityDetailModalPr
                   <Tag className="h-4 w-4" />
                   <span>{t('detail.relatedAgent')}</span>
                 </div>
-                <p className="text-white font-mono text-sm">
+                <p className="text-slate-900 font-mono text-sm">
                   {activity.agent_id}
                 </p>
               </div>
@@ -216,12 +216,12 @@ export function ActivityDetailModal({ activity, onClose }: ActivityDetailModalPr
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
                   <p className="text-agora-muted">{t('detail.created')}</p>
-                  <p className="text-white">{format(new Date(activity.created_at), 'PPpp')}</p>
+                  <p className="text-slate-900">{format(new Date(activity.created_at), 'PPpp')}</p>
                 </div>
                 {activity.timestamp && activity.timestamp !== activity.created_at && (
                   <div>
                     <p className="text-agora-muted">{t('detail.occurred')}</p>
-                    <p className="text-white">{format(new Date(activity.timestamp), 'PPpp')}</p>
+                    <p className="text-slate-900">{format(new Date(activity.timestamp), 'PPpp')}</p>
                   </div>
                 )}
               </div>
@@ -235,13 +235,13 @@ export function ActivityDetailModal({ activity, onClose }: ActivityDetailModalPr
             </div>
 
             <div className="flex items-center gap-3">
-              <button className="flex items-center gap-2 rounded-lg bg-agora-card px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-agora-border">
+              <button className="flex items-center gap-2 rounded-lg bg-agora-card px-4 py-2 text-sm font-medium text-slate-900 transition-colors hover:bg-agora-border">
                 <Share2 className="h-4 w-4" />
                 {t('detail.share')}
               </button>
               <button
                 onClick={onClose}
-                className="rounded-lg bg-agora-primary px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-agora-primary/80"
+                className="rounded-lg bg-agora-primary px-4 py-2 text-sm font-medium text-slate-900 transition-colors hover:bg-agora-primary/80"
               >
                 {t('detail.close')}
               </button>

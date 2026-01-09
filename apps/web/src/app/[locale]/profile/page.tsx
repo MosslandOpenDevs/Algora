@@ -89,7 +89,7 @@ export default function ProfilePage() {
       <div className="flex min-h-[60vh] items-center justify-center">
         <div className="text-center">
           <Wallet className="mx-auto h-16 w-16 text-agora-muted" />
-          <h2 className="mt-4 text-xl font-semibold text-white">Connect Your Wallet</h2>
+          <h2 className="mt-4 text-xl font-semibold text-slate-900">Connect Your Wallet</h2>
           <p className="mt-2 text-agora-muted">Connect your wallet to view your profile and voting history</p>
         </div>
       </div>
@@ -101,13 +101,13 @@ export default function ProfilePage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white">My Profile</h1>
+          <h1 className="text-2xl font-bold text-slate-900">My Profile</h1>
           <p className="text-agora-muted">Your token holdings and voting history</p>
         </div>
         <button
           onClick={() => refetchProfile()}
           disabled={loadingProfile}
-          className="flex items-center gap-2 rounded-lg bg-agora-card px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-agora-border disabled:opacity-50"
+          className="flex items-center gap-2 rounded-lg bg-agora-card px-4 py-2 text-sm font-medium text-slate-900 transition-colors hover:bg-agora-border disabled:opacity-50"
         >
           <RefreshCw className={`h-4 w-4 ${loadingProfile ? 'animate-spin' : ''}`} />
           Refresh
@@ -124,10 +124,10 @@ export default function ProfilePage() {
             <div>
               <p className="text-sm text-agora-muted">{tWallet('address')}</p>
               <div className="flex items-center gap-2">
-                <p className="font-mono text-lg text-white">{formatAddress(address!)}</p>
+                <p className="font-mono text-lg text-slate-900">{formatAddress(address!)}</p>
                 <button
                   onClick={copyAddress}
-                  className="rounded p-1 text-agora-muted hover:bg-agora-border hover:text-white"
+                  className="rounded p-1 text-agora-muted hover:bg-agora-border hover:text-slate-900"
                 >
                   {copied ? <CheckCircle className="h-4 w-4 text-green-400" /> : <Copy className="h-4 w-4" />}
                 </button>
@@ -135,7 +135,7 @@ export default function ProfilePage() {
                   href={`https://etherscan.io/address/${address}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="rounded p-1 text-agora-muted hover:bg-agora-border hover:text-white"
+                  className="rounded p-1 text-agora-muted hover:bg-agora-border hover:text-slate-900"
                 >
                   <ExternalLink className="h-4 w-4" />
                 </a>
@@ -152,7 +152,7 @@ export default function ProfilePage() {
             <button
               onClick={() => verifyMutation.mutate()}
               disabled={verifyMutation.isPending}
-              className="flex items-center gap-2 rounded-lg bg-agora-primary px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-agora-primary/80 disabled:opacity-50"
+              className="flex items-center gap-2 rounded-lg bg-agora-primary px-4 py-2 text-sm font-medium text-slate-900 transition-colors hover:bg-agora-primary/80 disabled:opacity-50"
             >
               {verifyMutation.isPending ? (
                 <>
@@ -187,7 +187,7 @@ export default function ProfilePage() {
               </div>
               <div>
                 <p className="text-sm text-agora-muted">{t('tokenBalance')}</p>
-                <p className="text-xl font-bold text-white">
+                <p className="text-xl font-bold text-slate-900">
                   {formatBalance(profile.holder.balance)} MOC
                 </p>
               </div>
@@ -201,7 +201,7 @@ export default function ProfilePage() {
               </div>
               <div>
                 <p className="text-sm text-agora-muted">{t('votingPower')}</p>
-                <p className="text-xl font-bold text-white">
+                <p className="text-xl font-bold text-slate-900">
                   {profile.holder.votingPower.toLocaleString()}
                 </p>
               </div>
@@ -215,7 +215,7 @@ export default function ProfilePage() {
               </div>
               <div>
                 <p className="text-sm text-agora-muted">Votes Cast</p>
-                <p className="text-xl font-bold text-white">
+                <p className="text-xl font-bold text-slate-900">
                   {profile.votingHistory?.length || 0}
                 </p>
               </div>
@@ -228,13 +228,13 @@ export default function ProfilePage() {
       {profile?.votingHistory && profile.votingHistory.length > 0 && (
         <div className="rounded-xl border border-agora-border bg-agora-card">
           <div className="border-b border-agora-border p-4">
-            <h3 className="font-semibold text-white">Voting History</h3>
+            <h3 className="font-semibold text-slate-900">Voting History</h3>
           </div>
           <div className="divide-y divide-agora-border">
             {profile.votingHistory.map((vote: VoteHistory) => (
               <div key={vote.proposal_id} className="flex items-center justify-between p-4">
                 <div>
-                  <p className="font-medium text-white">{vote.proposal_title || vote.proposal_id}</p>
+                  <p className="font-medium text-slate-900">{vote.proposal_title || vote.proposal_id}</p>
                   <p className="text-sm text-agora-muted">
                     {new Date(vote.created_at).toLocaleDateString()}
                   </p>
@@ -261,7 +261,7 @@ export default function ProfilePage() {
       {!profile?.holder && !loadingProfile && (
         <div className="rounded-xl border border-dashed border-agora-border p-12 text-center">
           <Shield className="mx-auto h-12 w-12 text-agora-muted" />
-          <h3 className="mt-4 text-lg font-semibold text-white">Verify Your Wallet</h3>
+          <h3 className="mt-4 text-lg font-semibold text-slate-900">Verify Your Wallet</h3>
           <p className="mt-2 text-sm text-agora-muted">
             Verify your wallet to see your token balance and participate in governance voting
           </p>

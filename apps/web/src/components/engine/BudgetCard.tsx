@@ -18,7 +18,7 @@ export function BudgetCard({ budget }: BudgetCardProps) {
 
   return (
     <div className="rounded-lg border border-agora-border bg-agora-card p-5">
-      <div className="flex items-center gap-2 text-white">
+      <div className="flex items-center gap-2 text-slate-900">
         <Wallet className="h-5 w-5 text-agora-accent" />
         <h3 className="font-semibold">{t('title')}</h3>
       </div>
@@ -28,7 +28,7 @@ export function BudgetCard({ budget }: BudgetCardProps) {
         <div>
           <div className="flex items-center justify-between text-sm">
             <span className="text-agora-muted">{t('daily')}</span>
-            <span className="text-white">
+            <span className="text-slate-900">
               ${budget.daily.spent.toFixed(2)} / ${budget.daily.limit.toFixed(2)}
             </span>
           </div>
@@ -53,7 +53,7 @@ export function BudgetCard({ budget }: BudgetCardProps) {
         <div>
           <div className="flex items-center justify-between text-sm">
             <span className="text-agora-muted">{t('monthly')}</span>
-            <span className="text-white">
+            <span className="text-slate-900">
               ${budget.monthly.spent.toFixed(2)} / ${budget.monthly.limit.toFixed(2)}
             </span>
           </div>

@@ -9,7 +9,6 @@ import {
   Link2,
   Radio,
   ExternalLink,
-  CheckCircle,
   Clock,
   AlertTriangle,
   ChevronRight,
@@ -18,6 +17,7 @@ import type { Signal } from '@/lib/api';
 
 interface SignalCardProps {
   signal: Signal;
+  index?: number;
   onClick?: () => void;
 }
 
@@ -81,7 +81,7 @@ const severityConfig: Record<string, { color: string; bg: string; icon: typeof C
   critical: { color: 'text-red-500', bg: 'bg-red-500/10', icon: AlertTriangle },
 };
 
-export function SignalCard({ signal, onClick }: SignalCardProps) {
+export function SignalCard({ signal, index = 0, onClick }: SignalCardProps) {
   const t = useTranslations('Signals');
   const sourceType = getSourceType(signal.source);
   const title = getTitle(signal);
@@ -90,16 +90,47 @@ export function SignalCard({ signal, onClick }: SignalCardProps) {
   const config = severityConfig[severity] || severityConfig.low;
   const SeverityIcon = config.icon;
 
+  // Check if signal is recent (within last hour)
+  const signalTime = new Date(signal.timestamp || signal.created_at).getTime();
+  const isRecent = Date.now() - signalTime < 60 * 60 * 1000;
+
+  // Calculate stagger delay
+  const delayMs = Math.min(index * 50, 400);
+
+  const isHighSeverity = severity === 'high' || severity === 'critical';
+
   return (
     <div
       onClick={onClick}
-      className={`relative group rounded-lg border bg-agora-card p-4 transition-all hover:border-agora-primary/50 ${
-        severity === 'low' ? 'border-agora-border' : 'border-agora-warning/30'
-      } ${onClick ? 'cursor-pointer hover:bg-agora-card/80' : ''}`}
+      className={`
+        relative group rounded-lg border bg-agora-card p-4
+        animate-slide-up
+        transition-all duration-300
+        hover:border-agora-primary/50 hover:scale-[1.02] hover:shadow-lg hover:shadow-agora-primary/10
+        ${isHighSeverity ? 'border-agora-warning/50 ring-2 ring-agora-warning/30' : 'border-agora-border'}
+        ${onClick ? 'cursor-pointer' : ''}
+      `}
+      style={{
+        animationDelay: `${delayMs}ms`,
+        animationFillMode: 'backwards',
+      }}
     >
+      {/* NEW Badge */}
+      {isRecent && (
+        <span className="absolute -top-2 -right-2 rounded-full bg-agora-primary px-2 py-0.5 text-[10px] font-bold text-slate-900 animate-bounce-in">
+          NEW
+        </span>
+      )}
+
       <div className="flex items-start gap-4">
         {/* Source Icon */}
-        <div className={`rounded-lg p-2 ${sourceColors[sourceType] || sourceColors.api}`}>
+        <div
+          className={`
+            rounded-lg p-2 transition-all duration-300
+            group-hover:scale-110 group-hover:rotate-6
+            ${sourceColors[sourceType] || sourceColors.api}
+          `}
+        >
           {sourceIcons[sourceType] || sourceIcons.api}
         </div>
 
@@ -113,7 +144,7 @@ export function SignalCard({ signal, onClick }: SignalCardProps) {
           )}
           <div className="flex items-start justify-between gap-4">
             <div>
-              <h3 className="font-semibold text-white">{title}</h3>
+              <h3 className="font-semibold text-slate-900">{title}</h3>
               <p className="mt-1 text-sm text-agora-muted line-clamp-2">
                 {signal.description}
               </p>

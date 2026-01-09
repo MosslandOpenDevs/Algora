@@ -71,7 +71,7 @@ export default function DashboardPage() {
       {/* Header */}
       <div>
         <div className="flex items-center gap-2">
-          <h1 className="text-2xl font-bold text-white">{t('title')}</h1>
+          <h1 className="text-2xl font-bold text-slate-900">{t('title')}</h1>
           <HelpTooltip content={tGuide('dashboard')} />
         </div>
         <p className="text-agora-muted">{t('subtitle')}</p>
@@ -120,7 +120,7 @@ export default function DashboardPage() {
         {/* Activity Feed */}
         <div className="lg:col-span-2">
           <div className="rounded-lg border border-agora-border bg-agora-card p-4">
-            <h2 className="mb-4 text-lg font-semibold text-white">
+            <h2 className="mb-4 text-lg font-semibold text-slate-900">
               {t('activityFeed')}
             </h2>
             <div className="max-h-[500px] overflow-y-auto">
@@ -132,7 +132,7 @@ export default function DashboardPage() {
         {/* Agent Lobby Preview */}
         <div>
           <div className="rounded-lg border border-agora-border bg-agora-card p-4">
-            <h2 className="mb-4 text-lg font-semibold text-white">
+            <h2 className="mb-4 text-lg font-semibold text-slate-900">
               {t('agentLobby')}
             </h2>
             <AgentLobbyPreview onAgentClick={setSelectedAgent} />

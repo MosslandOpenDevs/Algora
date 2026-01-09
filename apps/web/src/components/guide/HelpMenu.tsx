@@ -39,7 +39,7 @@ export function HelpMenu({ onStartTour }: HelpMenuProps) {
     <div className="relative" ref={menuRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 rounded-md px-3 py-1.5 text-sm text-agora-muted transition-colors hover:bg-agora-card hover:text-white"
+        className="flex items-center gap-2 rounded-md px-3 py-1.5 text-sm text-agora-muted transition-colors hover:bg-agora-card hover:text-slate-900"
         aria-label="Help"
       >
         <HelpCircle className="h-4 w-4" />
@@ -50,7 +50,7 @@ export function HelpMenu({ onStartTour }: HelpMenuProps) {
           <div className="p-2">
             <button
               onClick={handleStartTour}
-              className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm text-agora-muted transition-colors hover:bg-agora-card hover:text-white"
+              className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm text-agora-muted transition-colors hover:bg-agora-card hover:text-slate-900"
             >
               <RotateCcw className="h-4 w-4" />
               <span>{t('startTour')}</span>
@@ -58,7 +58,7 @@ export function HelpMenu({ onStartTour }: HelpMenuProps) {
             <a
               href={`/${locale}/guide`}
               onClick={() => setIsOpen(false)}
-              className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm text-agora-muted transition-colors hover:bg-agora-card hover:text-white"
+              className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm text-agora-muted transition-colors hover:bg-agora-card hover:text-slate-900"
             >
               <BookOpen className="h-4 w-4" />
               <span>{t('viewFlow')}</span>
@@ -68,7 +68,7 @@ export function HelpMenu({ onStartTour }: HelpMenuProps) {
               href="https://github.com/mossland/Algora/blob/main/USER_GUIDE.md"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm text-agora-muted transition-colors hover:bg-agora-card hover:text-white"
+              className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm text-agora-muted transition-colors hover:bg-agora-card hover:text-slate-900"
             >
               <Info className="h-4 w-4" />
               <span>{t('docs')}</span>

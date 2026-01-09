@@ -93,9 +93,9 @@ export default function GuidePage() {
       {/* Header */}
       <div className="text-center">
         <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-agora-primary to-agora-accent">
-          <BookOpen className="h-8 w-8 text-white" />
+          <BookOpen className="h-8 w-8 text-slate-900" />
         </div>
-        <h1 className="text-3xl font-bold text-white">{t('title')}</h1>
+        <h1 className="text-3xl font-bold text-slate-900">{t('title')}</h1>
         <p className="mt-2 text-lg text-agora-muted">{t('subtitle')}</p>
       </div>
 
@@ -109,7 +109,7 @@ export default function GuidePage() {
               className={`rounded-xl border border-agora-border ${feature.bgColor} p-6`}
             >
               <Icon className={`h-8 w-8 ${feature.color}`} />
-              <h3 className="mt-3 text-lg font-semibold text-white">
+              <h3 className="mt-3 text-lg font-semibold text-slate-900">
                 {t(`features.${feature.key}.title`)}
               </h3>
               <p className="mt-1 text-sm text-agora-muted">
@@ -122,7 +122,7 @@ export default function GuidePage() {
 
       {/* Visual Flow */}
       <div className="rounded-xl border border-agora-border bg-agora-card p-6">
-        <h2 className="mb-6 text-center text-xl font-semibold text-white">
+        <h2 className="mb-6 text-center text-xl font-semibold text-slate-900">
           {t('flowTitle')}
         </h2>
         <SystemFlowDiagram showDescriptions={true} highlightCurrent={false} />
@@ -130,7 +130,7 @@ export default function GuidePage() {
 
       {/* Detailed Steps */}
       <div className="space-y-4">
-        <h2 className="text-xl font-semibold text-white">{t('stepsTitle')}</h2>
+        <h2 className="text-xl font-semibold text-slate-900">{t('stepsTitle')}</h2>
         <div className="space-y-4">
           {detailedSteps.map((step, index) => {
             const Icon = step.icon;
@@ -141,14 +141,14 @@ export default function GuidePage() {
                 className={`group flex items-start gap-4 rounded-xl border ${step.borderColor} ${step.bgColor} p-4 transition-all hover:ring-2 hover:ring-current ${step.color}`}
               >
                 <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-agora-dark">
-                  <span className="text-lg font-bold text-white">
+                  <span className="text-lg font-bold text-slate-900">
                     {index + 1}
                   </span>
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
                     <Icon className={`h-5 w-5 ${step.color}`} />
-                    <h3 className="text-lg font-semibold text-white">
+                    <h3 className="text-lg font-semibold text-slate-900">
                       {t(`steps.${step.key}.title`)}
                     </h3>
                   </div>
@@ -169,7 +169,7 @@ export default function GuidePage() {
 
       {/* Other Menu Sections */}
       <div className="rounded-xl border border-agora-border bg-agora-card p-6">
-        <h2 className="mb-4 text-xl font-semibold text-white">
+        <h2 className="mb-4 text-xl font-semibold text-slate-900">
           {t('otherMenus.title')}
         </h2>
         <div className="grid gap-4 sm:grid-cols-2">
@@ -179,7 +179,7 @@ export default function GuidePage() {
           >
             <Users className="h-6 w-6 text-agora-primary" />
             <div>
-              <h3 className="font-medium text-white">
+              <h3 className="font-medium text-slate-900">
                 {t('otherMenus.agents.title')}
               </h3>
               <p className="text-xs text-agora-muted">
@@ -193,7 +193,7 @@ export default function GuidePage() {
           >
             <Sparkles className="h-6 w-6 text-agora-accent" />
             <div>
-              <h3 className="font-medium text-white">
+              <h3 className="font-medium text-slate-900">
                 {t('otherMenus.dashboard.title')}
               </h3>
               <p className="text-xs text-agora-muted">
@@ -206,11 +206,11 @@ export default function GuidePage() {
 
       {/* CTA */}
       <div className="rounded-xl bg-gradient-to-r from-agora-primary/20 to-agora-accent/20 p-6 text-center">
-        <h2 className="text-xl font-semibold text-white">{t('cta.title')}</h2>
+        <h2 className="text-xl font-semibold text-slate-900">{t('cta.title')}</h2>
         <p className="mt-1 text-sm text-agora-muted">{t('cta.desc')}</p>
         <Link
           href={`/${locale}/signals`}
-          className="mt-4 inline-flex items-center gap-2 rounded-lg bg-agora-primary px-6 py-2.5 font-medium text-white transition-colors hover:bg-agora-primary/80"
+          className="mt-4 inline-flex items-center gap-2 rounded-lg bg-agora-primary px-6 py-2.5 font-medium text-slate-900 transition-colors hover:bg-agora-primary/80"
         >
           {t('cta.button')}
           <ArrowRight className="h-4 w-4" />

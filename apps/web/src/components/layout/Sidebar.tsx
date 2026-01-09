@@ -42,9 +42,9 @@ export function Sidebar() {
       <div className="flex h-14 items-center border-b border-agora-border px-6">
         <Link href={`/${locale}`} className="flex items-center gap-3">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-agora-primary to-agora-accent">
-            <span className="text-lg font-bold text-white">A</span>
+            <span className="text-lg font-bold text-slate-900">A</span>
           </div>
-          <span className="text-xl font-bold text-white">Algora</span>
+          <span className="text-xl font-bold text-slate-900">Algora</span>
         </Link>
       </div>
 
@@ -63,7 +63,7 @@ export function Sidebar() {
               className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
                 isActive
                   ? 'bg-agora-primary/10 text-agora-primary'
-                  : 'text-agora-muted hover:bg-agora-card hover:text-white'
+                  : 'text-agora-muted hover:bg-agora-card hover:text-slate-900'
               }`}
             >
               <Icon className="h-5 w-5" />
@@ -77,7 +77,7 @@ export function Sidebar() {
       <div className="border-t border-agora-border p-4">
         <div className="rounded-lg bg-agora-card p-3">
           <p className="text-xs text-agora-muted">Powered by</p>
-          <p className="text-sm font-medium text-white">MOC Governance</p>
+          <p className="text-sm font-medium text-slate-900">MOC Governance</p>
         </div>
       </div>
     </aside>

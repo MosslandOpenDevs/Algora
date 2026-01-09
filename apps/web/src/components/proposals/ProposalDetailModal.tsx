@@ -125,7 +125,7 @@ export function ProposalDetailModal({ proposal, onClose }: ProposalDetailModalPr
                     {t(`status.${proposal.status}`)}
                   </span>
                 </div>
-                <h2 className="text-xl font-bold text-white pr-8">{proposal.title}</h2>
+                <h2 className="text-xl font-bold text-slate-900 pr-8">{proposal.title}</h2>
                 <div className="mt-2 flex items-center gap-3 text-sm text-agora-muted">
                   <span className="flex items-center gap-1">
                     <User className="h-4 w-4" />
@@ -143,7 +143,7 @@ export function ProposalDetailModal({ proposal, onClose }: ProposalDetailModalPr
 
             <button
               onClick={onClose}
-              className="rounded-lg p-2 text-agora-muted transition-colors hover:bg-agora-card hover:text-white"
+              className="rounded-lg p-2 text-agora-muted transition-colors hover:bg-agora-card hover:text-slate-900"
             >
               <X className="h-5 w-5" />
             </button>
@@ -157,7 +157,7 @@ export function ProposalDetailModal({ proposal, onClose }: ProposalDetailModalPr
                 <FileText className="h-4 w-4" />
                 <span>{t('detail.summary')}</span>
               </div>
-              <p className="text-white whitespace-pre-wrap leading-relaxed">
+              <p className="text-slate-900 whitespace-pre-wrap leading-relaxed">
                 {proposal.summary}
               </p>
             </div>
@@ -204,19 +204,19 @@ export function ProposalDetailModal({ proposal, onClose }: ProposalDetailModalPr
                       className="bg-agora-success transition-all flex items-center justify-center"
                       style={{ width: `${forPercent}%` }}
                     >
-                      {forPercent > 10 && <span className="text-xs font-medium text-white">{forPercent.toFixed(0)}%</span>}
+                      {forPercent > 10 && <span className="text-xs font-medium text-slate-900">{forPercent.toFixed(0)}%</span>}
                     </div>
                     <div
                       className="bg-agora-error transition-all flex items-center justify-center"
                       style={{ width: `${againstPercent}%` }}
                     >
-                      {againstPercent > 10 && <span className="text-xs font-medium text-white">{againstPercent.toFixed(0)}%</span>}
+                      {againstPercent > 10 && <span className="text-xs font-medium text-slate-900">{againstPercent.toFixed(0)}%</span>}
                     </div>
                     <div
                       className="bg-gray-500 transition-all flex items-center justify-center"
                       style={{ width: `${abstainPercent}%` }}
                     >
-                      {abstainPercent > 10 && <span className="text-xs font-medium text-white">{abstainPercent.toFixed(0)}%</span>}
+                      {abstainPercent > 10 && <span className="text-xs font-medium text-slate-900">{abstainPercent.toFixed(0)}%</span>}
                     </div>
                   </div>
                 </div>
@@ -225,10 +225,10 @@ export function ProposalDetailModal({ proposal, onClose }: ProposalDetailModalPr
               {/* Total Votes & Quorum */}
               <div className="flex items-center justify-between text-sm">
                 <span className="text-agora-muted">
-                  {t('detail.totalVotes')}: <span className="text-white font-medium">{formatNumber(totalVotes)}</span>
+                  {t('detail.totalVotes')}: <span className="text-slate-900 font-medium">{formatNumber(totalVotes)}</span>
                 </span>
                 <span className="text-agora-muted">
-                  {t('detail.quorumRequired')}: <span className="text-white font-medium">{formatNumber(proposal.quorum)}</span>
+                  {t('detail.quorumRequired')}: <span className="text-slate-900 font-medium">{formatNumber(proposal.quorum)}</span>
                 </span>
               </div>
             </div>
@@ -241,7 +241,7 @@ export function ProposalDetailModal({ proposal, onClose }: ProposalDetailModalPr
                   <Calendar className="h-4 w-4" />
                   <span>{t('detail.created')}</span>
                 </div>
-                <p className="text-white font-medium">
+                <p className="text-slate-900 font-medium">
                   {format(new Date(proposal.created_at), 'PPpp')}
                 </p>
                 <p className="text-sm text-agora-muted mt-1">
@@ -255,7 +255,7 @@ export function ProposalDetailModal({ proposal, onClose }: ProposalDetailModalPr
                   <Clock className="h-4 w-4" />
                   <span>{isActive && !hasEnded ? t('detail.votingEnds') : t('detail.votingEnded')}</span>
                 </div>
-                <p className="text-white font-medium">
+                <p className="text-slate-900 font-medium">
                   {format(endDate, 'PPpp')}
                 </p>
                 <p className={`text-sm mt-1 ${isActive && !hasEnded ? 'text-agora-warning' : 'text-agora-muted'}`}>
@@ -275,7 +275,7 @@ export function ProposalDetailModal({ proposal, onClose }: ProposalDetailModalPr
               }`}>
                 <div className="flex items-center gap-2">
                   <Target className="h-5 w-5" />
-                  <span className="font-medium text-white">{t('detail.outcome')}</span>
+                  <span className="font-medium text-slate-900">{t('detail.outcome')}</span>
                 </div>
                 <p className={`mt-2 text-sm ${
                   proposal.status === 'rejected' ? 'text-agora-error' : 'text-agora-success'
@@ -303,13 +303,13 @@ export function ProposalDetailModal({ proposal, onClose }: ProposalDetailModalPr
             </div>
 
             <div className="flex items-center gap-3">
-              <button className="flex items-center gap-2 rounded-lg bg-agora-card px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-agora-border">
+              <button className="flex items-center gap-2 rounded-lg bg-agora-card px-4 py-2 text-sm font-medium text-slate-900 transition-colors hover:bg-agora-border">
                 <Share2 className="h-4 w-4" />
                 {t('detail.share')}
               </button>
 
               {isActive && !hasEnded && (
-                <button className="flex items-center gap-2 rounded-lg bg-agora-primary px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-agora-primary/80">
+                <button className="flex items-center gap-2 rounded-lg bg-agora-primary px-4 py-2 text-sm font-medium text-slate-900 transition-colors hover:bg-agora-primary/80">
                   <Vote className="h-4 w-4" />
                   {t('detail.castVote')}
                 </button>

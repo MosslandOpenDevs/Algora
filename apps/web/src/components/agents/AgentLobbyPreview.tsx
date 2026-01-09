@@ -75,7 +75,7 @@ export function AgentLobbyPreview({ onAgentClick }: AgentLobbyPreviewProps) {
             />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-white truncate">
+            <p className="text-sm font-medium text-slate-900 truncate">
               {agent.display_name || agent.name}
             </p>
             <p className="text-xs text-agora-muted truncate">
@@ -87,7 +87,7 @@ export function AgentLobbyPreview({ onAgentClick }: AgentLobbyPreviewProps) {
 
       <Link
         href={`/${locale}/agents`}
-        className="flex items-center justify-center gap-2 rounded-lg border border-agora-border bg-agora-darker px-4 py-2 text-sm text-agora-muted transition-colors hover:bg-agora-card hover:text-white"
+        className="flex items-center justify-center gap-2 rounded-lg border border-agora-border bg-agora-darker px-4 py-2 text-sm text-agora-muted transition-colors hover:bg-agora-card hover:text-slate-900"
       >
         <span>View all agents</span>
         <ChevronRight className="h-4 w-4" />

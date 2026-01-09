@@ -157,7 +157,7 @@ export function ActivityFeed({ onActivityClick }: ActivityFeedProps) {
             <div className="flex-1 min-w-0">
               {/* Header row: Type + Severity */}
               <div className="flex items-center gap-2 flex-wrap">
-                <p className="text-sm font-medium text-white">
+                <p className="text-sm font-medium text-slate-900">
                   {t(activity.type as keyof typeof activityIcons)}
                 </p>
                 {activity.severity && activity.severity !== 'info' && (

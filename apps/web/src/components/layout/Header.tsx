@@ -69,7 +69,7 @@ export function Header() {
         <div className="flex items-center gap-2">
           <Wallet className="h-4 w-4 text-agora-muted" />
           <span className="text-sm text-agora-muted">{t('budget')}:</span>
-          <span className="text-sm font-medium text-white">
+          <span className="text-sm font-medium text-slate-900">
             ${health?.budget?.remaining?.toFixed(2) || '0.00'}
           </span>
         </div>
@@ -88,7 +88,7 @@ export function Header() {
         {/* Queue */}
         <div className="flex items-center gap-2">
           <span className="text-sm text-agora-muted">{t('queue')}:</span>
-          <span className="text-sm font-medium text-white">
+          <span className="text-sm font-medium text-slate-900">
             {health?.scheduler?.queueLength || 0}
           </span>
         </div>
@@ -104,7 +104,7 @@ export function Header() {
         {/* Language Toggle */}
         <Link
           href={`/${otherLocale}${pathWithoutLocale}`}
-          className="flex items-center gap-2 rounded-md px-3 py-1.5 text-sm text-agora-muted transition-colors hover:bg-agora-card hover:text-white"
+          className="flex items-center gap-2 rounded-md px-3 py-1.5 text-sm text-agora-muted transition-colors hover:bg-agora-card hover:text-slate-900"
         >
           <Globe className="h-4 w-4" />
           <span>{otherLocale === 'en' ? 'EN' : '한국어'}</span>

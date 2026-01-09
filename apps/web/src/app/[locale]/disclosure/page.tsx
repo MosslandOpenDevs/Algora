@@ -95,7 +95,7 @@ export default function DisclosurePage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold text-white">{t('disclosure')}</h1>
+            <h1 className="text-2xl font-bold text-slate-900">{t('disclosure')}</h1>
             <HelpTooltip content="Transparency reports and governance disclosures for the DAO" />
           </div>
           <p className="text-agora-muted">Transparency reports and governance disclosures</p>
@@ -109,28 +109,28 @@ export default function DisclosurePage() {
             <FileText className="h-4 w-4" />
             <span className="text-sm">Total Reports</span>
           </div>
-          <p className="mt-2 text-2xl font-bold text-white">{stats.total}</p>
+          <p className="mt-2 text-2xl font-bold text-slate-900">{stats.total}</p>
         </div>
         <div className="rounded-lg border border-agora-border bg-agora-card p-4">
           <div className="flex items-center gap-2 text-agora-success">
             <CheckCircle className="h-4 w-4" />
             <span className="text-sm">Published</span>
           </div>
-          <p className="mt-2 text-2xl font-bold text-white">{stats.published}</p>
+          <p className="mt-2 text-2xl font-bold text-slate-900">{stats.published}</p>
         </div>
         <div className="rounded-lg border border-agora-border bg-agora-card p-4">
           <div className="flex items-center gap-2 text-agora-primary">
             <Calendar className="h-4 w-4" />
             <span className="text-sm">Quarterly</span>
           </div>
-          <p className="mt-2 text-2xl font-bold text-white">{stats.quarterly}</p>
+          <p className="mt-2 text-2xl font-bold text-slate-900">{stats.quarterly}</p>
         </div>
         <div className="rounded-lg border border-agora-border bg-agora-card p-4">
           <div className="flex items-center gap-2 text-agora-accent">
             <Shield className="h-4 w-4" />
             <span className="text-sm">Audits</span>
           </div>
-          <p className="mt-2 text-2xl font-bold text-white">{stats.audits}</p>
+          <p className="mt-2 text-2xl font-bold text-slate-900">{stats.audits}</p>
         </div>
       </div>
 
@@ -154,7 +154,7 @@ export default function DisclosurePage() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between gap-4">
                     <div>
-                      <h3 className="font-semibold text-white group-hover:text-agora-primary transition-colors">
+                      <h3 className="font-semibold text-slate-900 group-hover:text-agora-primary transition-colors">
                         {report.title}
                       </h3>
                       <p className="mt-1 text-sm text-agora-muted line-clamp-2">
@@ -189,7 +189,7 @@ export default function DisclosurePage() {
                     {/* Actions */}
                     {report.status === 'published' && (
                       <div className="ml-auto flex items-center gap-2">
-                        <button className="flex items-center gap-1 text-agora-muted hover:text-white transition-colors">
+                        <button className="flex items-center gap-1 text-agora-muted hover:text-slate-900 transition-colors">
                           <Download className="h-3 w-3" />
                           Download
                         </button>

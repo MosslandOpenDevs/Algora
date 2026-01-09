@@ -109,7 +109,7 @@ export default function TreasuryPage() {
       <div className="flex items-center justify-between">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold text-white">{t('title')}</h1>
+            <h1 className="text-2xl font-bold text-slate-900">{t('title')}</h1>
             <HelpTooltip content={tGuide('treasury')} />
           </div>
           <p className="text-agora-muted">{t('subtitle')}</p>
@@ -117,7 +117,7 @@ export default function TreasuryPage() {
         <button
           onClick={() => refetch()}
           disabled={isLoading}
-          className="flex items-center gap-2 rounded-lg bg-agora-card px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-agora-border disabled:opacity-50"
+          className="flex items-center gap-2 rounded-lg bg-agora-card px-4 py-2 text-sm font-medium text-slate-900 transition-colors hover:bg-agora-border disabled:opacity-50"
         >
           <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
           {t('overview')}
@@ -133,7 +133,7 @@ export default function TreasuryPage() {
             </div>
             <div>
               <p className="text-sm text-agora-muted">{t('stats.mocBalance')}</p>
-              <p className="text-xl font-bold text-white">
+              <p className="text-xl font-bold text-slate-900">
                 {mocBalance ? mocBalance.balanceFormatted.toLocaleString() : '0'}
               </p>
             </div>
@@ -147,7 +147,7 @@ export default function TreasuryPage() {
             </div>
             <div>
               <p className="text-sm text-agora-muted">{t('stats.ethBalance')}</p>
-              <p className="text-xl font-bold text-white">
+              <p className="text-xl font-bold text-slate-900">
                 {ethBalance ? ethBalance.balanceFormatted.toLocaleString() : '0'}
               </p>
             </div>
@@ -161,7 +161,7 @@ export default function TreasuryPage() {
             </div>
             <div>
               <p className="text-sm text-agora-muted">{t('stats.holders')}</p>
-              <p className="text-xl font-bold text-white">
+              <p className="text-xl font-bold text-slate-900">
                 {dashboard?.token?.holders?.verified || 0}
               </p>
             </div>
@@ -175,7 +175,7 @@ export default function TreasuryPage() {
             </div>
             <div>
               <p className="text-sm text-agora-muted">{t('stats.activeVoting')}</p>
-              <p className="text-xl font-bold text-white">
+              <p className="text-xl font-bold text-slate-900">
                 {dashboard?.voting?.activeVoting || 0}
               </p>
             </div>
@@ -192,8 +192,8 @@ export default function TreasuryPage() {
               onClick={() => setActiveTab(tab)}
               className={`border-b-2 px-1 pb-3 text-sm font-medium transition-colors ${
                 activeTab === tab
-                  ? 'border-agora-accent text-white'
-                  : 'border-transparent text-agora-muted hover:text-white'
+                  ? 'border-agora-accent text-slate-900'
+                  : 'border-transparent text-agora-muted hover:text-slate-900'
               }`}
             >
               {t(tab)}
@@ -207,19 +207,19 @@ export default function TreasuryPage() {
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           {/* Token Info */}
           <div className="rounded-xl border border-agora-border bg-agora-card p-6">
-            <h3 className="mb-4 text-lg font-semibold text-white">Token Info</h3>
+            <h3 className="mb-4 text-lg font-semibold text-slate-900">Token Info</h3>
             <div className="space-y-3">
               <div className="flex justify-between">
                 <span className="text-agora-muted">Name</span>
-                <span className="text-white">{dashboard?.tokenInfo?.name || 'MOC'}</span>
+                <span className="text-slate-900">{dashboard?.tokenInfo?.name || 'MOC'}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-agora-muted">Symbol</span>
-                <span className="text-white">{dashboard?.tokenInfo?.symbol || 'MOC'}</span>
+                <span className="text-slate-900">{dashboard?.tokenInfo?.symbol || 'MOC'}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-agora-muted">Total Supply</span>
-                <span className="text-white">
+                <span className="text-slate-900">
                   {dashboard?.tokenInfo?.totalSupply
                     ? formatBalance(dashboard.tokenInfo.totalSupply)
                     : '0'}
@@ -227,7 +227,7 @@ export default function TreasuryPage() {
               </div>
               <div className="flex justify-between">
                 <span className="text-agora-muted">Chain ID</span>
-                <span className="text-white">{dashboard?.tokenInfo?.chainId || 1}</span>
+                <span className="text-slate-900">{dashboard?.tokenInfo?.chainId || 1}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-agora-muted">Mode</span>
@@ -244,23 +244,23 @@ export default function TreasuryPage() {
 
           {/* Voting Stats */}
           <div className="rounded-xl border border-agora-border bg-agora-card p-6">
-            <h3 className="mb-4 text-lg font-semibold text-white">Voting Stats</h3>
+            <h3 className="mb-4 text-lg font-semibold text-slate-900">Voting Stats</h3>
             <div className="space-y-3">
               <div className="flex justify-between">
                 <span className="text-agora-muted">Total Votes</span>
-                <span className="text-white">{dashboard?.voting?.totalVotes || 0}</span>
+                <span className="text-slate-900">{dashboard?.voting?.totalVotes || 0}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-agora-muted">Voting Power Used</span>
-                <span className="text-white">{dashboard?.voting?.totalVotingPowerUsed || 0}</span>
+                <span className="text-slate-900">{dashboard?.voting?.totalVotingPowerUsed || 0}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-agora-muted">Active Voting</span>
-                <span className="text-white">{dashboard?.voting?.activeVoting || 0}</span>
+                <span className="text-slate-900">{dashboard?.voting?.activeVoting || 0}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-agora-muted">Completed</span>
-                <span className="text-white">{dashboard?.voting?.completedVoting || 0}</span>
+                <span className="text-slate-900">{dashboard?.voting?.completedVoting || 0}</span>
               </div>
             </div>
           </div>
@@ -278,12 +278,12 @@ export default function TreasuryPage() {
                       <FileText className="h-5 w-5 text-agora-accent" />
                     </div>
                     <div>
-                      <p className="font-medium text-white">{allocation.category}</p>
+                      <p className="font-medium text-slate-900">{allocation.category}</p>
                       <p className="text-sm text-agora-muted">{allocation.description}</p>
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="font-medium text-white">
+                    <p className="font-medium text-slate-900">
                       {formatBalance(allocation.amount)} {allocation.tokenSymbol}
                     </p>
                     <span className={`rounded px-2 py-0.5 text-xs ${
@@ -324,7 +324,7 @@ export default function TreasuryPage() {
                       )}
                     </div>
                     <div>
-                      <p className="font-medium text-white">{tx.type === 'deposit' ? t('transaction.deposit') : t('transaction.withdrawal')}</p>
+                      <p className="font-medium text-slate-900">{tx.type === 'deposit' ? t('transaction.deposit') : t('transaction.withdrawal')}</p>
                       <p className="text-sm text-agora-muted">{tx.description}</p>
                     </div>
                   </div>
@@ -361,7 +361,7 @@ export default function TreasuryPage() {
                       <Users className="h-5 w-5 text-agora-accent" />
                     </div>
                     <div>
-                      <p className="font-mono text-sm font-medium text-white">
+                      <p className="font-mono text-sm font-medium text-slate-900">
                         {formatAddress(holder.walletAddress)}
                       </p>
                       <p className="text-sm text-agora-muted">
@@ -370,7 +370,7 @@ export default function TreasuryPage() {
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="font-medium text-white">
+                    <p className="font-medium text-slate-900">
                       {holder.votingPower.toLocaleString()} {t('votingPower')}
                     </p>
                     <p className="text-sm text-agora-muted">

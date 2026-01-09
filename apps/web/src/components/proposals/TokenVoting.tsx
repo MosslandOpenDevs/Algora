@@ -163,10 +163,10 @@ export function TokenVoting({ proposalId, onVoteSuccess }: TokenVotingProps) {
 
   return (
     <div className="rounded-lg border border-agora-border bg-agora-card p-4">
-      <h4 className="mb-4 font-medium text-white">Cast Your Vote</h4>
+      <h4 className="mb-4 font-medium text-slate-900">Cast Your Vote</h4>
 
       <div className="mb-4 text-sm text-agora-muted">
-        Your voting power: <span className="text-white font-medium">{holder.votingPower.toLocaleString()}</span>
+        Your voting power: <span className="text-slate-900 font-medium">{holder.votingPower.toLocaleString()}</span>
       </div>
 
       {/* Vote Options */}
@@ -215,7 +215,7 @@ export function TokenVoting({ proposalId, onVoteSuccess }: TokenVotingProps) {
           value={reason}
           onChange={(e) => setReason(e.target.value)}
           placeholder="Why are you voting this way?"
-          className="w-full rounded-lg border border-agora-border bg-agora-darker px-3 py-2 text-sm text-white placeholder-agora-muted focus:border-agora-primary focus:outline-none resize-none"
+          className="w-full rounded-lg border border-agora-border bg-agora-darker px-3 py-2 text-sm text-slate-900 placeholder-agora-muted focus:border-agora-primary focus:outline-none resize-none"
           rows={2}
         />
       </div>
@@ -224,7 +224,7 @@ export function TokenVoting({ proposalId, onVoteSuccess }: TokenVotingProps) {
       <button
         onClick={() => selectedChoice && voteMutation.mutate(selectedChoice)}
         disabled={!selectedChoice || voteMutation.isPending}
-        className="w-full rounded-lg bg-agora-primary px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-agora-primary/80 disabled:cursor-not-allowed disabled:opacity-50"
+        className="w-full rounded-lg bg-agora-primary px-4 py-2 text-sm font-medium text-slate-900 transition-colors hover:bg-agora-primary/80 disabled:cursor-not-allowed disabled:opacity-50"
       >
         {voteMutation.isPending ? (
           <span className="flex items-center justify-center gap-2">

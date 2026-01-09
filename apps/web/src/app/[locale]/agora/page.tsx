@@ -87,14 +87,14 @@ export default function AgoraPage() {
       <div className="flex items-center justify-between">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold text-white">{t('title')}</h1>
+            <h1 className="text-2xl font-bold text-slate-900">{t('title')}</h1>
             <HelpTooltip content={tGuide('agora')} />
           </div>
           <p className="text-agora-muted">{t('subtitle')}</p>
         </div>
         <button
           onClick={() => setShowNewSession(true)}
-          className="flex items-center gap-2 rounded-lg bg-agora-primary px-4 py-2 font-medium text-white transition-colors hover:bg-agora-primary/80"
+          className="flex items-center gap-2 rounded-lg bg-agora-primary px-4 py-2 font-medium text-slate-900 transition-colors hover:bg-agora-primary/80"
         >
           <Plus className="h-4 w-4" />
           {t('startSession')}
@@ -104,11 +104,11 @@ export default function AgoraPage() {
       {/* Main Content */}
       <div className="flex flex-1 gap-4 overflow-hidden">
         {/* Sessions Sidebar */}
-        <div className="w-72 flex-shrink-0 space-y-4 overflow-y-auto">
+        <div className="w-72 flex-shrink-0 space-y-4 overflow-y-auto pr-2">
           {/* Active Sessions */}
           {activeSessions.length > 0 && (
             <div>
-              <h3 className="mb-2 text-sm font-semibold text-white">
+              <h3 className="mb-2 text-sm font-semibold text-slate-900">
                 Active Sessions ({activeSessions.length})
               </h3>
               <div className="space-y-2">
@@ -187,7 +187,7 @@ export default function AgoraPage() {
               {/* Chat Header */}
               <div className="flex items-center justify-between border-b border-agora-border p-4">
                 <div>
-                  <h2 className="font-semibold text-white">{activeSession.title}</h2>
+                  <h2 className="font-semibold text-slate-900">{activeSession.title}</h2>
                   <p className="text-xs text-agora-muted">
                     Session started {activeSession.created_at ? new Date(activeSession.created_at).toLocaleString() : 'Unknown'}
                   </p>
@@ -235,12 +235,12 @@ export default function AgoraPage() {
                     onChange={(e) => setMessage(e.target.value)}
                     onKeyPress={handleKeyPress}
                     placeholder={t('sendMessage')}
-                    className="flex-1 rounded-lg border border-agora-border bg-agora-darker px-4 py-2 text-white placeholder-agora-muted focus:border-agora-primary focus:outline-none"
+                    className="flex-1 rounded-lg border border-agora-border bg-agora-darker px-4 py-2 text-slate-900 placeholder-agora-muted focus:border-agora-primary focus:outline-none"
                   />
                   <button
                     onClick={handleSendMessage}
                     disabled={!message.trim()}
-                    className="flex items-center gap-2 rounded-lg bg-agora-primary px-4 py-2 text-white transition-colors hover:bg-agora-primary/80 disabled:opacity-50"
+                    className="flex items-center gap-2 rounded-lg bg-agora-primary px-4 py-2 text-slate-900 transition-colors hover:bg-agora-primary/80 disabled:opacity-50"
                   >
                     <Send className="h-4 w-4" />
                   </button>
@@ -250,7 +250,7 @@ export default function AgoraPage() {
           ) : (
             <div className="flex flex-1 flex-col items-center justify-center text-center">
               <MessageSquare className="h-16 w-16 text-agora-muted/50" />
-              <h3 className="mt-4 text-lg font-semibold text-white">
+              <h3 className="mt-4 text-lg font-semibold text-slate-900">
                 {t('noActiveSession')}
               </h3>
               <p className="mt-2 text-sm text-agora-muted">
@@ -258,7 +258,7 @@ export default function AgoraPage() {
               </p>
               <button
                 onClick={() => setShowNewSession(true)}
-                className="mt-4 flex items-center gap-2 rounded-lg bg-agora-primary px-4 py-2 text-white transition-colors hover:bg-agora-primary/80"
+                className="mt-4 flex items-center gap-2 rounded-lg bg-agora-primary px-4 py-2 text-slate-900 transition-colors hover:bg-agora-primary/80"
               >
                 <Plus className="h-4 w-4" />
                 {t('startSession')}

@@ -77,14 +77,14 @@ export default function EngineRoomPage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold text-white">{t('title')}</h1>
+            <h1 className="text-2xl font-bold text-slate-900">{t('title')}</h1>
             <HelpTooltip content={tGuide('engine')} />
           </div>
           <p className="text-agora-muted">{t('subtitle')}</p>
         </div>
         <button
           onClick={() => refetch()}
-          className="flex items-center gap-2 rounded-lg bg-agora-card px-4 py-2 text-white transition-colors hover:bg-agora-border"
+          className="flex items-center gap-2 rounded-lg bg-agora-card px-4 py-2 text-slate-900 transition-colors hover:bg-agora-border"
         >
           <RefreshCw className="h-4 w-4" />
           {t('refresh')}
@@ -109,7 +109,7 @@ export default function EngineRoomPage() {
           <AlertTriangle className="h-5 w-5 text-agora-error" />
         )}
         <div>
-          <p className="font-medium text-white">
+          <p className="font-medium text-slate-900">
             {t(`status.${systemHealth.status}`)}
           </p>
           <p className="text-sm text-agora-muted">
@@ -140,7 +140,7 @@ export default function EngineRoomPage() {
             <Server className="h-4 w-4" />
             <span className="text-sm">{t('stats.apiCalls')}</span>
           </div>
-          <p className="mt-2 text-2xl font-bold text-white">
+          <p className="mt-2 text-2xl font-bold text-slate-900">
             {(tierUsage.tier0.calls + tierUsage.tier1.calls + tierUsage.tier2.calls).toLocaleString()}
           </p>
           <p className="text-xs text-agora-muted">{t('stats.today')}</p>
@@ -150,7 +150,7 @@ export default function EngineRoomPage() {
             <Cpu className="h-4 w-4" />
             <span className="text-sm">{t('stats.llmCalls')}</span>
           </div>
-          <p className="mt-2 text-2xl font-bold text-white">
+          <p className="mt-2 text-2xl font-bold text-slate-900">
             {(tierUsage.tier1.calls + tierUsage.tier2.calls).toLocaleString()}
           </p>
           <p className="text-xs text-agora-muted">{t('stats.today')}</p>
@@ -160,7 +160,7 @@ export default function EngineRoomPage() {
             <Database className="h-4 w-4" />
             <span className="text-sm">{t('stats.dbSize')}</span>
           </div>
-          <p className="mt-2 text-2xl font-bold text-white">{systemHealth.dbSize} MB</p>
+          <p className="mt-2 text-2xl font-bold text-slate-900">{systemHealth.dbSize} MB</p>
           <p className="text-xs text-agora-muted">SQLite WAL</p>
         </div>
         <div className="rounded-lg border border-agora-border bg-agora-card p-4">
@@ -168,7 +168,7 @@ export default function EngineRoomPage() {
             <TrendingUp className="h-4 w-4" />
             <span className="text-sm">{t('stats.activeAgents')}</span>
           </div>
-          <p className="mt-2 text-2xl font-bold text-white">
+          <p className="mt-2 text-2xl font-bold text-slate-900">
             {systemHealth.agents.active}/{systemHealth.agents.total}
           </p>
           <p className="text-xs text-agora-muted">{t('stats.agents')}</p>

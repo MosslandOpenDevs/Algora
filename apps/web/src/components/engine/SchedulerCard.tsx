@@ -21,7 +21,7 @@ export function SchedulerCard({ scheduler }: SchedulerCardProps) {
 
   return (
     <div className="rounded-lg border border-agora-border bg-agora-card p-5">
-      <div className="flex items-center gap-2 text-white">
+      <div className="flex items-center gap-2 text-slate-900">
         <Clock className="h-5 w-5 text-agora-warning" />
         <h3 className="font-semibold">{t('title')}</h3>
       </div>
@@ -33,7 +33,7 @@ export function SchedulerCard({ scheduler }: SchedulerCardProps) {
             <Timer className="h-4 w-4" />
             <span className="text-xs">{t('nextTier2')}</span>
           </div>
-          <p className="mt-2 text-lg font-semibold text-white">
+          <p className="mt-2 text-lg font-semibold text-slate-900">
             {formatDistanceToNow(nextRun, { addSuffix: false })}
           </p>
           <p className="text-xs text-agora-muted">
@@ -47,7 +47,7 @@ export function SchedulerCard({ scheduler }: SchedulerCardProps) {
             <ListOrdered className="h-4 w-4" />
             <span className="text-xs">{t('queueLength')}</span>
           </div>
-          <p className="mt-2 text-lg font-semibold text-white">
+          <p className="mt-2 text-lg font-semibold text-slate-900">
             {scheduler.queueLength}
           </p>
           <p className="text-xs text-agora-muted">{t('pendingTasks')}</p>
@@ -59,7 +59,7 @@ export function SchedulerCard({ scheduler }: SchedulerCardProps) {
             <Play className="h-4 w-4" />
             <span className="text-xs">{t('lastRun')}</span>
           </div>
-          <p className="mt-2 text-lg font-semibold text-white">
+          <p className="mt-2 text-lg font-semibold text-slate-900">
             {formatDistanceToNow(lastRun, { addSuffix: true })}
           </p>
           <p className="text-xs text-agora-muted">
@@ -73,7 +73,7 @@ export function SchedulerCard({ scheduler }: SchedulerCardProps) {
             <Clock className="h-4 w-4" />
             <span className="text-xs">{t('interval')}</span>
           </div>
-          <p className="mt-2 text-lg font-semibold text-white">
+          <p className="mt-2 text-lg font-semibold text-slate-900">
             {scheduler.interval}h
           </p>
           <p className="text-xs text-agora-muted">{t('tier2Interval')}</p>

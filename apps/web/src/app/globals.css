@@ -3,20 +3,39 @@
 @tailwind utilities;
 
 :root {
-  --foreground-rgb: 226, 232, 240;
-  --background-start-rgb: 15, 23, 42;
-  --background-end-rgb: 2, 6, 23;
+  --foreground-rgb: 15, 23, 42;
+  --background-rgb: 255, 255, 255;
+
+  /* moss.land inspired colors */
+  --moss-primary: #16f6ab;
+  --moss-secondary: #00c2c2;
+  --moss-tertiary: #0080e8;
 }
 
 body {
   color: rgb(var(--foreground-rgb));
-  background: linear-gradient(
-      to bottom,
-      transparent,
-      rgb(var(--background-end-rgb))
-    )
-    rgb(var(--background-start-rgb));
+  background-color: rgb(var(--background-rgb));
   min-height: 100vh;
+  position: relative;
+}
+
+/* Background grid pattern (moss.land style) */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(to right, #e2e8f0 1px, transparent 1px),
+    linear-gradient(to bottom, #e2e8f0 1px, transparent 1px);
+  background-size: 60px 60px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Content should be above the grid */
+body > * {
+  position: relative;
+  z-index: 1;
 }
 
 @layer utilities {
@@ -25,39 +44,53 @@ body {
   }
 }
 
-/* Custom scrollbar */
+/* Custom scrollbar (light theme) */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #1e293b;
+  background: #f1f5f9;
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #475569;
+  background: #cbd5e1;
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #64748b;
+  background: #94a3b8;
 }
 
 /* Agent status indicators */
 .agent-status-idle {
-  @apply bg-gray-500;
+  @apply bg-gray-400;
 }
 
 .agent-status-active {
-  @apply bg-green-500 animate-pulse;
+  @apply bg-agora-primary;
 }
 
 .agent-status-speaking {
-  @apply bg-blue-500 animate-pulse-slow;
+  @apply bg-agora-secondary;
 }
 
 .agent-status-listening {
-  @apply bg-yellow-500;
+  @apply bg-agora-tertiary;
+}
+
+/* Selection styling */
+::selection {
+  background-color: rgba(22, 246, 171, 0.3);
+  color: #0f172a;
+}
+
+/* Gradient text utility */
+.text-gradient-moss {
+  background: linear-gradient(135deg, #16f6ab 0%, #00c2c2 50%, #0080e8 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }

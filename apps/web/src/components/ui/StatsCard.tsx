@@ -17,7 +17,7 @@ const variantStyles = {
     border: 'border-agora-border',
     bg: 'bg-agora-card',
     icon: 'text-agora-muted',
-    value: 'text-white',
+    value: 'text-slate-900',
     hover: 'hover:border-agora-primary/50 hover:shadow-lg hover:shadow-agora-primary/5',
   },
   warning: {

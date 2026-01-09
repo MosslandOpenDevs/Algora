@@ -80,14 +80,14 @@ export default function SignalsPage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold text-white">{t('title')}</h1>
+            <h1 className="text-2xl font-bold text-slate-900">{t('title')}</h1>
             <HelpTooltip content={tGuide('signals')} />
           </div>
           <p className="text-agora-muted">{t('subtitle')}</p>
         </div>
         <button
           onClick={() => refetch()}
-          className="flex items-center gap-2 rounded-lg bg-agora-card px-4 py-2 text-white transition-colors hover:bg-agora-border"
+          className="flex items-center gap-2 rounded-lg bg-agora-card px-4 py-2 text-slate-900 transition-colors hover:bg-agora-border"
         >
           <RefreshCw className="h-4 w-4" />
           {t('refresh')}
@@ -96,38 +96,50 @@ export default function SignalsPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <div className="rounded-lg border border-agora-border bg-agora-card p-4">
+        <div
+          className="animate-slide-up rounded-lg border border-agora-border bg-agora-card p-4 transition-all duration-200 hover:scale-[1.02] hover:shadow-lg hover:border-agora-primary/30"
+          style={{ animationDelay: '0ms', animationFillMode: 'backwards' }}
+        >
           <div className="flex items-center gap-2 text-agora-muted">
             <Radio className="h-4 w-4" />
             <span className="text-sm">{t('stats.total')}</span>
           </div>
-          <p className="mt-2 text-2xl font-bold text-white">{stats.total.toLocaleString()}</p>
+          <p className="mt-2 text-2xl font-bold text-slate-900">{stats.total.toLocaleString()}</p>
           {stats.showing < stats.total && (
             <p className="mt-1 text-xs text-agora-muted">
               Showing {stats.showing} of {stats.total.toLocaleString()}
             </p>
           )}
         </div>
-        <div className="rounded-lg border border-agora-border bg-agora-card p-4">
+        <div
+          className="animate-slide-up rounded-lg border border-agora-border bg-agora-card p-4 transition-all duration-200 hover:scale-[1.02] hover:shadow-lg hover:border-agora-success/30"
+          style={{ animationDelay: '50ms', animationFillMode: 'backwards' }}
+        >
           <div className="flex items-center gap-2 text-agora-success">
             <CheckCircle className="h-4 w-4" />
             <span className="text-sm">{t('stats.processed')}</span>
           </div>
-          <p className="mt-2 text-2xl font-bold text-white">{stats.processed}</p>
+          <p className="mt-2 text-2xl font-bold text-slate-900">{stats.processed}</p>
         </div>
-        <div className="rounded-lg border border-agora-border bg-agora-card p-4">
+        <div
+          className="animate-slide-up rounded-lg border border-agora-border bg-agora-card p-4 transition-all duration-200 hover:scale-[1.02] hover:shadow-lg hover:border-agora-warning/30"
+          style={{ animationDelay: '100ms', animationFillMode: 'backwards' }}
+        >
           <div className="flex items-center gap-2 text-agora-warning">
             <Clock className="h-4 w-4" />
             <span className="text-sm">{t('stats.pending')}</span>
           </div>
-          <p className="mt-2 text-2xl font-bold text-white">{stats.unprocessed}</p>
+          <p className="mt-2 text-2xl font-bold text-slate-900">{stats.unprocessed}</p>
         </div>
-        <div className="rounded-lg border border-agora-border bg-agora-card p-4">
+        <div
+          className="animate-slide-up rounded-lg border border-agora-border bg-agora-card p-4 transition-all duration-200 hover:scale-[1.02] hover:shadow-lg hover:border-agora-error/30"
+          style={{ animationDelay: '150ms', animationFillMode: 'backwards' }}
+        >
           <div className="flex items-center gap-2 text-agora-error">
             <AlertCircle className="h-4 w-4" />
             <span className="text-sm">{t('stats.highPriority')}</span>
           </div>
-          <p className="mt-2 text-2xl font-bold text-white">{stats.highPriority}</p>
+          <p className="mt-2 text-2xl font-bold text-slate-900">{stats.highPriority}</p>
         </div>
       </div>
 
@@ -141,11 +153,14 @@ export default function SignalsPage() {
               <button
                 key={source}
                 onClick={() => setSelectedSource(source)}
-                className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-                  selectedSource === source
-                    ? 'bg-agora-primary text-white'
-                    : 'bg-agora-card text-agora-muted hover:bg-agora-border'
-                }`}
+                className={`
+                  flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium
+                  transition-all duration-200
+                  ${selectedSource === source
+                    ? 'bg-agora-primary text-slate-900 scale-105 shadow-lg shadow-agora-primary/30'
+                    : 'bg-agora-card text-agora-muted hover:bg-agora-border hover:scale-105'
+                  }
+                `}
               >
                 {source !== 'all' && sourceIcons[source]}
                 <span>{t(`sources.${source}`)}</span>
@@ -160,11 +175,14 @@ export default function SignalsPage() {
             <button
               key={status}
               onClick={() => setShowProcessed(status)}
-              className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-                showProcessed === status
-                  ? 'bg-agora-accent text-white'
-                  : 'bg-agora-card text-agora-muted hover:bg-agora-border'
-              }`}
+              className={`
+                rounded-full px-3 py-1.5 text-xs font-medium
+                transition-all duration-200
+                ${showProcessed === status
+                  ? 'bg-agora-accent text-slate-900 scale-105 shadow-lg shadow-agora-accent/30'
+                  : 'bg-agora-card text-agora-muted hover:bg-agora-border hover:scale-105'
+                }
+              `}
             >
               {t(`filter.${status}`)}
             </button>
@@ -179,21 +197,36 @@ export default function SignalsPage() {
             <div
               key={i}
               className="h-32 animate-pulse rounded-lg border border-agora-border bg-agora-card"
+              style={{ animationDelay: `${i * 100}ms` }}
             />
           ))}
         </div>
       ) : filteredSignals?.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-agora-border p-8 text-center">
-          <Radio className="mx-auto h-12 w-12 text-agora-muted/50" />
-          <h3 className="mt-4 text-lg font-semibold text-white">{t('noSignals')}</h3>
-          <p className="mt-2 text-sm text-agora-muted">{t('noSignalsDesc')}</p>
+        <div className="animate-fade-in flex flex-col items-center justify-center rounded-lg border border-dashed border-agora-border p-12 text-center">
+          <div className="mb-4 rounded-full bg-agora-card p-4">
+            <Radio className="h-12 w-12 text-agora-muted" />
+          </div>
+          <h3 className="text-lg font-semibold text-slate-900">{t('noSignals')}</h3>
+          <p className="mt-2 text-sm text-agora-muted max-w-md">{t('noSignalsDesc')}</p>
+          {(selectedSource !== 'all' || showProcessed !== 'all') && (
+            <button
+              onClick={() => {
+                setSelectedSource('all');
+                setShowProcessed('all');
+              }}
+              className="mt-4 rounded-lg bg-agora-primary px-4 py-2 text-sm font-medium text-slate-900 transition-all hover:bg-agora-primary/80 hover:scale-105"
+            >
+              {t('clearFilters')}
+            </button>
+          )}
         </div>
       ) : (
         <div className="space-y-4">
-          {filteredSignals?.map((signal) => (
+          {filteredSignals?.map((signal, index) => (
             <SignalCard
               key={signal.id}
               signal={signal}
+              index={index}
               onClick={() => setSelectedSignal(signal)}
             />
           ))}

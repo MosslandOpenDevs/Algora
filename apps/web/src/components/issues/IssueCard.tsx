@@ -17,6 +17,7 @@ import type { Issue } from '@/lib/api';
 
 interface IssueCardProps {
   issue: Issue;
+  index?: number;
   onClick?: () => void;
 }
 
@@ -70,20 +71,53 @@ function getSignalCount(signalIds: string | null): number {
   }
 }
 
-export function IssueCard({ issue, onClick }: IssueCardProps) {
+export function IssueCard({ issue, index = 0, onClick }: IssueCardProps) {
   const t = useTranslations('Issues');
   const config = statusConfig[issue.status] || statusConfig.detected;
   const StatusIcon = config.icon;
   const signalCount = getSignalCount(issue.signal_ids);
 
+  // Calculate stagger delay
+  const delayMs = Math.min(index * 50, 400);
+
+  // Check if high priority
+  const isHighPriority = issue.priority === 'high' || issue.priority === 'critical';
+
+  // Check if recently updated (within last hour)
+  const isRecentlyUpdated = Date.now() - new Date(issue.updated_at).getTime() < 60 * 60 * 1000;
+
   return (
     <div
       onClick={onClick}
-      className={`group cursor-pointer rounded-lg border bg-agora-card p-5 transition-all hover:shadow-lg hover:bg-agora-card/80 ${config.border}`}
+      className={`
+        relative group cursor-pointer rounded-lg border bg-agora-card p-5
+        animate-slide-up
+        transition-all duration-300
+        hover:shadow-lg hover:scale-[1.02] hover:border-agora-primary/50
+        ${isHighPriority ? 'border-l-4 border-l-agora-error ' + config.border : config.border}
+        ${isHighPriority && !['resolved', 'dismissed'].includes(issue.status) ? 'ring-2 ring-agora-error/30' : ''}
+      `}
+      style={{
+        animationDelay: `${delayMs}ms`,
+        animationFillMode: 'backwards',
+      }}
     >
+      {/* Recently Updated Badge */}
+      {isRecentlyUpdated && (
+        <span className="absolute -top-2 -right-2 rounded-full bg-agora-success px-2 py-0.5 text-[10px] font-bold text-slate-900 animate-bounce-in">
+          UPDATED
+        </span>
+      )}
+
       <div className="flex items-start gap-4">
         {/* Status Icon */}
-        <div className={`rounded-lg p-2 ${config.bg}`}>
+        <div
+          className={`
+            rounded-lg p-2 transition-all duration-300
+            group-hover:scale-110
+            ${config.bg}
+          `}
+        >
           <StatusIcon className={`h-5 w-5 ${config.color}`} />
         </div>
 
@@ -91,7 +125,7 @@ export function IssueCard({ issue, onClick }: IssueCardProps) {
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <h3 className="font-semibold text-white group-hover:text-agora-primary transition-colors">
+              <h3 className="font-semibold text-slate-900 group-hover:text-agora-primary transition-colors">
                 {issue.title}
               </h3>
               <p className="mt-1 text-sm text-agora-muted line-clamp-2">

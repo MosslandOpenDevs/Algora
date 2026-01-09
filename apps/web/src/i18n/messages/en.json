@@ -83,7 +83,11 @@
       "listening": "Listening"
     },
     "summon": "Summon",
-    "dismiss": "Dismiss"
+    "dismiss": "Dismiss",
+    "noResults": "No Agents Found",
+    "noSearchResults": "No agents match \"{query}\"",
+    "noAgentsInCluster": "No agents in this cluster",
+    "clearFilters": "Clear Filters"
   },
   "Agora": {
     "title": "Agora",
@@ -265,6 +269,7 @@
     "searchPlaceholder": "Search issues...",
     "noIssues": "No issues found",
     "noIssuesDesc": "Issues will appear here when detected from signals",
+    "clearFilters": "Clear Filters",
     "signals": "signals",
     "comments": "comments",
     "updated": "Updated",
@@ -310,6 +315,7 @@
     "noSignals": "No signals found",
     "noSignalsDesc": "Signals will appear here when collected from various sources",
     "viewSource": "View Source",
+    "clearFilters": "Clear Filters",
     "stats": {
       "total": "Total Signals",
       "processed": "Processed",

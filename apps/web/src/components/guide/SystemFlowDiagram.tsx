@@ -93,7 +93,7 @@ export function SystemFlowDiagram({
                 className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs transition-all ${
                   isActive
                     ? `${step.bgColor} ${step.color} ring-2 ring-current`
-                    : 'text-agora-muted hover:bg-agora-card hover:text-white'
+                    : 'text-agora-muted hover:bg-agora-card hover:text-slate-900'
                 }`}
               >
                 <Icon className="h-3 w-3" />
@@ -133,7 +133,7 @@ export function SystemFlowDiagram({
                 </div>
                 <div className="text-center">
                   <p
-                    className={`text-sm font-medium ${isActive ? step.color : 'text-white'}`}
+                    className={`text-sm font-medium ${isActive ? step.color : 'text-slate-900'}`}
                   >
                     {t(`step${index + 1}`)}
                   </p>

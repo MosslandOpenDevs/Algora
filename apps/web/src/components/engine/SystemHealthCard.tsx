@@ -58,7 +58,7 @@ export function SystemHealthCard({ health }: SystemHealthCardProps) {
 
   return (
     <div className="rounded-lg border border-agora-border bg-agora-card p-5">
-      <div className="flex items-center gap-2 text-white">
+      <div className="flex items-center gap-2 text-slate-900">
         <Activity className="h-5 w-5 text-agora-success" />
         <h3 className="font-semibold">{t('title')}</h3>
       </div>
@@ -72,7 +72,7 @@ export function SystemHealthCard({ health }: SystemHealthCardProps) {
                 <Icon className={`h-4 w-4 ${metric.color}`} />
                 <span className="text-xs text-agora-muted">{metric.label}</span>
               </div>
-              <p className="mt-2 text-lg font-semibold text-white">
+              <p className="mt-2 text-lg font-semibold text-slate-900">
                 {metric.value}
               </p>
             </div>

@@ -83,7 +83,11 @@
       "listening": "청취 중"
     },
     "summon": "소환",
-    "dismiss": "퇴장"
+    "dismiss": "퇴장",
+    "noResults": "에이전트를 찾을 수 없습니다",
+    "noSearchResults": "\"{query}\"와 일치하는 에이전트가 없습니다",
+    "noAgentsInCluster": "이 클러스터에 에이전트가 없습니다",
+    "clearFilters": "필터 초기화"
   },
   "Agora": {
     "title": "아고라",
@@ -265,6 +269,7 @@
     "searchPlaceholder": "이슈 검색...",
     "noIssues": "이슈 없음",
     "noIssuesDesc": "신호에서 감지된 이슈가 여기에 표시됩니다",
+    "clearFilters": "필터 초기화",
     "signals": "신호",
     "comments": "댓글",
     "updated": "업데이트",
@@ -310,6 +315,7 @@
     "noSignals": "신호 없음",
     "noSignalsDesc": "다양한 소스에서 수집된 신호가 여기에 표시됩니다",
     "viewSource": "소스 보기",
+    "clearFilters": "필터 초기화",
     "stats": {
       "total": "전체 신호",
       "processed": "처리됨",

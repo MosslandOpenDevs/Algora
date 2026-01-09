@@ -92,9 +92,17 @@ export function SessionDetailModal({ session, agents, onClose, onJoinSession }: 
       <div className="fixed inset-4 z-50 flex items-center justify-center sm:inset-10">
         <div className="animate-scale-in w-full max-w-2xl max-h-full overflow-hidden rounded-xl border border-agora-border bg-agora-dark shadow-2xl">
           {/* Header */}
-          <div className="flex items-start justify-between border-b border-agora-border p-6">
+          <div
+            className="animate-slide-up flex items-start justify-between border-b border-agora-border p-6"
+            style={{ animationDelay: '0ms', animationFillMode: 'backwards' }}
+          >
             <div className="flex items-start gap-4">
-              <div className={`rounded-lg border p-3 ${config.bg} ${config.border}`}>
+              <div
+                className={`
+                  rounded-lg border p-3 transition-transform duration-300 hover:scale-110
+                  ${config.bg} ${config.border}
+                `}
+              >
                 <StatusIcon className={`h-5 w-5 ${config.color} ${config.animate || ''}`} />
               </div>
               <div>
@@ -108,7 +116,7 @@ export function SessionDetailModal({ session, agents, onClose, onJoinSession }: 
                     Round {session.current_round}/{session.max_rounds}
                   </span>
                 </div>
-                <h2 className="text-xl font-bold text-white pr-8">{session.title}</h2>
+                <h2 className="text-xl font-bold text-slate-900 pr-8">{session.title}</h2>
                 {session.description && (
                   <p className="mt-1 text-sm text-agora-muted line-clamp-2">
                     {session.description}
@@ -119,7 +127,7 @@ export function SessionDetailModal({ session, agents, onClose, onJoinSession }: 
 
             <button
               onClick={onClose}
-              className="rounded-lg p-2 text-agora-muted transition-colors hover:bg-agora-card hover:text-white"
+              className="rounded-lg p-2 text-agora-muted transition-colors hover:bg-agora-card hover:text-slate-900"
             >
               <X className="h-5 w-5" />
             </button>
@@ -128,14 +136,17 @@ export function SessionDetailModal({ session, agents, onClose, onJoinSession }: 
           {/* Content */}
           <div className="max-h-[60vh] overflow-y-auto p-6">
             {/* Session Info Grid */}
-            <div className="grid grid-cols-2 gap-4">
+            <div
+              className="animate-slide-up grid grid-cols-2 gap-4"
+              style={{ animationDelay: '50ms', animationFillMode: 'backwards' }}
+            >
               {/* Started */}
-              <div className="rounded-lg border border-agora-border bg-agora-card p-4">
+              <div className="rounded-lg border border-agora-border bg-agora-card p-4 transition-all hover:border-agora-primary/30">
                 <div className="flex items-center gap-2 mb-2 text-sm text-agora-muted">
                   <Calendar className="h-4 w-4" />
                   <span>{t('detail.started')}</span>
                 </div>
-                <p className="text-white font-medium">
+                <p className="text-slate-900 font-medium">
                   {createdDate ? format(createdDate, 'PPpp') : 'Unknown'}
                 </p>
                 <p className="text-sm text-agora-muted mt-1">
@@ -144,12 +155,12 @@ export function SessionDetailModal({ session, agents, onClose, onJoinSession }: 
               </div>
 
               {/* Duration / Status */}
-              <div className="rounded-lg border border-agora-border bg-agora-card p-4">
+              <div className="rounded-lg border border-agora-border bg-agora-card p-4 transition-all hover:border-agora-primary/30">
                 <div className="flex items-center gap-2 mb-2 text-sm text-agora-muted">
                   <Clock className="h-4 w-4" />
                   <span>{t('detail.duration')}</span>
                 </div>
-                <p className="text-white font-medium">
+                <p className="text-slate-900 font-medium">
                   {session.status === 'active' && createdDate
                     ? formatDistanceToNow(createdDate)
                     : session.status === 'pending'
@@ -166,23 +177,32 @@ export function SessionDetailModal({ session, agents, onClose, onJoinSession }: 
             </div>
 
             {/* Participants */}
-            <div className="mt-4 rounded-lg border border-agora-border bg-agora-card p-4">
+            <div
+              className="animate-slide-up mt-4 rounded-lg border border-agora-border bg-agora-card p-4"
+              style={{ animationDelay: '100ms', animationFillMode: 'backwards' }}
+            >
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2 text-sm text-agora-muted">
                   <Users className="h-4 w-4" />
                   <span>{t('detail.participants')}</span>
                 </div>
-                <span className="text-sm text-white font-medium">
+                <span className="text-sm text-slate-900 font-medium">
                   {participantIds.length} {t('detail.agents')}
                 </span>
               </div>
 
               {participantAgents.length > 0 ? (
                 <div className="flex flex-wrap gap-2">
-                  {participantAgents.map((agent) => (
+                  {participantAgents.map((agent, index) => (
                     <div
                       key={agent.id}
-                      className="flex items-center gap-2 rounded-full bg-agora-darker px-3 py-1.5"
+                      className="
+                        flex items-center gap-2 rounded-full bg-agora-darker px-3 py-1.5
+                        transition-all duration-200 hover:scale-105 hover:bg-agora-border cursor-pointer
+                      "
+                      style={{
+                        animationDelay: `${100 + index * 30}ms`,
+                      }}
                     >
                       <div
                         className="h-6 w-6 rounded-full flex items-center justify-center text-xs font-bold text-white"
@@ -190,7 +210,7 @@ export function SessionDetailModal({ session, agents, onClose, onJoinSession }: 
                       >
                         {agent.display_name?.charAt(0) || agent.name.charAt(0)}
                       </div>
-                      <span className="text-sm text-white">
+                      <span className="text-sm text-slate-900">
                         {agent.display_name || agent.name}
                       </span>
                     </div>
@@ -216,32 +236,38 @@ export function SessionDetailModal({ session, agents, onClose, onJoinSession }: 
 
             {/* Session Summary (for concluded sessions) */}
             {(session.status === 'concluded' || session.status === 'completed') && (
-              <div className="mt-4 rounded-lg border border-agora-border bg-agora-card p-4">
+              <div
+                className="animate-slide-up mt-4 rounded-lg border border-agora-border bg-agora-card p-4"
+                style={{ animationDelay: '150ms', animationFillMode: 'backwards' }}
+              >
                 <div className="flex items-center gap-2 mb-3 text-sm text-agora-muted">
                   <FileText className="h-4 w-4" />
                   <span>{t('detail.summary')}</span>
                 </div>
-                <p className="text-white text-sm leading-relaxed">
+                <p className="text-slate-900 text-sm leading-relaxed">
                   {t('detail.summaryPlaceholder')}
                 </p>
               </div>
             )}
 
             {/* Activity Stats */}
-            <div className="mt-4 grid grid-cols-3 gap-4">
-              <div className="rounded-lg border border-agora-border bg-agora-card p-4 text-center">
+            <div
+              className="animate-slide-up mt-4 grid grid-cols-3 gap-4"
+              style={{ animationDelay: '200ms', animationFillMode: 'backwards' }}
+            >
+              <div className="rounded-lg border border-agora-border bg-agora-card p-4 text-center transition-all hover:scale-[1.02] hover:border-agora-accent/30">
                 <MessageSquare className="h-6 w-6 text-agora-accent mx-auto mb-2" />
-                <p className="text-2xl font-bold text-white">--</p>
+                <p className="text-2xl font-bold text-slate-900">--</p>
                 <p className="text-xs text-agora-muted">{t('detail.messages')}</p>
               </div>
-              <div className="rounded-lg border border-agora-border bg-agora-card p-4 text-center">
+              <div className="rounded-lg border border-agora-border bg-agora-card p-4 text-center transition-all hover:scale-[1.02] hover:border-agora-primary/30">
                 <Users className="h-6 w-6 text-agora-primary mx-auto mb-2" />
-                <p className="text-2xl font-bold text-white">{participantIds.length}</p>
+                <p className="text-2xl font-bold text-slate-900">{participantIds.length}</p>
                 <p className="text-xs text-agora-muted">{t('detail.agents')}</p>
               </div>
-              <div className="rounded-lg border border-agora-border bg-agora-card p-4 text-center">
+              <div className="rounded-lg border border-agora-border bg-agora-card p-4 text-center transition-all hover:scale-[1.02] hover:border-agora-warning/30">
                 <Clock className="h-6 w-6 text-agora-warning mx-auto mb-2" />
-                <p className="text-2xl font-bold text-white">
+                <p className="text-2xl font-bold text-slate-900">
                   {session.status !== 'pending' && createdDate
                     ? Math.round((Date.now() - createdDate.getTime()) / 60000)
                     : '--'
@@ -253,13 +279,16 @@ export function SessionDetailModal({ session, agents, onClose, onJoinSession }: 
           </div>
 
           {/* Footer */}
-          <div className="flex items-center justify-between border-t border-agora-border p-4">
+          <div
+            className="animate-slide-up flex items-center justify-between border-t border-agora-border p-4"
+            style={{ animationDelay: '250ms', animationFillMode: 'backwards' }}
+          >
             <div className="flex items-center gap-2 text-sm text-agora-muted">
               <span>ID: {session.id.slice(0, 8)}...</span>
             </div>
 
             <div className="flex items-center gap-3">
-              <button className="flex items-center gap-2 rounded-lg bg-agora-card px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-agora-border">
+              <button className="flex items-center gap-2 rounded-lg bg-agora-card px-4 py-2 text-sm font-medium text-slate-900 transition-all duration-200 hover:bg-agora-border hover:scale-105">
                 <Share2 className="h-4 w-4" />
                 {t('detail.share')}
               </button>
@@ -267,7 +296,7 @@ export function SessionDetailModal({ session, agents, onClose, onJoinSession }: 
               {session.status === 'active' && onJoinSession && (
                 <button
                   onClick={onJoinSession}
-                  className="flex items-center gap-2 rounded-lg bg-agora-primary px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-agora-primary/80"
+                  className="flex items-center gap-2 rounded-lg bg-agora-primary px-4 py-2 text-sm font-medium text-slate-900 transition-all duration-200 hover:bg-agora-primary/80 hover:scale-105 hover:shadow-lg hover:shadow-agora-primary/30"
                 >
                   <Play className="h-4 w-4" />
                   {t('detail.joinSession')}
@@ -275,14 +304,14 @@ export function SessionDetailModal({ session, agents, onClose, onJoinSession }: 
               )}
 
               {session.status === 'pending' && (
-                <button className="flex items-center gap-2 rounded-lg bg-agora-success px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-agora-success/80">
+                <button className="flex items-center gap-2 rounded-lg bg-agora-success px-4 py-2 text-sm font-medium text-slate-900 transition-all duration-200 hover:bg-agora-success/80 hover:scale-105 hover:shadow-lg hover:shadow-agora-success/30">
                   <Play className="h-4 w-4" />
                   {t('detail.startSession')}
                 </button>
               )}
 
               {(session.status === 'concluded' || session.status === 'completed') && (
-                <button className="flex items-center gap-2 rounded-lg bg-agora-card px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-agora-border">
+                <button className="flex items-center gap-2 rounded-lg bg-agora-card px-4 py-2 text-sm font-medium text-slate-900 transition-all duration-200 hover:bg-agora-border hover:scale-105">
                   <ExternalLink className="h-4 w-4" />
                   {t('detail.viewTranscript')}
                 </button>

@@ -137,7 +137,7 @@ export function WelcomeTour({ forceShow = false, onComplete }: WelcomeTourProps)
         {/* Close button */}
         <button
           onClick={handleClose}
-          className="absolute right-4 top-4 text-agora-muted transition-colors hover:text-white"
+          className="absolute right-4 top-4 text-agora-muted transition-colors hover:text-slate-900"
         >
           <X className="h-5 w-5" />
         </button>
@@ -167,7 +167,7 @@ export function WelcomeTour({ forceShow = false, onComplete }: WelcomeTourProps)
             <Icon className={`h-10 w-10 ${step.color}`} />
           </div>
 
-          <h2 className="text-2xl font-bold text-white">{t(`${step.key}.title`)}</h2>
+          <h2 className="text-2xl font-bold text-slate-900">{t(`${step.key}.title`)}</h2>
           <p className="mt-3 text-agora-muted">{t(`${step.key}.desc`)}</p>
 
           {step.href && (
@@ -185,7 +185,7 @@ export function WelcomeTour({ forceShow = false, onComplete }: WelcomeTourProps)
         <div className="flex items-center justify-between border-t border-agora-border bg-agora-card px-6 py-4">
           <button
             onClick={handleClose}
-            className="text-sm text-agora-muted transition-colors hover:text-white"
+            className="text-sm text-agora-muted transition-colors hover:text-slate-900"
           >
             {t('skip')}
           </button>
@@ -194,7 +194,7 @@ export function WelcomeTour({ forceShow = false, onComplete }: WelcomeTourProps)
             {!isFirstStep && (
               <button
                 onClick={handlePrev}
-                className="flex items-center gap-1 rounded-lg bg-agora-darker px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-agora-border"
+                className="flex items-center gap-1 rounded-lg bg-agora-darker px-4 py-2 text-sm font-medium text-slate-900 transition-colors hover:bg-agora-border"
               >
                 <ChevronLeft className="h-4 w-4" />
                 {t('prev')}
@@ -202,7 +202,7 @@ export function WelcomeTour({ forceShow = false, onComplete }: WelcomeTourProps)
             )}
             <button
               onClick={handleNext}
-              className="flex items-center gap-1 rounded-lg bg-agora-primary px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-agora-primary/80"
+              className="flex items-center gap-1 rounded-lg bg-agora-primary px-4 py-2 text-sm font-medium text-slate-900 transition-colors hover:bg-agora-primary/80"
             >
               {isLastStep ? t('finish') : t('next')}
               {!isLastStep && <ChevronRight className="h-4 w-4" />}

@@ -80,6 +80,78 @@ Reality Signals → Issues → Agentic Deliberation → Human Decision → Execu
 - **DiscussionArena**: Real-time debate visualization
 - **Activity Feed**: Continuous event stream (never more than 10s gap)
 
+### 3.3 UI Theme (v0.2.4 - moss.land Style)
+
+The UI follows a **light theme** inspired by [moss.land](https://moss.land), with the following color scheme:
+
+#### Color Tokens (tailwind.config.ts)
+```typescript
+agora: {
+  // Light theme backgrounds
+  dark: '#ffffff',        // Main background
+  darker: '#f8fafc',      // Subtle background (slate-50)
+  card: '#ffffff',        // Card background
+  border: '#e2e8f0',      // Border color (slate-200)
+
+  // Text colors
+  text: '#0f172a',        // Primary text (slate-900)
+  muted: '#64748b',       // Muted text (slate-500)
+
+  // Brand colors (moss.land)
+  primary: '#16f6ab',     // Mint green (primary actions)
+  secondary: '#00c2c2',   // Teal (secondary elements)
+  tertiary: '#0080e8',    // Blue (links, accents)
+
+  // Status colors
+  success: '#10b981',     // Green (success states)
+  accent: '#00c2c2',      // Teal (speaking/active)
+  warning: '#f59e0b',     // Amber (warnings)
+  error: '#ef4444',       // Red (errors)
+}
+```
+
+#### CSS Variables (globals.css)
+```css
+:root {
+  --foreground-rgb: 15, 23, 42;   /* slate-900 */
+  --background-rgb: 255, 255, 255; /* white */
+  --moss-primary: #16f6ab;
+  --moss-secondary: #00c2c2;
+  --moss-tertiary: #0080e8;
+}
+```
+
+#### Background Grid Pattern
+```css
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(to right, #e2e8f0 1px, transparent 1px),
+    linear-gradient(to bottom, #e2e8f0 1px, transparent 1px);
+  background-size: 60px 60px;
+  pointer-events: none;
+  z-index: 0;
+}
+```
+
+#### Animation Classes
+- `animate-slide-up`: Card entry animation (translateY + fade)
+- `animate-slide-in-left`: Message entry animation
+- `animate-bounce-in`: Modal entry animation
+- `animate-fade-in`: Subtle fade animation
+
+#### Text Color Guidelines
+- Primary text: `text-slate-900`
+- Content text: `text-slate-700`
+- Muted text: `text-agora-muted` (slate-500)
+- Avatar text on colored backgrounds: `text-white`
+
+#### Hover Effects
+- Cards: `hover:shadow-md hover:border-agora-primary/50 hover:-translate-y-0.5`
+- Avoid `hover:scale` effects that cause layout shifts
+
 ---
 
 ## 4. Local LLM Hardware Specification
@@ -1104,4 +1176,4 @@ MIT License
 
 ---
 
-**Last Updated**: 2025-01-09
+**Last Updated**: 2026-01-10
