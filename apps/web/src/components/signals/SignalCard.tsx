@@ -12,6 +12,7 @@ import {
   CheckCircle,
   Clock,
   AlertTriangle,
+  ChevronRight,
 } from 'lucide-react';
 
 interface Signal {
@@ -28,6 +29,7 @@ interface Signal {
 
 interface SignalCardProps {
   signal: Signal;
+  onClick?: () => void;
 }
 
 const sourceIcons: Record<string, React.ReactNode> = {
@@ -52,15 +54,16 @@ const priorityConfig = {
   high: { color: 'text-agora-error', bg: 'bg-agora-error/10', icon: AlertTriangle },
 };
 
-export function SignalCard({ signal }: SignalCardProps) {
+export function SignalCard({ signal, onClick }: SignalCardProps) {
   const t = useTranslations('Signals');
   const PriorityIcon = priorityConfig[signal.priority].icon;
 
   return (
     <div
-      className={`rounded-lg border bg-agora-card p-4 transition-colors hover:border-agora-primary/50 ${
+      onClick={onClick}
+      className={`relative group rounded-lg border bg-agora-card p-4 transition-all hover:border-agora-primary/50 ${
         signal.processed ? 'border-agora-border' : 'border-agora-warning/30'
-      }`}
+      } ${onClick ? 'cursor-pointer hover:bg-agora-card/80' : ''}`}
     >
       <div className="flex items-start gap-4">
         {/* Source Icon */}
@@ -70,6 +73,12 @@ export function SignalCard({ signal }: SignalCardProps) {
 
         {/* Content */}
         <div className="flex-1 min-w-0">
+          {/* Click indicator */}
+          {onClick && (
+            <div className="absolute right-4 top-1/2 -translate-y-1/2 text-agora-muted opacity-0 transition-opacity group-hover:opacity-100">
+              <ChevronRight className="h-5 w-5" />
+            </div>
+          )}
           <div className="flex items-start justify-between gap-4">
             <div>
               <h3 className="font-semibold text-white">{signal.title}</h3>

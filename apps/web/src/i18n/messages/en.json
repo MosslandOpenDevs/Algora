@@ -245,6 +245,14 @@
     "status": {
       "processed": "Processed",
       "pending": "Pending"
+    },
+    "detail": {
+      "content": "Content",
+      "timestamp": "Received At",
+      "signalId": "Signal ID",
+      "metadata": "Additional Data",
+      "source": "Source",
+      "createIssue": "Create Issue"
     }
   },
   "Wallet": {

@@ -245,6 +245,14 @@
     "status": {
       "processed": "처리됨",
       "pending": "대기 중"
+    },
+    "detail": {
+      "content": "내용",
+      "timestamp": "수신 시간",
+      "signalId": "신호 ID",
+      "metadata": "추가 데이터",
+      "source": "소스",
+      "createIssue": "이슈 생성"
     }
   },
   "Wallet": {

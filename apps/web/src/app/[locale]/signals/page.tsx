@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 
 import { SignalCard } from '@/components/signals/SignalCard';
+import { SignalDetailModal } from '@/components/signals/SignalDetailModal';
 
 interface Signal {
   id: string;
@@ -105,6 +106,7 @@ export default function SignalsPage() {
   const t = useTranslations('Signals');
   const [selectedSource, setSelectedSource] = useState<string>('all');
   const [showProcessed, setShowProcessed] = useState<'all' | 'processed' | 'unprocessed'>('all');
+  const [selectedSignal, setSelectedSignal] = useState<Signal | null>(null);
 
   // In real app, this would fetch from API
   const { data: signals, isLoading, refetch } = useQuery({
@@ -241,9 +243,21 @@ export default function SignalsPage() {
       ) : (
         <div className="space-y-4">
           {filteredSignals?.map((signal) => (
-            <SignalCard key={signal.id} signal={signal} />
+            <SignalCard
+              key={signal.id}
+              signal={signal}
+              onClick={() => setSelectedSignal(signal)}
+            />
           ))}
         </div>
+      )}
+
+      {/* Signal Detail Modal */}
+      {selectedSignal && (
+        <SignalDetailModal
+          signal={selectedSignal}
+          onClose={() => setSelectedSignal(null)}
+        />
       )}
     </div>
   );
