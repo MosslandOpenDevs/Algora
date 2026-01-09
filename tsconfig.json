@@ -1,0 +1,38 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "esModuleInterop": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": false,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "allowSyntheticDefaultImports": true,
+    "paths": {
+      "@algora/core": ["./packages/core/src"],
+      "@algora/core/*": ["./packages/core/src/*"],
+      "@algora/reality-oracle": ["./packages/reality-oracle/src"],
+      "@algora/reality-oracle/*": ["./packages/reality-oracle/src/*"],
+      "@algora/inference-mining": ["./packages/inference-mining/src"],
+      "@algora/inference-mining/*": ["./packages/inference-mining/src/*"],
+      "@algora/agentic-consensus": ["./packages/agentic-consensus/src"],
+      "@algora/agentic-consensus/*": ["./packages/agentic-consensus/src/*"],
+      "@algora/human-governance": ["./packages/human-governance/src"],
+      "@algora/human-governance/*": ["./packages/human-governance/src/*"],
+      "@algora/proof-of-outcome": ["./packages/proof-of-outcome/src"],
+      "@algora/proof-of-outcome/*": ["./packages/proof-of-outcome/src/*"]
+    }
+  },
+  "exclude": ["node_modules", "dist", ".next", "coverage"]
+}
