@@ -115,7 +115,20 @@
       "AGENT_CHATTER": "에이전트 잡담",
       "AGENT_SUMMONED": "에이전트 소환됨",
       "AGORA_SESSION_START": "세션 시작됨",
-      "DECISION_PACKET": "Decision Packet"
+      "DECISION_PACKET": "의사결정 패킷",
+      "ISSUE_DETECTED": "이슈 감지됨",
+      "VOTE_CAST": "투표 완료",
+      "VOTING_FINALIZED": "투표 종료됨",
+      "DELEGATION_CREATED": "위임 생성됨",
+      "PROPOSAL_CREATED": "제안 생성됨",
+      "VOTING_STARTED": "투표 시작됨",
+      "DECISION_PACKET_GENERATED": "의사결정 패킷 생성됨",
+      "SYSTEM_STATUS": "시스템 상태",
+      "PROPOSAL_OUTCOME_PROCESSED": "결과 처리됨",
+      "OUTCOME_CREATED": "결과 생성됨",
+      "EXECUTION_STARTED": "실행 시작됨",
+      "EXECUTION_COMPLETED": "실행 완료됨",
+      "OUTCOME_COMPLETED": "결과 완료됨"
     },
     "detail": {
       "activityId": "활동 ID",

@@ -9,6 +9,15 @@ import {
   UserPlus,
   Play,
   FileText,
+  AlertTriangle,
+  Vote,
+  CheckCircle,
+  Users,
+  Lightbulb,
+  Activity as ActivityIcon,
+  Target,
+  Loader,
+  Trophy,
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 
@@ -25,6 +34,19 @@ const activityIcons: Record<string, React.ReactNode> = {
   AGENT_SUMMONED: <UserPlus className="h-4 w-4 text-agora-warning" />,
   AGORA_SESSION_START: <Play className="h-4 w-4 text-agora-primary" />,
   DECISION_PACKET: <FileText className="h-4 w-4 text-agora-success" />,
+  ISSUE_DETECTED: <AlertTriangle className="h-4 w-4 text-agora-warning" />,
+  VOTE_CAST: <Vote className="h-4 w-4 text-agora-accent" />,
+  VOTING_FINALIZED: <CheckCircle className="h-4 w-4 text-agora-success" />,
+  DELEGATION_CREATED: <Users className="h-4 w-4 text-agora-primary" />,
+  PROPOSAL_CREATED: <Lightbulb className="h-4 w-4 text-agora-warning" />,
+  VOTING_STARTED: <Play className="h-4 w-4 text-agora-accent" />,
+  DECISION_PACKET_GENERATED: <FileText className="h-4 w-4 text-agora-primary" />,
+  SYSTEM_STATUS: <ActivityIcon className="h-4 w-4 text-agora-muted" />,
+  PROPOSAL_OUTCOME_PROCESSED: <Target className="h-4 w-4 text-agora-success" />,
+  OUTCOME_CREATED: <Target className="h-4 w-4 text-agora-primary" />,
+  EXECUTION_STARTED: <Loader className="h-4 w-4 text-agora-warning" />,
+  EXECUTION_COMPLETED: <CheckCircle className="h-4 w-4 text-agora-success" />,
+  OUTCOME_COMPLETED: <Trophy className="h-4 w-4 text-agora-success" />,
 };
 
 export function ActivityFeed({ onActivityClick }: ActivityFeedProps) {

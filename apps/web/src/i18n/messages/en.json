@@ -115,7 +115,20 @@
       "AGENT_CHATTER": "Agent Chatter",
       "AGENT_SUMMONED": "Agent Summoned",
       "AGORA_SESSION_START": "Session Started",
-      "DECISION_PACKET": "Decision Packet"
+      "DECISION_PACKET": "Decision Packet",
+      "ISSUE_DETECTED": "Issue Detected",
+      "VOTE_CAST": "Vote Cast",
+      "VOTING_FINALIZED": "Voting Finalized",
+      "DELEGATION_CREATED": "Delegation Created",
+      "PROPOSAL_CREATED": "Proposal Created",
+      "VOTING_STARTED": "Voting Started",
+      "DECISION_PACKET_GENERATED": "Decision Packet Generated",
+      "SYSTEM_STATUS": "System Status",
+      "PROPOSAL_OUTCOME_PROCESSED": "Outcome Processed",
+      "OUTCOME_CREATED": "Outcome Created",
+      "EXECUTION_STARTED": "Execution Started",
+      "EXECUTION_COMPLETED": "Execution Completed",
+      "OUTCOME_COMPLETED": "Outcome Completed"
     },
     "detail": {
       "activityId": "Activity ID",
