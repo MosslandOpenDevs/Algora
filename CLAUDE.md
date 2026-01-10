@@ -188,5 +188,28 @@ When starting a new session, follow these steps:
 
 ---
 
-**Last Updated**: 2026-01-09
-**Version**: 0.1.0
+## Recent Changes (v0.3.0)
+
+### Live Showcase Page (`/live`)
+New IR/PR showcase page displaying the 24/7 AI governance system:
+- **Location**: `apps/web/src/app/[locale]/live/page.tsx`
+- **Components**: `apps/web/src/components/live/`
+  - `LiveHeader.tsx` - Status bar with uptime, version
+  - `SignalStream.tsx` - Real-time signal feed
+  - `SystemBlueprint.tsx` - Pipeline visualization
+  - `LiveMetrics.tsx` - Live statistics
+  - `ActivityLog.tsx` - Terminal-style activity log
+  - `AgentChatter.tsx` - Agent messages preview
+  - `AgoraPreview.tsx` - Active session preview
+  - `TerminalBox.tsx`, `GlowText.tsx` - Shared UI components
+- **Documentation**: `docs/ALGORA_LIVE_IMPLEMENTATION_STATUS.md`
+
+### Key Technical Patterns
+- **Hydration Safety**: Use deterministic initial values, randomize only after mount
+- **API URL**: Use `NEXT_PUBLIC_API_URL` env var for API server URL
+- **Socket Events**: `signals:collected`, `agent:chatter`, `activity:event`, `agora:message`
+
+---
+
+**Last Updated**: 2026-01-10
+**Version**: 0.3.0

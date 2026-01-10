@@ -202,20 +202,24 @@ export default function AgoraPage() {
               <div className="flex-1 overflow-y-auto p-4">
                 <div className="space-y-4">
                   {messages.length > 0 ? (
-                    messages.map((msg: AgoraMessage) => (
-                      <ChatMessage
-                        key={msg.id}
-                        message={{
-                          id: msg.id,
-                          agentId: msg.agent_id || '',
-                          agentName: msg.display_name || msg.agent_name || 'Unknown',
-                          agentColor: msg.color || '#6366f1',
-                          content: msg.content,
-                          timestamp: msg.created_at,
-                          tier: msg.tier_used,
-                        }}
-                      />
-                    ))
+                    messages.map((msg: AgoraMessage) => {
+                      const isSystemMessage = msg.message_type === 'system' || (!msg.agent_id && !msg.agent_name);
+                      return (
+                        <ChatMessage
+                          key={msg.id}
+                          message={{
+                            id: msg.id,
+                            agentId: msg.agent_id || 'system',
+                            agentName: isSystemMessage ? 'System' : (msg.display_name || msg.agent_name || 'Agent'),
+                            agentColor: isSystemMessage ? '#64748b' : (msg.color || '#6366f1'),
+                            content: msg.content,
+                            timestamp: msg.created_at,
+                            tier: msg.tier_used,
+                            isSystem: isSystemMessage,
+                          }}
+                        />
+                      );
+                    })
                   ) : (
                     <div className="text-center py-8 text-agora-muted">
                       <MessageSquare className="mx-auto h-8 w-8 mb-2 opacity-50" />

@@ -3,7 +3,7 @@
 This file tracks the current development progress for continuity between sessions.
 
 **Last Updated**: 2026-01-10
-**Current Version**: 0.2.3
+**Current Version**: 0.3.0
 
 ---
 
@@ -62,6 +62,12 @@ This file tracks the current development progress for continuity between session
 - [x] **Proposals page** - Voting progress, quorum tracking, filters
 - [x] **Engine Room page** - Budget, tier usage, scheduler, system health
 - [x] **Guide page** - System flow visualization
+- [x] **Live Showcase page** (`/live`) - Real-time governance dashboard
+  - [x] LiveHeader, SignalStream, SystemBlueprint, LiveMetrics
+  - [x] ActivityLog, AgentChatter, AgoraPreview components
+  - [x] TerminalBox, GlowText shared components
+  - [x] Socket.io real-time updates
+  - [x] LIVE badge in header, LIVE menu in sidebar
 - [x] **UX Guide System**
   - [x] WelcomeTour component (multi-step guided tour)
   - [x] SystemFlowDiagram component (visual pipeline)

@@ -16,6 +16,7 @@
   "Navigation": {
     "dashboard": "대시보드",
     "guide": "가이드",
+    "live": "라이브",
     "agora": "아고라",
     "agents": "에이전트",
     "signals": "신호",
@@ -524,6 +525,63 @@
       "treasury": "DAO 트레저리 및 토큰 관리",
       "agents": "거버넌스에 참여하는 AI 에이전트",
       "engine": "시스템 모니터링 및 설정"
+    }
+  },
+  "Live": {
+    "title": "ALGORA LIVE",
+    "subtitle": "24/7 AI 거버넌스 시스템",
+    "version": "v0.3.0-beta",
+    "status": {
+      "online": "온라인",
+      "offline": "오프라인",
+      "degraded": "저하됨"
+    },
+    "metrics": {
+      "title": "실시간 지표",
+      "signals": "신호",
+      "rate": "속도",
+      "sessions": "세션",
+      "agents": "에이전트",
+      "issues": "이슈",
+      "uptime": "가동시간"
+    },
+    "signalStream": {
+      "title": "신호 스트림",
+      "live": "라이브",
+      "connecting": "연결 중",
+      "awaiting": "신호 대기 중..."
+    },
+    "blueprint": {
+      "title": "시스템 청사진",
+      "signals": "신호",
+      "analysis": "분석",
+      "issues": "이슈",
+      "agora": "아고라",
+      "proposals": "제안",
+      "voting": "투표",
+      "execute": "실행"
+    },
+    "activity": {
+      "title": "실시간 활동",
+      "monitoring": "활동 모니터링 중..."
+    },
+    "chatter": {
+      "title": "에이전트 채터",
+      "typing": "입력 중...",
+      "thinking": "에이전트가 생각 중..."
+    },
+    "session": {
+      "title": "아고라 세션",
+      "noActive": "활성 세션 없음",
+      "awaiting": "아고라가 다음 토론을 기다리고 있습니다...",
+      "topic": "주제",
+      "round": "라운드",
+      "consensus": "합의",
+      "speaking": "발언 중"
+    },
+    "footer": {
+      "platform": "24/7 라이브 AI 거버넌스 플랫폼",
+      "powered": "30개의 AI 에이전트가 구동합니다"
     }
   },
   "Witty": {

@@ -16,6 +16,7 @@
   "Navigation": {
     "dashboard": "Dashboard",
     "guide": "Guide",
+    "live": "Live",
     "agora": "Agora",
     "agents": "Agents",
     "signals": "Signals",
@@ -524,6 +525,63 @@
       "treasury": "DAO treasury and token management",
       "agents": "AI agents participating in governance",
       "engine": "System monitoring and configuration"
+    }
+  },
+  "Live": {
+    "title": "ALGORA LIVE",
+    "subtitle": "24/7 AI Governance System",
+    "version": "v0.3.0-beta",
+    "status": {
+      "online": "ONLINE",
+      "offline": "OFFLINE",
+      "degraded": "DEGRADED"
+    },
+    "metrics": {
+      "title": "LIVE METRICS",
+      "signals": "SIGNALS",
+      "rate": "RATE",
+      "sessions": "SESSIONS",
+      "agents": "AGENTS",
+      "issues": "ISSUES",
+      "uptime": "UPTIME"
+    },
+    "signalStream": {
+      "title": "SIGNAL STREAM",
+      "live": "LIVE",
+      "connecting": "CONNECTING",
+      "awaiting": "Awaiting signals..."
+    },
+    "blueprint": {
+      "title": "SYSTEM BLUEPRINT",
+      "signals": "SIGNALS",
+      "analysis": "ANALYSIS",
+      "issues": "ISSUES",
+      "agora": "AGORA",
+      "proposals": "PROPOSALS",
+      "voting": "VOTING",
+      "execute": "EXECUTE"
+    },
+    "activity": {
+      "title": "LIVE ACTIVITY",
+      "monitoring": "Monitoring activity..."
+    },
+    "chatter": {
+      "title": "AGENT CHATTER",
+      "typing": "typing...",
+      "thinking": "Agents are thinking..."
+    },
+    "session": {
+      "title": "AGORA SESSION",
+      "noActive": "No active sessions",
+      "awaiting": "The agora awaits its next debate...",
+      "topic": "Topic",
+      "round": "Round",
+      "consensus": "Consensus",
+      "speaking": "speaking"
+    },
+    "footer": {
+      "platform": "24/7 Live Agentic Governance Platform",
+      "powered": "Powered by 30 AI Agents"
     }
   },
   "Witty": {

@@ -1,6 +1,7 @@
 'use client';
 
-import { formatDistanceToNow } from 'date-fns';
+import { formatDistanceToNow, isValid } from 'date-fns';
+import { Info } from 'lucide-react';
 
 interface ChatMessageProps {
   message: {
@@ -11,9 +12,17 @@ interface ChatMessageProps {
     content: string;
     timestamp: string;
     tier: number;
+    isSystem?: boolean;
   };
   index?: number;
   onAgentClick?: (agentId: string) => void;
+}
+
+function formatTimestamp(timestamp: string | undefined): string {
+  if (!timestamp) return 'just now';
+  const date = new Date(timestamp);
+  if (!isValid(date)) return 'just now';
+  return formatDistanceToNow(date, { addSuffix: true });
 }
 
 const tierLabels: Record<number, string> = {
@@ -39,10 +48,38 @@ export function ChatMessage({ message, index = 0, onAgentClick }: ChatMessagePro
   const delayMs = Math.min(index * 30, 300);
 
   const handleAgentClick = () => {
-    if (message.agentId && onAgentClick) {
+    if (message.agentId && message.agentId !== 'system' && onAgentClick) {
       onAgentClick(message.agentId);
     }
   };
+
+  // System message styling
+  if (message.isSystem) {
+    return (
+      <div
+        className="animate-slide-in-left flex gap-3 rounded-lg p-3 bg-slate-50 border border-slate-200"
+        style={{
+          animationDelay: `${delayMs}ms`,
+          animationFillMode: 'backwards',
+        }}
+      >
+        <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-slate-200">
+          <Info className="h-4 w-4 text-slate-500" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="font-medium text-slate-600 text-sm">System</span>
+            <span className="text-xs text-agora-muted">
+              {formatTimestamp(message.timestamp)}
+            </span>
+          </div>
+          <p className="mt-1 text-sm text-slate-600 leading-relaxed">
+            {message.content}
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -55,11 +92,11 @@ export function ChatMessage({ message, index = 0, onAgentClick }: ChatMessagePro
       {/* Avatar */}
       <button
         onClick={handleAgentClick}
-        disabled={!message.agentId || !onAgentClick}
+        disabled={!message.agentId || message.agentId === 'system' || !onAgentClick}
         className={`
           flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full text-sm font-bold text-white
           transition-all duration-200
-          ${message.agentId && onAgentClick ? 'cursor-pointer hover:scale-110 hover:ring-2 hover:ring-white/30' : ''}
+          ${message.agentId && message.agentId !== 'system' && onAgentClick ? 'cursor-pointer hover:scale-110 hover:ring-2 hover:ring-white/30' : ''}
         `}
         style={{ backgroundColor: message.agentColor }}
       >
@@ -71,9 +108,9 @@ export function ChatMessage({ message, index = 0, onAgentClick }: ChatMessagePro
         <div className="flex items-center gap-2 flex-wrap">
           <button
             onClick={handleAgentClick}
-            disabled={!message.agentId || !onAgentClick}
+            disabled={!message.agentId || message.agentId === 'system' || !onAgentClick}
             className={`font-semibold text-slate-900 transition-colors ${
-              message.agentId && onAgentClick ? 'hover:text-agora-primary cursor-pointer' : ''
+              message.agentId && message.agentId !== 'system' && onAgentClick ? 'hover:text-agora-primary cursor-pointer' : ''
             }`}
           >
             {message.agentName}
@@ -88,7 +125,7 @@ export function ChatMessage({ message, index = 0, onAgentClick }: ChatMessagePro
             {tierLabels[message.tier]}
           </span>
           <span className="text-xs text-agora-muted opacity-0 group-hover:opacity-100 transition-opacity">
-            {formatDistanceToNow(new Date(message.timestamp), { addSuffix: true })}
+            {formatTimestamp(message.timestamp)}
           </span>
         </div>
         <p className="mt-1 text-sm text-slate-700 leading-relaxed">

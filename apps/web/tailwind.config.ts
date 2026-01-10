@@ -57,6 +57,15 @@ const config: Config = {
         'highlight': 'highlight 2s ease-out',
         'shimmer': 'shimmer 2s linear infinite',
         'spin-slow': 'spin 3s linear infinite',
+        // Terminal animations
+        'cursor-blink': 'cursorBlink 1.06s step-end infinite',
+        'terminal-glow': 'terminalGlow 2s ease-in-out infinite',
+        'data-flow': 'dataFlow 3s linear infinite',
+        'scanline': 'scanline 8s linear infinite',
+        'number-spin': 'numberSpin 0.3s ease-out',
+        'rec-blink': 'recBlink 1.5s ease-in-out infinite',
+        'pulse-glow': 'pulseGlow 2s ease-in-out infinite',
+        'typing': 'typing 0.5s ease-out',
       },
       keyframes: {
         fadeIn: {
@@ -95,6 +104,41 @@ const config: Config = {
         shimmer: {
           '0%': { backgroundPosition: '-200% 0' },
           '100%': { backgroundPosition: '200% 0' },
+        },
+        // Terminal keyframes
+        cursorBlink: {
+          '0%, 50%': { opacity: '1' },
+          '51%, 100%': { opacity: '0' },
+        },
+        terminalGlow: {
+          '0%, 100%': { opacity: '1' },
+          '50%': { opacity: '0.7' },
+        },
+        dataFlow: {
+          '0%': { transform: 'translateX(0)', opacity: '0' },
+          '10%': { opacity: '1' },
+          '90%': { opacity: '1' },
+          '100%': { transform: 'translateX(100%)', opacity: '0' },
+        },
+        scanline: {
+          '0%': { transform: 'translateY(-100%)' },
+          '100%': { transform: 'translateY(100vh)' },
+        },
+        numberSpin: {
+          '0%': { transform: 'translateY(100%)', opacity: '0' },
+          '100%': { transform: 'translateY(0)', opacity: '1' },
+        },
+        recBlink: {
+          '0%, 100%': { opacity: '1' },
+          '50%': { opacity: '0.3' },
+        },
+        pulseGlow: {
+          '0%, 100%': { opacity: '1' },
+          '50%': { opacity: '0.8' },
+        },
+        typing: {
+          '0%': { width: '0' },
+          '100%': { width: '100%' },
         },
       },
       // Animation delay utilities

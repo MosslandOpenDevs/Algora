@@ -94,3 +94,139 @@ body > * {
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
+
+/* ============================================
+   ALGORA LIVE - Light Theme (matches website)
+   ============================================ */
+
+/* JetBrains Mono for terminal aesthetic */
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
+/* Live page light theme variables */
+.live-theme {
+  --live-bg: #ffffff;
+  --live-card: #f8fafc;
+  --live-card-hover: #f1f5f9;
+  --live-border: #e2e8f0;
+  --live-border-bright: #cbd5e1;
+  --live-glow: #16f6ab;
+  --live-glow-dim: rgba(22, 246, 171, 0.5);
+  --live-glow-subtle: rgba(22, 246, 171, 0.15);
+
+  /* Signal source colors */
+  --signal-rss: #0891b2;
+  --signal-git: #7c3aed;
+  --signal-chain: #059669;
+  --signal-api: #d97706;
+
+  /* Severity colors */
+  --severity-critical: #dc2626;
+  --severity-high: #ea580c;
+  --severity-medium: #d97706;
+  --severity-low: #64748b;
+
+  /* Agent states */
+  --agent-speaking: #0891b2;
+  --agent-active: #059669;
+  --agent-idle: #94a3b8;
+
+  /* Text */
+  --text-bright: #0f172a;
+  --text-muted: #64748b;
+  --text-dim: #94a3b8;
+}
+
+/* Terminal font utility */
+.font-terminal {
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* Terminal text - subtle, no glow */
+.terminal-glow {
+  /* Removed glow for realistic look */
+}
+
+.terminal-glow-box {
+  /* Minimal styling - no glow */
+}
+
+/* ASCII border box - clean, minimal */
+.terminal-box {
+  border: 1px solid var(--live-border);
+  background: var(--live-card);
+}
+
+.terminal-box:hover {
+  border-color: var(--live-border-bright);
+}
+
+/* CRT scanline overlay - very subtle */
+.crt-overlay::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.015) 0px,
+    transparent 1px,
+    transparent 2px
+  );
+  pointer-events: none;
+  z-index: 10;
+}
+
+/* Moving scanline - disabled for realistic look */
+.crt-scanline::before {
+  display: none;
+}
+
+/* Blinking cursor */
+.cursor-blink::after {
+  content: '█';
+  animation: cursorBlink 1.06s step-end infinite;
+}
+
+/* Signal source colors */
+.signal-rss { color: var(--signal-rss); }
+.signal-git { color: var(--signal-git); }
+.signal-chain { color: var(--signal-chain); }
+.signal-api { color: var(--signal-api); }
+
+/* Severity colors */
+.severity-critical { color: var(--severity-critical); }
+.severity-high { color: var(--severity-high); }
+.severity-medium { color: var(--severity-medium); }
+.severity-low { color: var(--severity-low); }
+
+/* Agent status glyphs */
+.glyph-speaking { color: #0891b2; }
+.glyph-active { color: #059669; }
+.glyph-idle { color: #94a3b8; }
+
+/* Live page scrollbar (light theme) */
+.live-theme ::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.live-theme ::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 3px;
+}
+
+.live-theme ::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+.live-theme ::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Reduce motion support */
+@media (prefers-reduced-motion: reduce) {
+  .crt-scanline::before,
+  .cursor-blink::after {
+    animation: none;
+  }
+}

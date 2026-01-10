@@ -15,6 +15,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.3.0] - 2026-01-10
+
+### Added
+- **Live Showcase Page** (`/live`):
+  - Real-time dashboard showcasing 24/7 AI governance system
+  - Terminal-style UI with light theme (matching site style)
+  - Components:
+    - `LiveHeader` - Status bar with version, uptime counter, live indicator
+    - `SignalStream` - Real-time signal feed with source color coding
+    - `SystemBlueprint` - Pipeline visualization (Signals → Analysis → Issues → Agora → Proposals → Execute)
+    - `LiveMetrics` - Live statistics with sparkline graphs
+    - `ActivityLog` - Terminal-style activity stream
+    - `AgentChatter` - Agent idle messages preview
+    - `AgoraPreview` - Active session preview with participants
+    - `TerminalBox`, `GlowText` - Shared terminal UI components
+  - Socket.io integration for real-time updates
+  - LIVE badge in header with pulsing red indicator
+  - LIVE menu item in sidebar navigation
+
+### Fixed
+- **Hydration Errors**:
+  - `useWittyMessage` hook now uses deterministic initial value (first message in array)
+  - Time/date formatting uses safe fallbacks to prevent server/client mismatch
+  - All live components properly handle undefined timestamps
+- **Agora System Messages**: System messages now display as "System" instead of "Unknown"
+- **API Response Handling**: All live components correctly extract nested arrays from API responses
+
+---
+
 ## [0.2.3] - 2026-01-10
 
 ### Added

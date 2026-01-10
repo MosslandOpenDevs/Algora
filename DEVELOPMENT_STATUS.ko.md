@@ -3,7 +3,7 @@
 이 파일은 세션 간 개발 연속성을 위해 현재 개발 진행 상황을 추적합니다.
 
 **최종 업데이트**: 2026-01-10
-**현재 버전**: 0.2.3
+**현재 버전**: 0.3.0
 
 ---
 
@@ -57,6 +57,13 @@
 - [x] **이슈 페이지** - 상태 워크플로우, 우선순위 필터, 검색
 - [x] **제안 페이지** - 투표 진행률, 정족수 추적, 필터
 - [x] **엔진룸 페이지** - 예산, tier 사용량, 스케줄러, 시스템 상태
+- [x] **가이드 페이지** - 시스템 흐름 시각화
+- [x] **라이브 쇼케이스 페이지** (`/live`) - 실시간 거버넌스 대시보드
+  - [x] LiveHeader, SignalStream, SystemBlueprint, LiveMetrics
+  - [x] ActivityLog, AgentChatter, AgoraPreview 컴포넌트
+  - [x] TerminalBox, GlowText 공유 컴포넌트
+  - [x] Socket.io 실시간 업데이트
+  - [x] 헤더에 LIVE 배지, 사이드바에 LIVE 메뉴
 
 #### 에이전트 시스템 (100%)
 - [x] 3-tier 지원 LLM 서비스 (llm.ts)

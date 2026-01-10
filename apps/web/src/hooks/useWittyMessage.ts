@@ -69,24 +69,35 @@ export function useWittyMessage(options: UseWittyMessageOptions = {}) {
 
   const messagePool = customMessages || categoryToMessages[category];
 
-  const [message, setMessage] = useState(() => getRandomMessage(messagePool));
+  // Use first message as initial value to avoid hydration mismatch
+  // (Math.random() gives different results on server vs client)
+  const [message, setMessage] = useState(messagePool[0]);
+  const [mounted, setMounted] = useState(false);
 
   const refresh = useCallback(() => {
     setMessage(getRandomMessage(messagePool));
   }, [messagePool]);
 
+  // Set mounted and randomize initial message on client
+  useEffect(() => {
+    setMounted(true);
+    refresh();
+  }, []);
+
   // Cycle messages if interval is set
   useEffect(() => {
-    if (!enabled || interval <= 0) return;
+    if (!mounted || !enabled || interval <= 0) return;
 
     const timer = setInterval(refresh, interval);
     return () => clearInterval(timer);
-  }, [enabled, interval, refresh]);
+  }, [mounted, enabled, interval, refresh]);
 
-  // Refresh on category change
+  // Refresh on category change (only after mount)
   useEffect(() => {
-    refresh();
-  }, [category, refresh]);
+    if (mounted) {
+      refresh();
+    }
+  }, [category, mounted, refresh]);
 
   return { message, refresh };
 }
