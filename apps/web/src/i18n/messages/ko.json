@@ -525,5 +525,48 @@
       "agents": "거버넌스에 참여하는 AI 에이전트",
       "engine": "시스템 모니터링 및 설정"
     }
+  },
+  "Witty": {
+    "loading": {
+      "germinating": "발아 중...",
+      "percolating": "침출 중...",
+      "cogitating": "숙고 중...",
+      "deliberating": "숙의 중...",
+      "orchestrating": "지휘 중...",
+      "crystallizing": "결정화 중...",
+      "transmuting": "변환 중...",
+      "bootstrapping": "부트스트랩 중...",
+      "quantumizing": "양자화 중..."
+    },
+    "signals": {
+      "reconciling": "신호 조정 중...",
+      "syncing": "현실 동기화 중...",
+      "deciphering": "해독 중...",
+      "channelling": "채널링 중..."
+    },
+    "agents": {
+      "spawning": "에이전트 소환 중...",
+      "pondering": "사색 중...",
+      "cerebrating": "사유 중...",
+      "manifesting": "현현 중..."
+    },
+    "governance": {
+      "consensus": "합의 형성 중...",
+      "tallying": "의견 집계 중...",
+      "actualizing": "결정 실현 중...",
+      "effecting": "변화 발효 중..."
+    },
+    "empty": {
+      "signals": "전파가 고요합니다... 아직은.",
+      "sessions": "아고라가 첫 토론을 기다립니다...",
+      "agents": "로비가 동면 중입니다...",
+      "activity": "다음 막을 기다리는 중..."
+    },
+    "success": {
+      "accomplished": "완수!",
+      "crystallized": "결정화!",
+      "manifested": "현현!",
+      "harmonized": "조화!"
+    }
   }
 }

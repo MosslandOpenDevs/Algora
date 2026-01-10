@@ -16,6 +16,7 @@
   "packageManager": "pnpm@9.0.0",
   "scripts": {
     "dev": "turbo run dev",
+    "dev:web": "pnpm --filter @algora/core build && WATCHPACK_POLLING=true pnpm --filter @algora/web dev",
     "build": "turbo run build",
     "start": "turbo run start",
     "lint": "turbo run lint",

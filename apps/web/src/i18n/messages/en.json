@@ -525,5 +525,48 @@
       "agents": "AI agents participating in governance",
       "engine": "System monitoring and configuration"
     }
+  },
+  "Witty": {
+    "loading": {
+      "germinating": "Germinating...",
+      "percolating": "Percolating...",
+      "cogitating": "Cogitating...",
+      "deliberating": "Deliberating...",
+      "orchestrating": "Orchestrating...",
+      "crystallizing": "Crystallizing...",
+      "transmuting": "Transmuting...",
+      "bootstrapping": "Bootstrapping...",
+      "quantumizing": "Quantumizing..."
+    },
+    "signals": {
+      "reconciling": "Reconciling signals...",
+      "syncing": "Reality syncing...",
+      "deciphering": "Deciphering...",
+      "channelling": "Channelling..."
+    },
+    "agents": {
+      "spawning": "Spawning agent...",
+      "pondering": "Pondering...",
+      "cerebrating": "Cerebrating...",
+      "manifesting": "Manifesting..."
+    },
+    "governance": {
+      "consensus": "Consensus forming...",
+      "tallying": "Tallying voices...",
+      "actualizing": "Actualizing decisions...",
+      "effecting": "Effecting change..."
+    },
+    "empty": {
+      "signals": "The airwaves are quiet... for now.",
+      "sessions": "The agora awaits its first debate...",
+      "agents": "The lobby hibernates...",
+      "activity": "Awaiting the next act..."
+    },
+    "success": {
+      "accomplished": "Accomplished!",
+      "crystallized": "Crystallized!",
+      "manifested": "Manifested!",
+      "harmonized": "Harmonized!"
+    }
   }
 }

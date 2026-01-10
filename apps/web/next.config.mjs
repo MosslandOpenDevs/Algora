@@ -13,9 +13,17 @@ const nextConfig = {
     if (dev) {
       // Reduce file watching to prevent EMFILE errors
       config.watchOptions = {
-        ignored: ['**/node_modules/**', '**/.git/**', '**/.next/**'],
-        poll: 1000,
-        aggregateTimeout: 300,
+        ignored: [
+          '**/node_modules/**',
+          '**/.git/**',
+          '**/.next/**',
+          '**/dist/**',
+          '**/.turbo/**',
+          '**/coverage/**',
+          '**/*.log',
+        ],
+        poll: 2000,
+        aggregateTimeout: 500,
       };
     }
     return config;
