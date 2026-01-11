@@ -2,12 +2,39 @@
 
 This file tracks the current development progress for continuity between sessions.
 
-**Last Updated**: 2026-01-10
-**Current Version**: 0.3.0
+**Last Updated**: 2026-01-11
+**Current Version**: 0.3.1
 
 ---
 
-## Current Phase: Token Integration (v0.8.0)
+## Current Phase: Governance Upgrade Design (v0.9.0)
+
+### Governance Upgrade Plan (NEW)
+
+A comprehensive governance upgrade plan has been designed to transform Algora from a community voting model to a Director Council approval model.
+
+**Key Documents**:
+- `docs/ALGORA_GOVERNANCE_UPGRADE_PLAN.md` (English)
+- `docs/ALGORA_GOVERNANCE_UPGRADE_PLAN.ko.md` (Korean)
+
+**Core Changes**:
+1. **Director Council (3 members)**: Human approval layer for decision-making
+2. **Working Groups (5 WGs)**: AI-operated, human-sponsored execution units
+3. **Registry System**: Decision/Policy/Program registries for auditability
+4. **Session Roles**: Dynamic agent role assignment in Agora sessions
+5. **Document Templates**: Standardized Issue Cards, Decision Packets, Outcome Reports
+
+**Implementation Phases**:
+- Phase 1: Director Council (P0)
+- Phase 2: Working Group System (P0)
+- Phase 3: Registry System (P0)
+- Phase 4: Session Role System (P1)
+- Phase 5: Document Templates (P1)
+- Phase 6: DAO Voting Separation (P2)
+
+---
+
+## Previous Phase: Token Integration (v0.8.0)
 
 ### Completed Features
 
@@ -255,14 +282,39 @@ This file tracks the current development progress for continuity between session
 
 ## Next Steps (Priority Order)
 
-### Phase 8: UI Integration & Polish
+### Phase 9: Governance Upgrade Implementation (NEW)
+
+**Phase 9.1: Director Council (P0)**
+1. Create `directors` and `director_approvals` database tables
+2. Implement Director CRUD API endpoints
+3. Add Director approval/rejection workflow
+4. Create Director Dashboard page
+5. Add Approval Queue component
+
+**Phase 9.2: Working Group System (P0)**
+1. Create `working_groups` and `wg_assignments` tables
+2. Implement WG management API
+3. Add Issue → WG auto-routing logic
+4. Create Working Groups page
+
+**Phase 9.3: Registry System (P0)**
+1. Create `decision_registry`, `policy_registry`, `program_registry` tables
+2. Implement Registry CRUD API
+3. Create Registry browser pages
+
+**Phase 9.4: Session Roles (P1)**
+1. Create `session_roles` table
+2. Implement role assignment API
+3. Add Role Panel to Agora sessions
+
+### Phase 10: UI Integration & Polish
 1. Token wallet connection UI (MetaMask, WalletConnect)
 2. Treasury dashboard with balance visualization
 3. Token-weighted voting UI in proposals
 4. Holder profile and voting history pages
 5. Real-time WebSocket integration for token events
 
-### Phase 9: Production Deployment
+### Phase 11: Production Deployment
 1. Mainnet contract integration
 2. Security audit
 3. Performance optimization
