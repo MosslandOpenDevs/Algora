@@ -10,10 +10,77 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Planned
-- Workflow C: Developer Support
-- Workflow D: Ecosystem Expansion
-- Workflow E: Working Groups
 - Phase 8: Testing & Production Deployment
+- UI Integration for v2.0 features
+
+---
+
+## [0.11.0] - 2026-01-13
+
+### Added
+- **Workflow C: Developer Support** (`@algora/orchestrator`):
+  - Types: GrantStatus, GrantCategory, MilestoneStatus, RewardStatus
+  - Types: GrantApplication, GrantMilestone, DeveloperGrant, MilestoneReport
+  - Types: RetroactiveReward, GrantProposal, ApplicationEvaluation, MilestoneReview
+  - WorkflowCHandler class implementation:
+    - `processGrantApplication()` - Process applications and create proposals
+    - `evaluateApplication()` - AI-powered evaluation with multi-dimensional scoring
+    - `processMilestoneReport()` - Review milestone submissions
+    - `processRetroactiveReward()` - Handle retroactive reward nominations
+    - `requiresDualHouseApproval()` - Check dual-house requirements
+    - `requiresDirector3Approval()` - Check Director 3 requirements
+    - `calculateDisbursement()` - Calculate disbursement with LOCK status
+  - Dual-House approval integration (MossCoin House + OpenSource House)
+  - Director 3 approval for high-value grants (>$5,000)
+  - LOCK mechanism for all fund disbursements
+  - 19 comprehensive test cases, all passing
+
+- **Workflow D: Ecosystem Expansion** (`@algora/orchestrator`):
+  - Types: ExpansionOrigin, OpportunityCategory, OpportunityStatus, PartnershipStatus
+  - Types: ExpansionOpportunity, OpportunityAssessment, PartnershipProposal
+  - Types: PartnershipAgreement, EcosystemReport, DetectedSignal
+  - Types: AlwaysOnConfig, AntiAbuseConfig, SignalSource
+  - WorkflowDHandler class implementation:
+    - `processCallBasedOpportunity()` - Process explicit proposals
+    - `processAlwaysOnSignal()` - Process signals from always-on scanner
+    - `assessOpportunity()` - AI-powered assessment with SWOT analysis
+    - `createPartnershipProposal()` - Create proposals from qualified opportunities
+    - `createPartnershipAgreement()` - Create agreements with LOCK mechanism
+    - `generateEcosystemReport()` - Generate periodic ecosystem reports
+    - `requiresDualHouseApproval()` - Check value-based approval requirements
+    - `requiresDirector3Approval()` - Check high-value/high-risk requirements
+  - Dual intake: call_based (explicit) and always_on (scanning)
+  - Anti-spam guardrails (rate limiting, deduplication, quality filters, blocked domains)
+  - Partnership agreement LOCK until all approvals received
+  - 21 comprehensive test cases, all passing
+
+- **Workflow E: Working Groups** (`@algora/orchestrator`):
+  - Types: WorkingGroupStatus, CharterDuration, WGDocumentType, WGProposalOrigin
+  - Types: WorkingGroupProposal, WorkingGroupCharter, WGPublishingRules
+  - Types: WorkingGroup, WGStatusReport, WGDissolutionRequest, IssuePattern
+  - Types: CharterAmendment, WGProposalEvaluation
+  - WorkflowEHandler class implementation:
+    - `processWGProposal()` - Process WG formation proposals
+    - `evaluateProposal()` - AI-powered multi-dimensional evaluation
+    - `createCharter()` - Create charter from approved proposal
+    - `activateWorkingGroup()` - Activate WG from approved charter
+    - `canPublishDocument()` - Check publishing authority
+    - `recordPublication()` - Track WG document publications
+    - `generateStatusReport()` - Generate WG status reports
+    - `processDissolulutionRequest()` - Handle WG dissolution
+    - `detectPatterns()` - Auto-detect issue patterns for WG proposals
+    - `generateAutoProposal()` - Generate WG proposals from patterns
+  - Publishing authority system with configurable rules
+  - Charter management with duration options (3m, 6m, 1y, indefinite)
+  - Auto-proposal from issue pattern detection
+  - Dual-House approval for all WG formations
+  - Director 3 approval for high-budget WGs (>$5,000)
+  - 31 comprehensive test cases, all passing
+
+### Changed
+- Updated `DEVELOPMENT_STATUS.md` with Phase 7 completion
+- Total orchestrator tests: 96 passing (A: 12, B: 13, C: 19, D: 21, E: 31)
+- Phase 7 (Workflow Implementation & API Integration) now complete
 
 ---
 
