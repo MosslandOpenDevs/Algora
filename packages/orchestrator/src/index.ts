@@ -191,6 +191,10 @@ export {
   WorkflowBHandler,
   createWorkflowBHandler,
   DEFAULT_WORKFLOW_B_CONFIG,
+  // Workflow C
+  WorkflowCHandler,
+  createWorkflowCHandler,
+  DEFAULT_WORKFLOW_C_CONFIG,
 } from './workflows/index.js';
 
 export type {
@@ -212,4 +216,20 @@ export type {
   ConsensusAssessment,
   DebateSummary,
   WorkflowBConfig,
+  // Workflow C types
+  GrantStatus,
+  GrantCategory,
+  MilestoneStatus,
+  RewardStatus,
+  GrantApplication,
+  GrantMilestone,
+  MilestoneEvidence,
+  DeveloperGrant,
+  MilestoneReport,
+  RetroactiveReward,
+  GrantProposal,
+  WorkflowCConfig,
+  ApplicationEvaluation,
+  MilestoneReview,
+  RewardEvaluation,
 } from './workflows/index.js';

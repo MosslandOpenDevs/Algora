@@ -283,6 +283,12 @@ export interface WorkflowContext {
   kpiResults?: KpiResult[];
   trustScoreUpdates?: TrustScoreUpdate[];
 
+  // Workflow C: Developer Support data
+  grantProposal?: unknown;
+  grantEvaluation?: unknown;
+  milestoneReviews?: unknown[];
+  retroactiveRewardEvaluation?: unknown;
+
   // Metadata
   createdAt: Date;
   updatedAt: Date;

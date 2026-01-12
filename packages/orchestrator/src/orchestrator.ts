@@ -49,6 +49,14 @@ import {
   type DebateSummary,
   type DebateTopic,
 } from './workflows/workflow-b.js';
+import {
+  WorkflowCHandler,
+  type GrantApplication,
+  type GrantProposal,
+  type DeveloperGrant,
+  type MilestoneReport,
+  type RetroactiveReward,
+} from './workflows/workflow-c.js';
 
 /**
  * Event listener type for orchestrator events.
@@ -145,6 +153,7 @@ export class Orchestrator {
   private specialistManager: SpecialistManager;
   private workflowAHandler: WorkflowAHandler;
   private workflowBHandler: WorkflowBHandler;
+  private workflowCHandler: WorkflowCHandler;
   private stateMachines: Map<string, WorkflowStateMachine> = new Map();
   private eventListeners: Map<keyof OrchestratorEvents, Set<OrchestratorEventListener<keyof OrchestratorEvents>>> = new Map();
   private heartbeatInterval: ReturnType<typeof setInterval> | null = null;
@@ -168,6 +177,7 @@ export class Orchestrator {
     // Initialize workflow handlers
     this.workflowAHandler = new WorkflowAHandler(options.llmProvider);
     this.workflowBHandler = new WorkflowBHandler(options.llmProvider);
+    this.workflowCHandler = new WorkflowCHandler(options.llmProvider);
   }
 
   /**
@@ -671,6 +681,167 @@ Agent Opinions: ${JSON.stringify(context.agentOpinions || [])}`,
       open_general: 'open',
     };
     return mapping[category] || 'open';
+  }
+
+  /**
+   * Execute Workflow C (Developer Support) for a grant application.
+   * This workflow manages developer grants with Dual-House approval.
+   */
+  async executeWorkflowC(
+    issueId: string,
+    grantApplication: GrantApplication
+  ): Promise<{
+    grantProposal: GrantProposal;
+    requiresDualHouse: boolean;
+    requiresDirector3: boolean;
+    success: boolean;
+  }> {
+    const context = await this.workflowStorage.getContext(issueId);
+    if (!context) {
+      throw new Error(`Context not found for issue: ${issueId}`);
+    }
+
+    if (context.workflowType !== 'C') {
+      throw new Error(`Issue ${issueId} is not assigned to Workflow C`);
+    }
+
+    // Process the grant application
+    const { proposal, evaluation, opinions } = await this.workflowCHandler.processGrantApplication(
+      context,
+      grantApplication
+    );
+
+    // Update context with grant evaluation
+    const stateMachine = this.stateMachines.get(issueId);
+    if (stateMachine) {
+      stateMachine.updateContext({
+        agentOpinions: opinions,
+        grantProposal: proposal,
+        grantEvaluation: evaluation,
+      });
+      await this.workflowStorage.saveContext(stateMachine.getContext());
+    }
+
+    // Determine approval requirements
+    const requiresDualHouse = this.workflowCHandler.requiresDualHouseApproval(
+      grantApplication.requestedAmount
+    );
+    const requiresDirector3 = this.workflowCHandler.requiresDirector3Approval(
+      grantApplication.requestedAmount
+    );
+
+    // Emit workflow event
+    const todo = await this.todoManager.getTodoByIssueId(issueId);
+    if (todo) {
+      this.emitEvent('workflow:completed', {
+        todo,
+        outputs: {
+          grantProposal: proposal,
+          evaluation,
+          requiresDualHouse,
+          requiresDirector3,
+        },
+      });
+    }
+
+    return {
+      grantProposal: proposal,
+      requiresDualHouse,
+      requiresDirector3,
+      success: true,
+    };
+  }
+
+  /**
+   * Process a milestone report for a developer grant.
+   */
+  async processMilestoneReport(
+    grantId: string,
+    grant: DeveloperGrant,
+    report: MilestoneReport
+  ): Promise<{
+    approved: boolean;
+    feedback: string;
+    disbursement?: {
+      amount: number;
+      isLocked: boolean;
+      unlockRequirements: string[];
+    };
+  }> {
+    const context = await this.workflowStorage.getContext(grantId);
+    if (!context) {
+      throw new Error(`Context not found for grant: ${grantId}`);
+    }
+
+    const { review, approved, feedback } = await this.workflowCHandler.processMilestoneReport(
+      context,
+      grant,
+      report
+    );
+
+    let disbursement;
+    if (approved) {
+      const milestone = grant.milestones.find((m) => m.id === report.milestoneId);
+      if (milestone) {
+        disbursement = this.workflowCHandler.calculateDisbursement(grant, milestone);
+      }
+    }
+
+    // Update context with review
+    const stateMachine = this.stateMachines.get(grantId);
+    if (stateMachine) {
+      stateMachine.updateContext({
+        milestoneReviews: [...(context.milestoneReviews || []), review],
+      });
+      await this.workflowStorage.saveContext(stateMachine.getContext());
+    }
+
+    return {
+      approved,
+      feedback,
+      disbursement,
+    };
+  }
+
+  /**
+   * Process a retroactive reward nomination.
+   */
+  async processRetroactiveReward(
+    issueId: string,
+    reward: RetroactiveReward
+  ): Promise<{
+    approved: boolean;
+    adjustedAmount?: number;
+    requiresDirector3: boolean;
+  }> {
+    const context = await this.workflowStorage.getContext(issueId);
+    if (!context) {
+      throw new Error(`Context not found for issue: ${issueId}`);
+    }
+
+    const { evaluation, approved, adjustedAmount } = await this.workflowCHandler.processRetroactiveReward(
+      context,
+      reward
+    );
+
+    const requiresDirector3 = this.workflowCHandler.requiresDirector3Approval(
+      adjustedAmount || reward.proposedAmount
+    );
+
+    // Update context
+    const stateMachine = this.stateMachines.get(issueId);
+    if (stateMachine) {
+      stateMachine.updateContext({
+        retroactiveRewardEvaluation: evaluation,
+      });
+      await this.workflowStorage.saveContext(stateMachine.getContext());
+    }
+
+    return {
+      approved,
+      adjustedAmount,
+      requiresDirector3,
+    };
   }
 
   /**
