@@ -3,7 +3,7 @@
 이 파일은 세션 간 개발 연속성을 위해 현재 개발 진행 상황을 추적합니다.
 
 **최종 업데이트**: 2026-01-12
-**현재 버전**: 0.5.0
+**현재 버전**: 0.6.0
 
 ---
 
@@ -32,8 +32,17 @@
 - [x] 워크플로 모니터링용 이벤트 시스템
 - [x] 개발용 In-memory 스토리지 구현
 
-### Phase 3-5: 예정
-- Phase 3: Document Registry
+### Phase 3: Document Registry (완료)
+- [x] `@algora/document-registry` 패키지 생성
+- [x] Document Manager - 15개 공식 문서 유형 CRUD 작업
+- [x] Version Manager - 시맨틱 버전 관리, 차이점 추적, 브랜치
+- [x] Provenance Manager - 출처 추적, 에이전트 기여, 무결성 증명
+- [x] Audit Manager - 불변 감사 추적, 규정 준수 보고
+- [x] 문서, 버전, 출처, 감사 전체 TypeScript 타입
+- [x] 문서 상태 머신 (draft → pending_review → in_review → approved → published)
+- [x] 개발용 In-memory 스토리지 구현
+
+### Phase 4-5: 예정
 - Phase 4: Five Workflows + Model Router
 - Phase 5: Dual-House Governance
 
@@ -254,7 +263,7 @@
 - [x] packages/core - TypeScript 타입
 - [x] packages/safe-autonomy - LOCK/UNLOCK, 리스크 분류, 승인 라우팅 (v2.0)
 - [x] packages/orchestrator - 워크플로 오케스트레이션, 상태 머신, TODO 관리 (v2.0)
-- [ ] packages/document-registry - 공식 문서 저장소 (v2.0)
+- [x] packages/document-registry - 공식 문서 저장소, 버전 관리, 출처 추적 (v2.0)
 - [ ] packages/model-router - LLM 난이도 기반 라우팅 (v2.0)
 - [ ] packages/reality-oracle - 신호 수집
 - [ ] packages/inference-mining - 이슈 탐지

@@ -10,9 +10,59 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Planned
-- Phase 3: Document Registry
 - Phase 4: Five Workflows + Model Router
 - Phase 5: Dual-House Governance
+
+---
+
+## [0.6.0] - 2026-01-12
+
+### Added
+- **Phase 3: Document Registry Package** (`@algora/document-registry`):
+  - **Types** (`types.ts`):
+    - 15 Official document types (DP, GP, RM, RC, WGC, WGR, ER, PP, PA, DGP, DG, MR, RR, DR, AR)
+    - Document categories (decision, working_group, ecosystem, developer, transparency, research)
+    - Document states (draft, pending_review, in_review, approved, published, superseded, archived, rejected)
+    - Semantic versioning with major/minor/patch
+    - Provenance types with agent contributions and review history
+    - Audit action types (created, updated, state_changed, reviewed, approved, rejected, published, etc.)
+    - Document ID generation utilities
+  - **Document Manager** (`document.ts`):
+    - Full CRUD operations for documents
+    - State machine with valid transitions
+    - Content hashing for integrity verification
+    - Version increment logic
+    - Publish, archive, and supersede workflows
+    - Agent contribution tracking
+    - Event emission for document changes
+  - **Version Manager** (`versioning.ts`):
+    - Document version storage and retrieval
+    - Semantic version comparison
+    - Diff generation between versions
+    - Version tagging with optional metadata
+    - Branch support for parallel versions
+    - Version history traversal
+  - **Provenance Manager** (`provenance.ts`):
+    - Full provenance tracking from signal to outcome
+    - Agent contribution recording with model/cost info
+    - Review chain management
+    - Integrity proof generation (SHA-256)
+    - Provenance verification with issue detection
+    - Provenance chain building for document lineage
+  - **Audit Manager** (`audit.ts`):
+    - Immutable audit trail for all document actions
+    - Query support with filters (action, actor, date range)
+    - Audit summary generation
+    - Export to JSON/CSV formats
+    - Retention policy with cleanup
+    - Integrity verification of audit trail
+    - Actor helpers (system, agent, human)
+  - **Factory Function** (`index.ts`):
+    - `createDocumentRegistry()` for easy instantiation
+    - Comprehensive exports for all managers and types
+
+### Changed
+- Updated `DEVELOPMENT_STATUS.md` with Phase 3 completion
 
 ---
 
