@@ -31,7 +31,9 @@
       "@algora/human-governance": ["./packages/human-governance/src"],
       "@algora/human-governance/*": ["./packages/human-governance/src/*"],
       "@algora/proof-of-outcome": ["./packages/proof-of-outcome/src"],
-      "@algora/proof-of-outcome/*": ["./packages/proof-of-outcome/src/*"]
+      "@algora/proof-of-outcome/*": ["./packages/proof-of-outcome/src/*"],
+      "@algora/safe-autonomy": ["./packages/safe-autonomy/src"],
+      "@algora/safe-autonomy/*": ["./packages/safe-autonomy/src/*"]
     }
   },
   "exclude": ["node_modules", "dist", ".next", "coverage"]

@@ -10,8 +10,54 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Planned
-- WebSocket real-time updates for auto-sessions
-- Advanced agent personality tuning
+- Phase 2: Orchestrator + State Machine
+- Phase 3: Document Registry
+- Phase 4: Five Workflows + Model Router
+- Phase 5: Dual-House Governance
+
+---
+
+## [0.4.0] - 2026-01-12
+
+### Added
+- **Algora v2.0 Upgrade Plan**:
+  - Complete upgrade plan document (`docs/algora-v2-upgrade-plan.md`)
+  - Korean translation (`docs/algora-v2-upgrade-plan.ko.md`)
+  - 20 sections (A-T) covering all v2.0 components
+  - Requirements Traceability Matrix and Coverage Checklist
+
+- **Phase 1: Safe Autonomy Package** (`@algora/safe-autonomy`):
+  - **Risk Classifier** (`risk-classifier.ts`):
+    - Action risk taxonomy (LOW/MID/HIGH)
+    - Risk penalty calculation
+    - Automatic LOCK triggering for high-risk actions
+  - **Lock Manager** (`lock-manager.ts`):
+    - LOCK/UNLOCK mechanism for dangerous actions
+    - Approval tracking with multi-party requirements
+    - Execution gating (HIGH-risk cannot execute without Director 3 approval)
+  - **Approval Router** (`approval-router.ts`):
+    - Risk-based routing (LOW→auto, MID→any_reviewer, HIGH→director_3)
+    - Reviewer registry and notification system
+    - Escalation and reminder functionality
+  - **Passive Consensus** (`passive-consensus.ts`):
+    - Opt-out approval model
+    - Auto-approve after timeout (24h LOW, 48h MID)
+    - Veto and escalation support
+    - "Unreviewed by Human" labeling
+  - **Retry Handler** (`retry-handler.ts`):
+    - Exponential backoff retry logic
+    - Configurable max retries and delays
+    - Escalation to human after exhaustion
+  - **Full TypeScript Types** (`types.ts`):
+    - Complete type definitions for Safe Autonomy layer
+    - Default configuration with sensible defaults
+  - **Factory Functions**:
+    - `createSafeAutonomySystem()` - Bundle all components
+    - Individual factory functions for each component
+
+### Changed
+- Updated `tsconfig.json` with `@algora/safe-autonomy` path mapping
+- Updated `pnpm-workspace.yaml` auto-discovers new package
 
 ---
 

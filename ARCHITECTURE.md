@@ -109,6 +109,92 @@ External Sources → Adapters → Normalization → Deduplication → Signal Sto
 
 ---
 
+## v2.0 Safe Autonomy Layer
+
+Algora v2.0 introduces a **Safe Autonomy Layer** that ensures the system operates continuously while keeping dangerous effects locked until human approval.
+
+### Core Principles
+
+1. **The System Never Stops**: All operations use delay-retry with exponential backoff
+2. **Dangerous Effects Are LOCKED**: HIGH-risk actions cannot execute without explicit approval
+3. **Transparency by Default**: All outputs include provenance and "Unreviewed by Human" labels
+4. **Human Override at Any Time**: Veto and escalation available at all stages
+
+### Safe Autonomy Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                      Safe Autonomy Layer                             │
+├─────────────────────────────────────────────────────────────────────┤
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐ │
+│  │    Risk     │  │    Lock     │  │  Approval   │  │  Passive    │ │
+│  │ Classifier  │──│   Manager   │──│   Router    │──│  Consensus  │ │
+│  └─────────────┘  └─────────────┘  └─────────────┘  └─────────────┘ │
+│         │                │                │                │        │
+│         ▼                ▼                ▼                ▼        │
+│  ┌─────────────────────────────────────────────────────────────────┐│
+│  │                     Retry Handler                                ││
+│  │              (Exponential Backoff + Escalation)                  ││
+│  └─────────────────────────────────────────────────────────────────┘│
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+### Risk Classification
+
+| Risk Level | Examples | Review Required | Timeout Action |
+|------------|----------|-----------------|----------------|
+| LOW | Document publish, chatter | Recommended | Auto-approve (24h) |
+| MID | Proposals, working groups | Recommended | Auto-approve (48h) |
+| HIGH | Fund transfer, contracts | **Required** | Escalate to Director 3 |
+
+### LOCK/UNLOCK Flow
+
+```
+Action Created
+      │
+      ▼
+Risk Classification ─────────────────────────────────────┐
+      │                                                   │
+      │ (HIGH-risk)                                       │ (LOW/MID)
+      ▼                                                   ▼
+┌─────────────┐                                   Proceed with
+│   LOCKED    │◄──────────────────────────────── Passive Consensus
+└──────┬──────┘
+       │
+       ▼
+Route to Director 3
+       │
+       ▼
+Await Approval ────────────────────────────────────┐
+       │                                            │
+       │ (approved)                                 │ (rejected/timeout)
+       ▼                                            ▼
+┌─────────────┐                               Archive with
+│  UNLOCKED   │                               Rejection Reason
+└──────┬──────┘
+       │
+       ▼
+   Execute Action
+```
+
+### Passive Consensus (Opt-Out Model)
+
+```
+Document Created
+      │
+      ▼
+Review Period Starts (24-72h based on risk)
+      │
+      ├─── Veto received ──────────► Document VETOED
+      │
+      ├─── Escalation requested ───► Route to Director 3
+      │
+      └─── No action ──────────────► Auto-APPROVED
+                                      (labeled "Unreviewed by Human")
+```
+
+---
+
 ## 3-Tier LLM System
 
 ### Architecture
@@ -457,4 +543,29 @@ interface Provenance {
 
 ---
 
-**Last Updated**: 2025-01-09
+## v2.0 Package Structure
+
+Algora v2.0 introduces new packages for the autonomous governance system:
+
+```
+packages/
+├── core/                    # Shared types and utilities
+├── safe-autonomy/           # [v2.0] LOCK/UNLOCK, Risk Classification
+│   ├── risk-classifier.ts   # Action risk taxonomy
+│   ├── lock-manager.ts      # LOCK/UNLOCK mechanism
+│   ├── approval-router.ts   # Human review routing
+│   ├── passive-consensus.ts # Opt-out approval model
+│   └── retry-handler.ts     # Exponential backoff
+├── orchestrator/            # [v2.0] Workflow coordination (Phase 2)
+├── document-registry/       # [v2.0] Official document storage (Phase 3)
+├── model-router/            # [v2.0] LLM difficulty routing (Phase 4)
+├── reality-oracle/          # L0: Signal collection
+├── inference-mining/        # L1: Issue detection
+├── agentic-consensus/       # L2: Agent system
+├── human-governance/        # L3: Voting
+└── proof-of-outcome/        # L4: Result tracking
+```
+
+---
+
+**Last Updated**: 2026-01-12

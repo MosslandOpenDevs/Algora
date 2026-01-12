@@ -2,12 +2,41 @@
 
 이 파일은 세션 간 개발 연속성을 위해 현재 개발 진행 상황을 추적합니다.
 
-**최종 업데이트**: 2026-01-10
-**현재 버전**: 0.3.0
+**최종 업데이트**: 2026-01-12
+**현재 버전**: 0.4.0
 
 ---
 
-## 현재 단계: 토큰 통합 (v0.8.0)
+## 현재 단계: Algora v2.0 업그레이드 - Agentic Governance OS
+
+### v2.0 업그레이드 계획
+전체 업그레이드 계획은 [docs/algora-v2-upgrade-plan.ko.md](docs/algora-v2-upgrade-plan.ko.md)를 참조하세요.
+
+### Phase 1: Safe Autonomy 기반 (완료)
+- [x] `@algora/safe-autonomy` 패키지 생성
+- [x] Risk Classifier - 작업 리스크 분류 (LOW/MID/HIGH)
+- [x] Lock Manager - 위험 작업 LOCK/UNLOCK 메커니즘
+- [x] Approval Router - Director 3 우선 인간 검토 라우팅
+- [x] Passive Consensus - 자동 승인 타임아웃 Opt-out 승인 모델
+- [x] Retry Handler - 지수 백오프 재시도
+- [x] Safe Autonomy 계층 전체 TypeScript 타입
+- [x] 개발용 In-memory 스토리지 구현
+
+### Phase 2: Orchestrator + 상태 머신 (진행 중)
+- [ ] `@algora/orchestrator` 패키지
+- [ ] Primary Orchestrator 클래스
+- [ ] 워크플로 상태 머신 (INTAKE → OUTCOME_PROOF)
+- [ ] TODO Continuation 시스템
+- [ ] 서브에이전트 조정용 Specialist Manager
+
+### Phase 3-5: 예정
+- Phase 3: Document Registry
+- Phase 4: Five Workflows + Model Router
+- Phase 5: Dual-House Governance
+
+---
+
+## 이전 단계: 토큰 통합 (v0.8.0) - 완료
 
 ### 완료된 기능
 

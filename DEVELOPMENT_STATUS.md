@@ -2,12 +2,41 @@
 
 This file tracks the current development progress for continuity between sessions.
 
-**Last Updated**: 2026-01-10
-**Current Version**: 0.3.0
+**Last Updated**: 2026-01-12
+**Current Version**: 0.4.0
 
 ---
 
-## Current Phase: Token Integration (v0.8.0)
+## Current Phase: Algora v2.0 Upgrade - Agentic Governance OS
+
+### v2.0 Upgrade Plan
+See [docs/algora-v2-upgrade-plan.md](docs/algora-v2-upgrade-plan.md) for the complete upgrade plan.
+
+### Phase 1: Safe Autonomy Foundation (COMPLETED)
+- [x] `@algora/safe-autonomy` package created
+- [x] Risk Classifier - Action risk taxonomy (LOW/MID/HIGH)
+- [x] Lock Manager - LOCK/UNLOCK mechanism for dangerous actions
+- [x] Approval Router - Human review routing with Director 3 priority
+- [x] Passive Consensus - Opt-out approval model with auto-approve timeout
+- [x] Retry Handler - Delay-retry with exponential backoff
+- [x] Full TypeScript types for Safe Autonomy layer
+- [x] In-memory storage implementations for development
+
+### Phase 2: Orchestrator + State Machine (IN PROGRESS)
+- [ ] `@algora/orchestrator` package
+- [ ] Primary Orchestrator class
+- [ ] Workflow State Machine (INTAKE → OUTCOME_PROOF)
+- [ ] TODO Continuation system
+- [ ] Specialist Manager for subagent coordination
+
+### Phase 3-5: Upcoming
+- Phase 3: Document Registry
+- Phase 4: Five Workflows + Model Router
+- Phase 5: Dual-House Governance
+
+---
+
+## Previous Phase: Token Integration (v0.8.0) - COMPLETED
 
 ### Completed Features
 
@@ -235,6 +264,10 @@ This file tracks the current development progress for continuity between session
 
 #### Shared Packages
 - [x] packages/core - TypeScript types
+- [x] packages/safe-autonomy - LOCK/UNLOCK, Risk Classification, Approval Routing (v2.0)
+- [ ] packages/orchestrator - Workflow Orchestration, State Machine (v2.0 - IN PROGRESS)
+- [ ] packages/document-registry - Official Document Storage (v2.0)
+- [ ] packages/model-router - LLM Difficulty-Based Routing (v2.0)
 - [ ] packages/reality-oracle - Signal collection
 - [ ] packages/inference-mining - Issue detection
 - [ ] packages/agentic-consensus - Agent system
