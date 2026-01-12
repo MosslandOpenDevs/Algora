@@ -3,7 +3,7 @@
 이 파일은 세션 간 개발 연속성을 위해 현재 개발 진행 상황을 추적합니다.
 
 **최종 업데이트**: 2026-01-12
-**현재 버전**: 0.8.0
+**현재 버전**: 0.9.0
 
 ---
 
@@ -67,8 +67,24 @@
 - [x] 거버넌스 모니터링용 이벤트 시스템
 - [x] 개발용 In-memory 스토리지 구현
 
-### Phase 6: 예정
-- Phase 6: Integration & Testing
+### Phase 6: Governance OS 통합 (완료)
+- [x] `@algora/governance-os` 패키지 생성
+- [x] 통합 계층 - 모든 v2.0 패키지를 통합하는 GovernanceOS 클래스
+- [x] 파이프라인 시스템 - 9단계 거버넌스 파이프라인 (signal_intake → outcome_verification)
+- [x] 서브시스템 통합
+  - [x] Safe Autonomy 통합 (LOCK/UNLOCK, 위험 분류)
+  - [x] Orchestrator 통합 (워크플로 관리)
+  - [x] Document Registry 통합 (공식 문서 생산)
+  - [x] Model Router 통합 (LLM 작업 라우팅)
+  - [x] Dual-House 통합 (투표 및 승인)
+- [x] 이벤트 시스템 - 모든 서브시스템에 걸친 통합 이벤트 전파
+- [x] 통계 추적 - 파이프라인 메트릭, LLM 비용, 투표 세션
+- [x] 헬스 체크 API - 컴포넌트 상태 모니터링
+- [x] 설정 시스템 - GovernanceOSConfig 및 WorkflowConfigs
+- [x] 팩토리 함수 - createGovernanceOS, createDefaultGovernanceOS
+
+### Phase 7: 예정
+- Phase 7: Testing & Production Deployment
 
 ---
 

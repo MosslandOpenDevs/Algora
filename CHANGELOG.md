@@ -10,7 +10,49 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Planned
-- Phase 6: Integration & Testing
+- Phase 7: Testing & Production Deployment
+
+---
+
+## [0.9.0] - 2026-01-12
+
+### Added
+- **Phase 6: Governance OS Integration Package** (`@algora/governance-os`):
+  - **Types** (`types.ts`):
+    - GovernanceOSConfig for system-wide configuration
+    - PipelineStage and PipelineContext for pipeline management
+    - PipelineResult for pipeline completion status
+    - WorkflowConfigs (A-E) for workflow-specific settings
+    - GovernanceOSEvents for unified event system
+    - GovernanceOSStats for system statistics
+    - WORKFLOW_DOCUMENT_OUTPUTS mapping
+    - DUAL_APPROVAL_DOCUMENTS and DIRECTOR3_REQUIRED_DOCUMENTS
+    - ACTION_RISK_LEVELS for risk classification
+    - SPECIALIST_DIFFICULTY_MAPPING for model routing
+    - DOCUMENT_DIFFICULTY_MAPPING for document generation
+  - **Pipeline** (`pipeline.ts`):
+    - GovernancePipeline class with 9 stages
+    - Stage handlers for signal_intake through outcome_verification
+    - Event emission for pipeline progress
+    - Retry logic with exponential backoff
+    - Pipeline context management
+    - PipelineServices interface for dependency injection
+  - **Governance OS** (`governance-os.ts`):
+    - GovernanceOS class integrating all v2.0 packages
+    - Initialization of Safe Autonomy, Orchestrator, Document Registry, Model Router, Dual-House
+    - Event wiring between subsystems
+    - Pipeline execution API
+    - Subsystem accessor methods
+    - Statistics tracking (uptime, pipelines, documents, voting, LLM costs)
+    - Health check API for component status
+    - Configuration management
+  - **Factory Functions** (`index.ts`):
+    - `createGovernanceOS()` for custom configuration
+    - `createDefaultGovernanceOS()` for default setup
+    - Comprehensive re-exports from all v2.0 packages
+
+### Changed
+- Updated `DEVELOPMENT_STATUS.md` with Phase 6 completion
 
 ---
 
