@@ -1,4 +1,4 @@
-import { Express, Router } from 'express';
+import { Express, Router, Request, Response, NextFunction } from 'express';
 import { healthRouter } from './health';
 import { agentsRouter } from './agents';
 import { agoraRouter } from './agora';
@@ -12,9 +12,10 @@ import { chatterRouter } from './chatter';
 import { collectorsRouter } from './collectors';
 import { outcomesRouter } from './outcomes';
 import { tokenRouter } from './token';
+import governanceOSRouter from './governance-os';
 
 export function setupRoutes(app: Express): void {
-  const apiRouter = Router();
+  const apiRouter: Router = Router();
 
   // Mount route modules
   apiRouter.use('/health', healthRouter);
@@ -30,6 +31,7 @@ export function setupRoutes(app: Express): void {
   apiRouter.use('/collectors', collectorsRouter);
   apiRouter.use('/outcomes', outcomesRouter);
   apiRouter.use('/token', tokenRouter);
+  apiRouter.use('/governance-os', governanceOSRouter);
 
   // Mount API router
   app.use('/api', apiRouter);
@@ -43,7 +45,7 @@ export function setupRoutes(app: Express): void {
   });
 
   // Error handler
-  app.use((err: Error, _req: Express.Request, res: Express.Response, _next: Express.NextFunction) => {
+  app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
     console.error('Unhandled error:', err);
     res.status(500).json({
       error: 'Internal Server Error',

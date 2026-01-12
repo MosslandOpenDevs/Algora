@@ -8,7 +8,10 @@
       "@/*": ["./src/*"],
       "@algora/core": ["../../packages/core/src"],
       "@algora/core/*": ["../../packages/core/src/*"]
-    }
+    },
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "noImplicitReturns": false
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"]

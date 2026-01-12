@@ -35,6 +35,24 @@ importers:
       '@algora/core':
         specifier: workspace:*
         version: link:../../packages/core
+      '@algora/document-registry':
+        specifier: workspace:*
+        version: link:../../packages/document-registry
+      '@algora/dual-house':
+        specifier: workspace:*
+        version: link:../../packages/dual-house
+      '@algora/governance-os':
+        specifier: workspace:*
+        version: link:../../packages/governance-os
+      '@algora/model-router':
+        specifier: workspace:*
+        version: link:../../packages/model-router
+      '@algora/orchestrator':
+        specifier: workspace:*
+        version: link:../../packages/orchestrator
+      '@algora/safe-autonomy':
+        specifier: workspace:*
+        version: link:../../packages/safe-autonomy
       better-sqlite3:
         specifier: ^11.0.0
         version: 11.10.0

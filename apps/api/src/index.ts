@@ -9,7 +9,7 @@ import { initDatabase } from './db';
 import { setupRoutes } from './routes';
 import { setupSocketHandlers } from './services/socket';
 import { ActivityService } from './activity';
-import { SchedulerService } from './scheduler';
+// import { SchedulerService } from './scheduler'; // Commented out until fully implemented
 import { ChatterService } from './services/chatter';
 import { llmService } from './services/llm';
 import { SignalCollectorService } from './services/collectors';
@@ -17,11 +17,12 @@ import { IssueDetectionService } from './services/issue-detection';
 import { GovernanceService } from './services/governance';
 import { ProofOfOutcomeService } from './services/proof-of-outcome';
 import { TokenIntegrationService } from './services/token';
+import { GovernanceOSBridge } from './services/governance-os-bridge';
 
 const PORT = process.env.PORT || 3201;
 const NODE_ENV = process.env.NODE_ENV || 'development';
 
-const app = express();
+const app: ReturnType<typeof express> = express();
 const httpServer = createServer(app);
 
 // Socket.IO setup
@@ -115,6 +116,11 @@ async function bootstrap() {
     // Initialize token integration service
     const tokenIntegration = new TokenIntegrationService(db, io);
     app.locals.tokenIntegration = tokenIntegration;
+
+    // Initialize GovernanceOS Bridge (v2.0 integration)
+    const governanceOSBridge = new GovernanceOSBridge(db, io);
+    app.locals.governanceOSBridge = governanceOSBridge;
+    console.info('[GovernanceOS] Bridge initialized - v2.0 packages connected');
 
     // Log LLM availability
     console.info(`[LLM] Tier 1 (Ollama): ${llmService.isTier1Available() ? 'Available' : 'Not Available'}`);

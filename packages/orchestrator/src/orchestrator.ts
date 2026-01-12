@@ -39,6 +39,11 @@ import {
   type SpecialistEvent,
   type LLMProvider,
 } from './specialist-manager.js';
+import {
+  WorkflowAHandler,
+  type ResearchDigest,
+  type TechnologyAssessment,
+} from './workflows/workflow-a.js';
 
 /**
  * Event listener type for orchestrator events.
@@ -133,6 +138,7 @@ export class Orchestrator {
   private workflowStorage: WorkflowStorage;
   private todoManager: TodoManager;
   private specialistManager: SpecialistManager;
+  private workflowAHandler: WorkflowAHandler;
   private stateMachines: Map<string, WorkflowStateMachine> = new Map();
   private eventListeners: Map<keyof OrchestratorEvents, Set<OrchestratorEventListener<keyof OrchestratorEvents>>> = new Map();
   private heartbeatInterval: ReturnType<typeof setInterval> | null = null;
@@ -152,6 +158,9 @@ export class Orchestrator {
       llmProvider: options.llmProvider,
     });
     this.specialistManager.subscribe((event) => this.handleSpecialistEvent(event));
+
+    // Initialize workflow handlers
+    this.workflowAHandler = new WorkflowAHandler(options.llmProvider);
   }
 
   /**
@@ -470,6 +479,113 @@ Agent Opinions: ${JSON.stringify(context.agentOpinions || [])}`,
     }
 
     return packet;
+  }
+
+  /**
+   * Execute Workflow A (Academic Activity) for an issue.
+   * This workflow researches and synthesizes AI/blockchain academic developments.
+   */
+  async executeWorkflowA(issueId: string): Promise<{
+    researchDigest?: ResearchDigest;
+    technologyAssessment?: TechnologyAssessment;
+    success: boolean;
+  }> {
+    const context = await this.workflowStorage.getContext(issueId);
+    if (!context) {
+      throw new Error(`Context not found for issue: ${issueId}`);
+    }
+
+    if (context.workflowType !== 'A') {
+      throw new Error(`Issue ${issueId} is not assigned to Workflow A`);
+    }
+
+    // Convert signal IDs to signal objects for research
+    // In production, this would fetch actual signal data from storage
+    const signalIds = context.issue.signalIds || [];
+    const signals = signalIds.map((id) => ({
+      title: `Signal ${id}`,
+      content: `Content for signal ${id}`,
+      source: 'system',
+      url: undefined,
+    }));
+
+    // Execute research phase
+    const { researchBrief, papers } = await this.workflowAHandler.executeResearchPhase(
+      context,
+      signals
+    );
+
+    // Update context with research brief
+    const stateMachine = this.stateMachines.get(issueId);
+    if (stateMachine) {
+      stateMachine.updateContext({
+        researchBrief: researchBrief.summary,
+      });
+      await this.workflowStorage.saveContext(stateMachine.getContext());
+    }
+
+    // Execute deliberation phase
+    const { opinions, consensusScore } = await this.workflowAHandler.executeDeliberationPhase(
+      context,
+      researchBrief
+    );
+
+    // Update context with opinions
+    if (stateMachine) {
+      stateMachine.updateContext({
+        agentOpinions: opinions,
+        consensusScore,
+      });
+      await this.workflowStorage.saveContext(stateMachine.getContext());
+    }
+
+    // Generate weekly research digest
+    const weekNumber = this.getWeekNumber(new Date());
+    const year = new Date().getFullYear();
+    const researchDigest = await this.workflowAHandler.generateResearchDigest(
+      papers,
+      weekNumber,
+      year
+    );
+
+    // Check if we should generate a technology assessment
+    let technologyAssessment: TechnologyAssessment | undefined;
+    if (this.workflowAHandler.shouldGenerateAssessment(researchBrief)) {
+      technologyAssessment = await this.workflowAHandler.generateTechnologyAssessment(
+        context,
+        researchBrief,
+        opinions
+      );
+    }
+
+    // Emit workflow completed event
+    const todo = await this.todoManager.getTodoByIssueId(issueId);
+    if (todo) {
+      this.emitEvent('workflow:completed', {
+        todo,
+        outputs: {
+          researchDigest,
+          technologyAssessment,
+        },
+      });
+    }
+
+    return {
+      researchDigest,
+      technologyAssessment,
+      success: true,
+    };
+  }
+
+  /**
+   * Get the week number of a date.
+   */
+  private getWeekNumber(date: Date): number {
+    const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+    const dayNum = d.getUTCDay() || 7;
+    d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+    return Math.ceil(((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
   }
 
   /**

@@ -486,7 +486,7 @@ export interface OrchestratorEvents {
   'task:failed': { task: SpecialistTask; error: string };
   'decision:ready': { todo: OrchestratorTodo; decisionPacket: DecisionPacketDraft };
   'review:required': { todo: OrchestratorTodo; riskLevel: RiskLevel };
-  'workflow:completed': { todo: OrchestratorTodo };
+  'workflow:completed': { todo: OrchestratorTodo; outputs?: Record<string, unknown> };
   'workflow:rejected': { todo: OrchestratorTodo; reason: string };
   'todo:blocked': { todo: OrchestratorTodo; reason: string };
   'todo:resumed': { todo: OrchestratorTodo };

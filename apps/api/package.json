@@ -20,6 +20,12 @@
   },
   "dependencies": {
     "@algora/core": "workspace:*",
+    "@algora/governance-os": "workspace:*",
+    "@algora/safe-autonomy": "workspace:*",
+    "@algora/orchestrator": "workspace:*",
+    "@algora/document-registry": "workspace:*",
+    "@algora/model-router": "workspace:*",
+    "@algora/dual-house": "workspace:*",
     "better-sqlite3": "^11.0.0",
     "cors": "^2.8.5",
     "dotenv": "^16.4.0",

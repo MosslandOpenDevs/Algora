@@ -177,3 +177,24 @@ export type {
   WorkflowStorage,
   OrchestratorOptions,
 } from './orchestrator.js';
+
+// ============================================
+// Workflow Handlers
+// ============================================
+
+export {
+  WorkflowAHandler,
+  createWorkflowAHandler,
+  DEFAULT_WORKFLOW_A_CONFIG,
+} from './workflows/index.js';
+
+export type {
+  // Workflow A types
+  AcademicSource,
+  ResearchTopic,
+  AcademicPaper,
+  ResearchBrief,
+  TechnologyAssessment,
+  ResearchDigest,
+  WorkflowAConfig,
+} from './workflows/index.js';
