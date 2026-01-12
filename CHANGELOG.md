@@ -11,7 +11,76 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Planned
 - Phase 9: Testing & Production Deployment
-- Real-time updates via Socket.IO for Governance OS
+
+---
+
+## [0.12.2] - 2026-01-13
+
+### Added
+- **Agent Clusters Expansion (30 → 38 agents)** (`@algora/core`, `@algora/api`):
+  - New cluster types: 'orchestrators', 'archivists', 'red-team', 'scouts'
+  - 8 new agents with unique personas:
+    - Orchestrators: Nova Prime (methodical coordinator), Atlas (resilient backup)
+    - Archivists: Archive Alpha (meticulous keeper), Trace Master (forensic auditor)
+    - Red Team: Contrarian Carl (devil's advocate), Breach Tester (security attacker), Base Questioner (assumption challenger)
+    - Scouts: Horizon Seeker (opportunity detector)
+  - Updated i18n translations for new groups (EN/KO)
+
+- **Real-time Socket.IO for Governance Events** (`@algora/api`, `@algora/web`):
+  - 11 new broadcast functions for governance events:
+    - `broadcastDocumentCreated`, `broadcastDocumentStateChanged`
+    - `broadcastVotingCreated`, `broadcastVoteCast`, `broadcastVotingStatusChanged`
+    - `broadcastActionLocked`, `broadcastActionUnlocked`, `broadcastDirector3Approval`
+    - `broadcastPipelineProgress`, `broadcastWorkflowStateChanged`, `broadcastHealthUpdate`
+  - New `useGovernanceEvents` hook for frontend real-time subscriptions
+  - GovernanceEvent type with full event type definitions
+
+- **Operational KPIs Instrumentation** (`@algora/governance-os`):
+  - KPICollector class with comprehensive metric tracking:
+    - Decision Quality: DP completeness, option diversity, red team coverage, evidence depth
+    - Execution Speed: signal-to-issue, issue-to-DP, review queue, execution, end-to-end timing
+    - System Health: uptime, heartbeat gaps, LLM availability, queue depth, error rate
+  - 7 new API endpoints: `/kpi/dashboard`, `/kpi/decision-quality`, `/kpi/execution-speed`,
+    `/kpi/system-health`, `/kpi/alerts`, `/kpi/targets`, `/kpi/export`
+  - Alert generation for metrics below target thresholds
+  - Prometheus-compatible metric export
+
+- **Security Spam Protection** (`@algora/safe-autonomy`):
+  - AntiAbuseGuard class with comprehensive protection:
+    - Rate limiting (configurable signals per hour)
+    - Deduplication with topic hash and similarity threshold
+    - Quality filtering with minimum signal quality requirement
+    - Blacklist management for domains and patterns
+    - Cooldown periods after rejection
+    - Multiple source validation requirement
+  - DEFAULT_ANTI_ABUSE_CONFIG with sensible defaults
+
+- **E2E Pipeline Tests** (`@algora/governance-os`):
+  - Comprehensive test suite covering:
+    - Full Pipeline Execution (LOW/MID/HIGH risk scenarios)
+    - Document Registry Integration (create, publish, query)
+    - Dual-House Voting Integration (create, start, cast votes)
+    - Model Router Integration (task execution, statistics)
+    - KPI Collector Integration (samples, heartbeats, operations)
+    - Health Monitoring and Statistics
+    - Pipeline Stage Verification (all 9 stages)
+    - Workflow Type Coverage (A, B, C, D, E)
+
+- **Ollama Model Integration** (`@algora/model-router`):
+  - OllamaProvider class for local LLM inference:
+    - Text generation via `/api/generate` and `/api/chat` endpoints
+    - Embedding support via `/api/embed` endpoint
+    - Health checks via `/api/tags` endpoint
+    - Model pull functionality with progress callback
+    - Automatic retry with exponential backoff
+  - OllamaLLMProvider adapter for ModelRouter integration
+  - OLLAMA_INSTALL_COMMANDS constant with install commands for all model categories
+  - OLLAMA_HARDWARE_REQUIREMENTS constant with VRAM/RAM requirements per model
+  - Factory functions: `createOllamaModelRoutingSystem`, `createOllamaModelRoutingSystemWithDefaults`
+
+### Changed
+- Package versions updated to reflect new features
+- DEVELOPMENT_STATUS.md updated with Phase 8 completion details
 
 ---
 

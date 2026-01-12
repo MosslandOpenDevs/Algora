@@ -613,4 +613,248 @@ router.get('/config', (req: Request, res: Response) => {
   }
 });
 
+// ==========================================
+// KPI Endpoints (Section O)
+// ==========================================
+
+/**
+ * GET /governance-os/kpi/dashboard
+ * Get the full KPI dashboard
+ */
+router.get('/kpi/dashboard', (req: Request, res: Response) => {
+  try {
+    const bridge = getBridge(req);
+    const governanceOS = bridge.getGovernanceOS();
+    const kpiCollector = governanceOS.getKPICollector();
+
+    if (!kpiCollector) {
+      return res.json({
+        decisionQuality: {
+          dpCompleteness: 100,
+          optionDiversity: 3,
+          redTeamCoverage: 100,
+          evidenceDepth: 3,
+          confidenceCalibration: 10,
+        },
+        executionSpeed: {
+          signalToIssueMs: 0,
+          issueToDecisionMs: 0,
+          dpToApprovalMs: 0,
+          approvalToExecutionMs: 0,
+          endToEndMs: 0,
+        },
+        systemHealth: {
+          uptime: 100,
+          heartbeatGapMs: 0,
+          llmAvailability: 100,
+          queueDepth: 0,
+          errorRate: 0,
+        },
+        timestamp: new Date(),
+      });
+    }
+
+    const dashboard = kpiCollector.getDashboard();
+    return res.json(dashboard);
+  } catch (error) {
+    console.error('[GovernanceOS] Get KPI dashboard error:', error);
+    return res.status(500).json({
+      error: 'Failed to get KPI dashboard',
+      message: error instanceof Error ? error.message : 'Unknown error',
+    });
+  }
+});
+
+/**
+ * GET /governance-os/kpi/decision-quality
+ * Get Decision Quality metrics
+ */
+router.get('/kpi/decision-quality', (req: Request, res: Response) => {
+  try {
+    const bridge = getBridge(req);
+    const governanceOS = bridge.getGovernanceOS();
+    const kpiCollector = governanceOS.getKPICollector();
+
+    if (!kpiCollector) {
+      return res.json({
+        dpCompleteness: 100,
+        optionDiversity: 3,
+        redTeamCoverage: 100,
+        evidenceDepth: 3,
+        confidenceCalibration: 10,
+      });
+    }
+
+    const metrics = kpiCollector.getDecisionQualityMetrics();
+    return res.json(metrics);
+  } catch (error) {
+    console.error('[GovernanceOS] Get decision quality error:', error);
+    return res.status(500).json({
+      error: 'Failed to get decision quality metrics',
+      message: error instanceof Error ? error.message : 'Unknown error',
+    });
+  }
+});
+
+/**
+ * GET /governance-os/kpi/execution-speed
+ * Get Execution Speed metrics
+ */
+router.get('/kpi/execution-speed', (req: Request, res: Response) => {
+  try {
+    const bridge = getBridge(req);
+    const governanceOS = bridge.getGovernanceOS();
+    const kpiCollector = governanceOS.getKPICollector();
+
+    if (!kpiCollector) {
+      return res.json({
+        signalToIssueMs: 0,
+        issueToDecisionMs: 0,
+        dpToApprovalMs: 0,
+        approvalToExecutionMs: 0,
+        endToEndMs: 0,
+      });
+    }
+
+    const metrics = kpiCollector.getExecutionSpeedMetrics();
+    return res.json(metrics);
+  } catch (error) {
+    console.error('[GovernanceOS] Get execution speed error:', error);
+    return res.status(500).json({
+      error: 'Failed to get execution speed metrics',
+      message: error instanceof Error ? error.message : 'Unknown error',
+    });
+  }
+});
+
+/**
+ * GET /governance-os/kpi/system-health
+ * Get System Health metrics
+ */
+router.get('/kpi/system-health', (req: Request, res: Response) => {
+  try {
+    const bridge = getBridge(req);
+    const governanceOS = bridge.getGovernanceOS();
+    const kpiCollector = governanceOS.getKPICollector();
+
+    if (!kpiCollector) {
+      return res.json({
+        uptime: 100,
+        heartbeatGapMs: 0,
+        llmAvailability: 100,
+        queueDepth: 0,
+        errorRate: 0,
+      });
+    }
+
+    const metrics = kpiCollector.getSystemHealthMetrics();
+    return res.json(metrics);
+  } catch (error) {
+    console.error('[GovernanceOS] Get system health error:', error);
+    return res.status(500).json({
+      error: 'Failed to get system health metrics',
+      message: error instanceof Error ? error.message : 'Unknown error',
+    });
+  }
+});
+
+/**
+ * GET /governance-os/kpi/alerts
+ * Get recent KPI alerts
+ */
+router.get('/kpi/alerts', (req: Request, res: Response) => {
+  try {
+    const bridge = getBridge(req);
+    const governanceOS = bridge.getGovernanceOS();
+    const kpiCollector = governanceOS.getKPICollector();
+    const limit = parseInt(req.query.limit as string) || 50;
+
+    if (!kpiCollector) {
+      return res.json({ alerts: [], total: 0 });
+    }
+
+    const alerts = kpiCollector.getAlerts(limit);
+    return res.json({ alerts, total: alerts.length });
+  } catch (error) {
+    console.error('[GovernanceOS] Get KPI alerts error:', error);
+    return res.status(500).json({
+      error: 'Failed to get KPI alerts',
+      message: error instanceof Error ? error.message : 'Unknown error',
+    });
+  }
+});
+
+/**
+ * GET /governance-os/kpi/targets
+ * Get KPI target thresholds
+ */
+router.get('/kpi/targets', (req: Request, res: Response) => {
+  try {
+    const bridge = getBridge(req);
+    const governanceOS = bridge.getGovernanceOS();
+    const kpiCollector = governanceOS.getKPICollector();
+
+    if (!kpiCollector) {
+      // Return default targets
+      return res.json({
+        decisionQuality: {
+          dpCompleteness: 100,
+          optionDiversity: 3,
+          redTeamCoverage: 100,
+          evidenceDepth: 3,
+          confidenceCalibration: 10,
+        },
+        executionSpeed: {
+          signalToIssueMs: 3600000,
+          issueToDecisionMs: 86400000,
+          dpToApprovalMs: 259200000,
+          approvalToExecutionMs: 3600000,
+          endToEndMs: 432000000,
+        },
+        systemHealth: {
+          uptime: 99.9,
+          heartbeatGapMs: 30000,
+          llmAvailability: 99,
+          queueDepth: 100,
+          errorRate: 1,
+        },
+      });
+    }
+
+    const targets = kpiCollector.getTargets();
+    return res.json(targets);
+  } catch (error) {
+    console.error('[GovernanceOS] Get KPI targets error:', error);
+    return res.status(500).json({
+      error: 'Failed to get KPI targets',
+      message: error instanceof Error ? error.message : 'Unknown error',
+    });
+  }
+});
+
+/**
+ * GET /governance-os/kpi/export
+ * Export metrics in Prometheus-compatible format
+ */
+router.get('/kpi/export', (req: Request, res: Response) => {
+  try {
+    const bridge = getBridge(req);
+    const governanceOS = bridge.getGovernanceOS();
+    const kpiCollector = governanceOS.getKPICollector();
+
+    if (!kpiCollector) {
+      return res.json({});
+    }
+
+    const metrics = kpiCollector.exportMetrics();
+    return res.json(metrics);
+  } catch (error) {
+    console.error('[GovernanceOS] Export KPI metrics error:', error);
+    return res.status(500).json({
+      error: 'Failed to export KPI metrics',
+      message: error instanceof Error ? error.message : 'Unknown error',
+    });
+  }
+});
+
 export default router;

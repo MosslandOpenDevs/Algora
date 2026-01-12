@@ -217,6 +217,23 @@ export type {
 } from './rag/reranker.js';
 
 // ============================================
+// Providers
+// ============================================
+
+export {
+  OllamaProvider,
+  OllamaLLMProvider,
+  OllamaError,
+  createOllamaProvider,
+  createOllamaLLMProvider,
+  OLLAMA_INSTALL_COMMANDS,
+  OLLAMA_HARDWARE_REQUIREMENTS,
+  DEFAULT_OLLAMA_CONFIG,
+} from './providers/index.js';
+
+export type { OllamaProviderConfig } from './providers/index.js';
+
+// ============================================
 // Factory Functions
 // ============================================
 
@@ -284,6 +301,82 @@ export async function createModelRoutingSystemWithDefaults(
   reranker: RerankerService;
 }> {
   const system = createModelRoutingSystem(config);
+  await system.registry.seedDefaultModels();
+  return system;
+}
+
+// ============================================
+// Ollama-Specific Factory Functions
+// ============================================
+
+import { OllamaLLMProvider } from './providers/index.js';
+import type { OllamaProviderConfig } from './providers/index.js';
+
+/**
+ * Create a model routing system with Ollama as the LLM provider.
+ * This enables actual local LLM inference instead of mock responses.
+ */
+export function createOllamaModelRoutingSystem(options?: {
+  config?: Partial<ModelRouterConfig>;
+  ollamaConfig?: Partial<OllamaProviderConfig>;
+}): {
+  router: ModelRouter;
+  registry: ModelRegistry;
+  classifier: TaskDifficultyClassifier;
+  qualityGate: QualityGate;
+  embeddings: EmbeddingService;
+  reranker: RerankerService;
+  ollamaProvider: OllamaLLMProvider;
+} {
+  const fullConfig = {
+    ...DEFAULT_MODEL_ROUTER_CONFIG,
+    ...options?.config,
+  };
+
+  const registry = new ModelRegistry({
+    healthCheckIntervalMs: fullConfig.healthCheckIntervalMs,
+  });
+  const classifier = new TaskDifficultyClassifier();
+  const qualityGate = new QualityGate();
+  const embeddings = new EmbeddingService();
+  const reranker = new RerankerService();
+  const ollamaProvider = new OllamaLLMProvider(options?.ollamaConfig);
+
+  const router = new ModelRouter({
+    config: fullConfig,
+    registry,
+    classifier,
+    qualityGate,
+    llmProvider: ollamaProvider,
+  });
+
+  return {
+    router,
+    registry,
+    classifier,
+    qualityGate,
+    embeddings,
+    reranker,
+    ollamaProvider,
+  };
+}
+
+/**
+ * Create a model routing system with Ollama and pre-seeded models.
+ */
+export async function createOllamaModelRoutingSystemWithDefaults(options?: {
+  config?: Partial<ModelRouterConfig>;
+  ollamaConfig?: Partial<OllamaProviderConfig>;
+}): Promise<{
+  router: ModelRouter;
+  registry: ModelRegistry;
+  classifier: TaskDifficultyClassifier;
+  qualityGate: QualityGate;
+  embeddings: EmbeddingService;
+  reranker: RerankerService;
+  ollamaProvider: OllamaLLMProvider;
+}> {
+  const system = createOllamaModelRoutingSystem(options);
   await system.registry.seedDefaultModels();
   return system;
 }

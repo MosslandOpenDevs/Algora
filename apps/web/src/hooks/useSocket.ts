@@ -81,3 +81,169 @@ export function useTokenEvents(events: TokenEvent[], callback: (event: TokenEven
     };
   }, [events, callback, subscribe]);
 }
+
+// ===========================================
+// Governance OS Events
+// ===========================================
+
+export type GovernanceEvent =
+  // Document events
+  | 'governance:document:created'
+  | 'governance:document:state_changed'
+  // Voting events
+  | 'governance:voting:created'
+  | 'governance:voting:vote_cast'
+  | 'governance:voting:status_changed'
+  // Action lock events
+  | 'governance:action:locked'
+  | 'governance:action:unlocked'
+  | 'governance:approval:director3'
+  // Pipeline events
+  | 'governance:pipeline:progress'
+  | 'governance:workflow:state_changed'
+  // Health events
+  | 'governance:health:update'
+  // Legacy events (from governance-os-bridge)
+  | 'governance-os:pipeline:completed'
+  | 'governance-os:pipeline:stage'
+  | 'governance-os:pipeline:started'
+  | 'governance-os:action:locked'
+  | 'governance-os:action:unlocked'
+  | 'governance-os:approval:received'
+  | 'governance-os:approval:required'
+  | 'governance-os:approval:approved'
+  | 'governance-os:voting:created'
+  | 'governance-os:voting:vote_cast'
+  | 'governance-os:health';
+
+export interface GovernanceEventData {
+  'governance:document:created': {
+    id: string;
+    type: string;
+    title: string;
+    state: string;
+    createdBy: string;
+    timestamp: string;
+  };
+  'governance:document:state_changed': {
+    documentId: string;
+    previousState: string;
+    newState: string;
+    changedBy: string;
+    timestamp: string;
+  };
+  'governance:voting:created': {
+    id: string;
+    proposalId: string;
+    title: string;
+    status: string;
+    riskLevel: string;
+    timestamp: string;
+  };
+  'governance:voting:vote_cast': {
+    votingId: string;
+    house: 'mosscoin' | 'opensource';
+    voterId: string;
+    choice: 'for' | 'against' | 'abstain';
+    timestamp: string;
+  };
+  'governance:voting:status_changed': {
+    votingId: string;
+    previousStatus: string;
+    newStatus: string;
+    mossCoinPassed?: boolean;
+    openSourcePassed?: boolean;
+    timestamp: string;
+  };
+  'governance:action:locked': {
+    actionId: string;
+    proposalId: string;
+    actionType: string;
+    reason: string;
+    requiredApprovals: string[];
+    timestamp: string;
+  };
+  'governance:action:unlocked': {
+    actionId: string;
+    unlockedBy: string;
+    timestamp: string;
+  };
+  'governance:approval:director3': {
+    approvalId: string;
+    approverId: string;
+    actionDescription: string;
+    timestamp: string;
+  };
+  'governance:pipeline:progress': {
+    pipelineId: string;
+    issueId: string;
+    stage: string;
+    stageIndex: number;
+    totalStages: number;
+    status: 'started' | 'completed' | 'failed';
+    result?: Record<string, unknown>;
+    timestamp: string;
+  };
+  'governance:workflow:state_changed': {
+    workflowId: string;
+    workflowType: string;
+    previousState: string;
+    newState: string;
+    issueId: string;
+    timestamp: string;
+  };
+  'governance:health:update': {
+    status: 'healthy' | 'degraded' | 'unhealthy';
+    uptime: number;
+    lastCheck: string;
+    components: Record<string, 'healthy' | 'degraded' | 'unhealthy'>;
+    timestamp: string;
+  };
+}
+
+/**
+ * Hook for subscribing to Governance OS real-time events
+ */
+export function useGovernanceEvents<T extends GovernanceEvent>(
+  events: T[],
+  callback: (event: T, data: unknown) => void
+) {
+  const { subscribe, isConnected } = useSocket();
+
+  useEffect(() => {
+    if (!isConnected) return;
+
+    const unsubscribes = events.map(event =>
+      subscribe(event, (data) => callback(event, data))
+    );
+
+    return () => {
+      unsubscribes.forEach(unsub => unsub());
+    };
+  }, [events, callback, subscribe, isConnected]);
+
+  return { isConnected };
+}
+
+/**
+ * Hook for subscribing to all governance events
+ */
+export function useAllGovernanceEvents(
+  callback: (event: GovernanceEvent, data: unknown) => void
+) {
+  const allEvents: GovernanceEvent[] = [
+    'governance:document:created',
+    'governance:document:state_changed',
+    'governance:voting:created',
+    'governance:voting:vote_cast',
+    'governance:voting:status_changed',
+    'governance:action:locked',
+    'governance:action:unlocked',
+    'governance:approval:director3',
+    'governance:pipeline:progress',
+    'governance:workflow:state_changed',
+    'governance:health:update',
+  ];
+
+  return useGovernanceEvents(allEvents, callback);
+}

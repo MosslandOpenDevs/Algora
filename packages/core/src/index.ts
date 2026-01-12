@@ -10,7 +10,12 @@ export type AgentCluster =
   | 'guardians'
   | 'operatives'
   | 'moderators'
-  | 'advisors';
+  | 'advisors'
+  // v2.0 Additions
+  | 'orchestrators'
+  | 'archivists'
+  | 'red-team'
+  | 'scouts';
 
 export type AgentState = 'idle' | 'active' | 'speaking' | 'listening';
 

@@ -76,7 +76,11 @@
       "guardians": "가디언",
       "operatives": "오퍼러티브",
       "moderators": "모더레이터",
-      "advisors": "어드바이저"
+      "advisors": "어드바이저",
+      "orchestrators": "오케스트레이터",
+      "archivists": "아카이비스트",
+      "red-team": "레드팀",
+      "scouts": "스카우트"
     },
     "status": {
       "idle": "유휴",

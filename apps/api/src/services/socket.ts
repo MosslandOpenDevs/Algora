@@ -183,3 +183,210 @@ export function broadcastChatter(
     timestamp: new Date().toISOString(),
   });
 }
+
+// ===========================================
+// Governance OS Real-Time Events
+// ===========================================
+
+/**
+ * Broadcast when a new document is created in the registry
+ */
+export function broadcastDocumentCreated(
+  io: SocketServer,
+  document: {
+    id: string;
+    type: string;
+    title: string;
+    state: string;
+    createdBy: string;
+  }
+): void {
+  io.emit('governance:document:created', {
+    ...document,
+    timestamp: new Date().toISOString(),
+  });
+}
+
+/**
+ * Broadcast when a document state changes
+ */
+export function broadcastDocumentStateChanged(
+  io: SocketServer,
+  data: {
+    documentId: string;
+    previousState: string;
+    newState: string;
+    changedBy: string;
+  }
+): void {
+  io.emit('governance:document:state_changed', {
+    ...data,
+    timestamp: new Date().toISOString(),
+  });
+}
+
+/**
+ * Broadcast when a new voting session is created
+ */
+export function broadcastVotingCreated(
+  io: SocketServer,
+  voting: {
+    id: string;
+    proposalId: string;
+    title: string;
+    status: string;
+    riskLevel: string;
+  }
+): void {
+  io.emit('governance:voting:created', {
+    ...voting,
+    timestamp: new Date().toISOString(),
+  });
+}
+
+/**
+ * Broadcast when a vote is cast
+ */
+export function broadcastVoteCast(
+  io: SocketServer,
+  data: {
+    votingId: string;
+    house: 'mosscoin' | 'opensource';
+    voterId: string;
+    choice: 'for' | 'against' | 'abstain';
+  }
+): void {
+  io.emit('governance:voting:vote_cast', {
+    ...data,
+    timestamp: new Date().toISOString(),
+  });
+}
+
+/**
+ * Broadcast when voting status changes
+ */
+export function broadcastVotingStatusChanged(
+  io: SocketServer,
+  data: {
+    votingId: string;
+    previousStatus: string;
+    newStatus: string;
+    mossCoinPassed?: boolean;
+    openSourcePassed?: boolean;
+  }
+): void {
+  io.emit('governance:voting:status_changed', {
+    ...data,
+    timestamp: new Date().toISOString(),
+  });
+}
+
+/**
+ * Broadcast when a high-risk action is locked
+ */
+export function broadcastActionLocked(
+  io: SocketServer,
+  data: {
+    actionId: string;
+    proposalId: string;
+    actionType: string;
+    reason: string;
+    requiredApprovals: string[];
+  }
+): void {
+  io.emit('governance:action:locked', {
+    ...data,
+    timestamp: new Date().toISOString(),
+  });
+}
+
+/**
+ * Broadcast when a high-risk action is unlocked
+ */
+export function broadcastActionUnlocked(
+  io: SocketServer,
+  data: {
+    actionId: string;
+    unlockedBy: string;
+  }
+): void {
+  io.emit('governance:action:unlocked', {
+    ...data,
+    timestamp: new Date().toISOString(),
+  });
+}
+
+/**
+ * Broadcast when Director 3 approves an action
+ */
+export function broadcastDirector3Approval(
+  io: SocketServer,
+  data: {
+    approvalId: string;
+    approverId: string;
+    actionDescription: string;
+  }
+): void {
+  io.emit('governance:approval:director3', {
+    ...data,
+    timestamp: new Date().toISOString(),
+  });
+}
+
+/**
+ * Broadcast pipeline stage progress
+ */
+export function broadcastPipelineProgress(
+  io: SocketServer,
+  data: {
+    pipelineId: string;
+    issueId: string;
+    stage: string;
+    stageIndex: number;
+    totalStages: number;
+    status: 'started' | 'completed' | 'failed';
+    result?: Record<string, unknown>;
+  }
+): void {
+  io.emit('governance:pipeline:progress', {
+    ...data,
+    timestamp: new Date().toISOString(),
+  });
+}
+
+/**
+ * Broadcast workflow state change
+ */
+export function broadcastWorkflowStateChanged(
+  io: SocketServer,
+  data: {
+    workflowId: string;
+    workflowType: string;
+    previousState: string;
+    newState: string;
+    issueId: string;
+  }
+): void {
+  io.emit('governance:workflow:state_changed', {
+    ...data,
+    timestamp: new Date().toISOString(),
+  });
+}
+
+/**
+ * Broadcast system health update
+ */
+export function broadcastHealthUpdate(
+  io: SocketServer,
+  data: {
+    status: 'healthy' | 'degraded' | 'unhealthy';
+    uptime: number;
+    lastCheck: string;
+    components: Record<string, 'healthy' | 'degraded' | 'unhealthy'>;
+  }
+): void {
+  io.emit('governance:health:update', {
+    ...data,
+    timestamp: new Date().toISOString(),
+  });
+}

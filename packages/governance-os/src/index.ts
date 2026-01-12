@@ -80,3 +80,21 @@ export type {
   ReconciliationMemo,
   HighRiskApproval,
 } from '@algora/dual-house';
+
+// KPI Instrumentation
+export type {
+  DecisionQualityMetrics,
+  ExecutionSpeedMetrics,
+  SystemHealthMetrics,
+  KPIDashboard,
+  KPITargets,
+  KPIAlert,
+  KPIEvents,
+} from './kpi.js';
+
+export {
+  KPICollector,
+  DEFAULT_KPI_TARGETS,
+  getKPICollector,
+  createKPICollector,
+} from './kpi.js';

@@ -38,6 +38,8 @@ import { createModelRoutingSystem } from '@algora/model-router';
 import type { DualHouseVoting } from '@algora/dual-house';
 import { createDualHouseGovernance } from '@algora/dual-house';
 
+import { KPICollector, createKPICollector } from './kpi.js';
+
 // ============================================
 // Event Handler Type
 // ============================================
@@ -68,6 +70,9 @@ export class GovernanceOS {
 
   // Pipeline
   private pipeline: GovernancePipeline;
+
+  // KPI Collector
+  private kpiCollector: KPICollector;
 
   // Event handlers
   private eventHandlers: Map<keyof GovernanceOSEvents, Set<GovernanceOSEventHandler<keyof GovernanceOSEvents>>> = new Map();
@@ -108,6 +113,7 @@ export class GovernanceOS {
     this.modelRouter = createModelRoutingSystem();
     this.dualHouse = createDualHouseGovernance();
     this.pipeline = createPipeline();
+    this.kpiCollector = createKPICollector();
 
     // Wire up event integrations
     this.wireIntegrations();
@@ -118,15 +124,24 @@ export class GovernanceOS {
   // ==========================================
 
   private wireIntegrations(): void {
-    // Wire pipeline events to update stats
+    // Wire pipeline events to update stats and KPIs
     this.pipeline.on('pipeline:completed', (data) => {
       const { result } = data;
       this.stats.totalPipelines++;
       if (result.success) {
         this.stats.successfulPipelines++;
+        this.kpiCollector.recordOperation(true);
       } else {
         this.stats.failedPipelines++;
+        this.kpiCollector.recordOperation(false);
       }
+
+      // Record execution timing
+      if (result.context.startedAt && result.context.completedAt) {
+        const duration = result.context.completedAt.getTime() - result.context.startedAt.getTime();
+        this.kpiCollector.recordExecutionTiming('endToEndMs', duration);
+      }
+
       this.emit('pipeline:completed', { result });
     });
 
@@ -135,6 +150,7 @@ export class GovernanceOS {
     });
 
     this.pipeline.on('pipeline:error', (data) => {
+      this.kpiCollector.recordOperation(false);
       this.emit('pipeline:error', data);
     });
 
@@ -386,6 +402,13 @@ export class GovernanceOS {
     return this.pipeline;
   }
 
+  /**
+   * Get KPI Collector.
+   */
+  getKPICollector(): KPICollector {
+    return this.kpiCollector;
+  }
+
   // ==========================================
   // Public API - Statistics
   // ==========================================
@@ -410,8 +433,13 @@ export class GovernanceOS {
    */
   async getHealth(): Promise<{
     healthy: boolean;
+    status: 'healthy' | 'degraded' | 'unhealthy';
+    uptime: number;
     components: Record<string, boolean>;
   }> {
+    // Record heartbeat for KPI tracking
+    this.kpiCollector.recordHeartbeat();
+
     const components: Record<string, boolean> = {
       safeAutonomy: true,
       orchestrator: true,
@@ -422,10 +450,21 @@ export class GovernanceOS {
     };
 
     const healthy = Object.values(components).every(v => v);
+    const degraded = Object.values(components).filter(v => !v).length > 0 &&
+                     Object.values(components).filter(v => !v).length <= 2;
+
+    // Record LLM availability
+    this.kpiCollector.recordSample('llm_availability', components.modelRouter ? 100 : 0);
+
+    // Record queue depth
+    this.kpiCollector.recordSample('queue_depth', this.pipeline.getActivePipelineCount());
+
+    const status: 'healthy' | 'degraded' | 'unhealthy' = healthy ? 'healthy' : (degraded ? 'degraded' : 'unhealthy');
+    const uptime = (Date.now() - this.startedAt.getTime()) / 1000;
 
     this.emit('system:health_check', { healthy, components });
 
-    return { healthy, components };
+    return { healthy, status, uptime, components };
   }
 
   /**

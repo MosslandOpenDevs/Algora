@@ -216,6 +216,25 @@ export function createSafeAutonomySystem(
 }
 
 // ============================================
+// Anti-Abuse Protection Exports
+// ============================================
+
+export type {
+  AntiAbuseConfig,
+  Signal as AntiAbuseSignal,
+  ValidationResult,
+  SignalHistory,
+  RateLimitState,
+} from './anti-abuse.js';
+
+export {
+  AntiAbuseGuard,
+  DEFAULT_ANTI_ABUSE_CONFIG,
+  getAntiAbuseGuard,
+  createAntiAbuseGuard,
+} from './anti-abuse.js';
+
+// ============================================
 // Version
 // ============================================
 

@@ -76,7 +76,11 @@
       "guardians": "Guardians",
       "operatives": "Operatives",
       "moderators": "Moderators",
-      "advisors": "Advisors"
+      "advisors": "Advisors",
+      "orchestrators": "Orchestrators",
+      "archivists": "Archivists",
+      "red-team": "Red Team",
+      "scouts": "Scouts"
     },
     "status": {
       "idle": "Idle",
