@@ -3,7 +3,7 @@
 이 파일은 세션 간 개발 연속성을 위해 현재 개발 진행 상황을 추적합니다.
 
 **최종 업데이트**: 2026-01-12
-**현재 버전**: 0.7.0
+**현재 버전**: 0.8.0
 
 ---
 
@@ -53,8 +53,22 @@
 - [x] Tier 1 (로컬) 및 Tier 2 (외부) 기본 모델 라인업
 - [x] 일일 한도 및 경고 포함 예산 관리
 
-### Phase 5: 예정
-- Phase 5: Dual-House Governance
+### Phase 5: Dual-House Governance (완료)
+- [x] `@algora/dual-house` 패키지 생성
+- [x] House Manager - MossCoin House 및 OpenSource House 정의
+- [x] Member Management - 토큰 홀더 및 기여자 멤버십
+- [x] Voting Power - 토큰 가중치(MOC) 및 기여 가중치(OSS)
+- [x] Dual-House Voting - 정족수 및 임계값 검사 포함 병렬 투표
+- [x] Vote Delegation - 범위 옵션 포함 대리 투표 (all/category/proposal)
+- [x] Reconciliation Manager - 하우스 불일치 시 충돌 해결
+- [x] Director 3 Decision - 무효화, 재투표, 거부, 조건부 승인
+- [x] High-Risk Approval - 이중 승인 필요한 위험 작업 LOCK/UNLOCK
+- [x] 거버넌스, 투표, 조정 전체 TypeScript 타입
+- [x] 거버넌스 모니터링용 이벤트 시스템
+- [x] 개발용 In-memory 스토리지 구현
+
+### Phase 6: 예정
+- Phase 6: Integration & Testing
 
 ---
 

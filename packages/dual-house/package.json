@@ -1,0 +1,43 @@
+{
+  "name": "@algora/dual-house",
+  "version": "0.1.0",
+  "description": "Dual-House Governance System for Algora v2.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsup src/index.ts --format cjs,esm --dts",
+    "dev": "tsup src/index.ts --format cjs,esm --dts --watch",
+    "lint": "eslint src/",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@algora/core": "workspace:*",
+    "@algora/safe-autonomy": "workspace:*",
+    "@algora/document-registry": "workspace:*"
+  },
+  "devDependencies": {
+    "tsup": "^8.0.0",
+    "typescript": "^5.0.0"
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "keywords": [
+    "algora",
+    "governance",
+    "dual-house",
+    "voting",
+    "reconciliation"
+  ],
+  "license": "MIT"
+}

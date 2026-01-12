@@ -10,7 +10,71 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Planned
-- Phase 5: Dual-House Governance
+- Phase 6: Integration & Testing
+
+---
+
+## [0.8.0] - 2026-01-12
+
+### Added
+- **Phase 5: Dual-House Governance Package** (`@algora/dual-house`):
+  - **Types** (`types.ts`):
+    - House types (MossCoin House, OpenSource House)
+    - House configuration with quorum, threshold, focus areas
+    - Member types (MossCoinMember, OpenSourceMember)
+    - Vote types (for, against, abstain) with voting power
+    - Dual-house voting status tracking
+    - Reconciliation types for conflict resolution
+    - Director 3 decision types (override, revote, veto, conditional)
+    - High-risk approval types with LOCK/UNLOCK status
+    - Vote delegation with scope options
+    - Event types for governance monitoring
+    - Statistics types for both houses
+  - **House Manager** (`houses.ts`):
+    - MossCoin House member registration
+    - OpenSource House contributor registration
+    - Token balance and contribution score tracking
+    - Voting power calculation with role multipliers
+    - Member status management (active, inactive, suspended)
+    - Delegation support between members
+    - House statistics calculation
+    - Event emission for member changes
+  - **Voting Manager** (`voting.ts`):
+    - Dual-house voting session creation
+    - Parallel voting in both houses
+    - Vote casting with power calculation
+    - Quorum and pass threshold checking
+    - Tally calculation with participation rates
+    - Early finalization when quorum reached
+    - Vote delegation with scope (all, category, proposal)
+    - Automatic status updates
+    - Event emission for voting events
+  - **Reconciliation Manager** (`reconciliation.ts`):
+    - Reconciliation triggering when houses disagree
+    - Conflict summary generation
+    - Orchestrator analysis with recommendations
+    - Director 3 decision submission
+    - Decision application (override, revote, veto)
+    - Expiration handling for pending memos
+    - Deadline extension support
+    - Event emission for reconciliation events
+  - **High-Risk Approval Manager** (`high-risk-approval.ts`):
+    - High-risk approval creation
+    - House approval recording
+    - Director 3 approval recording
+    - LOCK/UNLOCK mechanism
+    - Execution handler registration
+    - Action execution with audit
+    - Missing approval tracking
+    - Event emission for approval events
+  - **Factory Functions** (`index.ts`):
+    - `createDualHouseGovernance()` for complete system
+    - `createDualHouseGovernanceWithStorage()` for custom storage
+    - Automatic event wiring between components
+    - Comprehensive exports for all components
+
+### Changed
+- Updated `DEVELOPMENT_STATUS.md` with Phase 5 completion
 
 ---
 

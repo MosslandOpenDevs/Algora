@@ -204,6 +204,25 @@ importers:
         specifier: ^1.0.0
         version: 1.6.1(@types/node@20.19.27)
 
+  packages/dual-house:
+    dependencies:
+      '@algora/core':
+        specifier: workspace:*
+        version: link:../core
+      '@algora/document-registry':
+        specifier: workspace:*
+        version: link:../document-registry
+      '@algora/safe-autonomy':
+        specifier: workspace:*
+        version: link:../safe-autonomy
+    devDependencies:
+      tsup:
+        specifier: ^8.0.0
+        version: 8.5.1(jiti@1.21.7)(postcss@8.5.6)(tsx@4.21.0)(typescript@5.9.3)(yaml@2.8.2)
+      typescript:
+        specifier: ^5.0.0
+        version: 5.9.3
+
   packages/model-router:
     dependencies:
       '@algora/core':

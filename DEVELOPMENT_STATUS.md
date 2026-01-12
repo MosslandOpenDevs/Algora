@@ -3,7 +3,7 @@
 This file tracks the current development progress for continuity between sessions.
 
 **Last Updated**: 2026-01-12
-**Current Version**: 0.7.0
+**Current Version**: 0.8.0
 
 ---
 
@@ -53,8 +53,22 @@ See [docs/algora-v2-upgrade-plan.md](docs/algora-v2-upgrade-plan.md) for the com
 - [x] Default model lineup for Tier 1 (local) and Tier 2 (external)
 - [x] Budget management with daily limits and warnings
 
-### Phase 5: Upcoming
-- Phase 5: Dual-House Governance
+### Phase 5: Dual-House Governance (COMPLETED)
+- [x] `@algora/dual-house` package created
+- [x] House Manager - MossCoin House and OpenSource House definitions
+- [x] Member Management - Token holders and contributor membership
+- [x] Voting Power - Token-weighted (MOC) and contribution-weighted (OSS)
+- [x] Dual-House Voting - Parallel voting with quorum and threshold checks
+- [x] Vote Delegation - Proxy voting with scope options (all/category/proposal)
+- [x] Reconciliation Manager - Conflict resolution when houses disagree
+- [x] Director 3 Decision - Override, revote, veto, or conditional approval
+- [x] High-Risk Approval - LOCK/UNLOCK for dangerous actions requiring dual approval
+- [x] Full TypeScript types for governance, voting, reconciliation
+- [x] Event system for governance monitoring
+- [x] In-memory storage implementations for development
+
+### Phase 6: Upcoming
+- Phase 6: Integration & Testing
 
 ---
 
