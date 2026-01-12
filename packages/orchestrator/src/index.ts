@@ -199,6 +199,10 @@ export {
   WorkflowDHandler,
   createWorkflowDHandler,
   DEFAULT_WORKFLOW_D_CONFIG,
+  // Workflow E
+  WorkflowEHandler,
+  createWorkflowEHandler,
+  DEFAULT_WORKFLOW_E_CONFIG,
 } from './workflows/index.js';
 
 export type {
@@ -252,4 +256,19 @@ export type {
   AntiAbuseConfig,
   DetectedSignal,
   WorkflowDConfig,
+  // Workflow E types
+  WorkingGroupStatus,
+  CharterDuration,
+  WGDocumentType,
+  WGProposalOrigin,
+  WorkingGroupProposal,
+  WorkingGroupCharter,
+  WGPublishingRules,
+  CharterAmendment,
+  WorkingGroup,
+  WGStatusReport,
+  WGDissolutionRequest,
+  IssuePattern,
+  WorkflowEConfig,
+  WGProposalEvaluation,
 } from './workflows/index.js';
