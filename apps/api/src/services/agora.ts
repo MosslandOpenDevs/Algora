@@ -406,6 +406,7 @@ export class AgoraService {
       agentId?: string;
       content: string;
       messageType: 'agent' | 'system' | 'human';
+      tier?: number; // Optional tier override
     }
   ): Promise<AgoraMessage> {
     const session = this.getSession(sessionId);
@@ -439,7 +440,7 @@ export class AgoraService {
       content: options.content,
       message_type: options.messageType,
       round: session.current_round,
-      tier: llmService.isTier1Available() ? 1 : 0,
+      tier: options.tier ?? (llmService.isTier1Available() ? 1 : 0),
       created_at: new Date().toISOString(),
     };
 
@@ -505,13 +506,14 @@ export class AgoraService {
     this.io.emit('agent:stateChange', { agentId, state: 'speaking' });
 
     try {
-      const content = await this.generateResponse(agent, session, recentMessages);
+      const response = await this.generateResponse(agent, session, recentMessages);
 
-      // Add message
+      // Add message with actual tier used
       const message = await this.addMessage(sessionId, {
         agentId,
-        content,
+        content: response.content,
         messageType: 'agent',
+        tier: response.tier,
       });
 
       // Check if orchestrator should advance the round (non-blocking)
@@ -1412,7 +1414,7 @@ Return [] if no clear action items. JSON array only:`,
     agent: Agent,
     session: AgoraSession,
     recentMessages: AgoraMessage[]
-  ): Promise<string> {
+  ): Promise<{ content: string; tier: number }> {
     // Try LLM generation
     if (llmService.isTier1Available() || this.hasExternalLLM()) {
       try {
@@ -1429,7 +1431,10 @@ Return [] if no clear action items. JSON array only:`,
         });
 
         if (response.content) {
-          return this.cleanResponse(response.content);
+          return {
+            content: this.cleanResponse(response.content),
+            tier: response.tier, // Use actual tier from LLM response
+          };
         }
       } catch (error) {
         console.warn('[Agora] LLM generation failed:', error);
@@ -1437,7 +1442,10 @@ Return [] if no clear action items. JSON array only:`,
     }
 
     // Fallback to template response
-    return this.getTemplateResponse(agent, session);
+    return {
+      content: this.getTemplateResponse(agent, session),
+      tier: 0, // Template fallback
+    };
   }
 
   private buildSystemPrompt(agent: Agent, session: AgoraSession): string {
