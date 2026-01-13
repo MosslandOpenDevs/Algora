@@ -7,6 +7,7 @@ import type { Agent } from '@/lib/api';
 interface ParticipantListProps {
   agents: Agent[];
   participants: string[];
+  onAgentClick?: (agentId: string) => void;
 }
 
 const statusColors: Record<string, string> = {
@@ -33,7 +34,7 @@ const statusAnimations: Record<string, string> = {
   listening: 'animate-pulse',
 };
 
-export function ParticipantList({ agents, participants }: ParticipantListProps) {
+export function ParticipantList({ agents, participants, onAgentClick }: ParticipantListProps) {
   const t = useTranslations('Agora');
   const tAgents = useTranslations('Agents.groups');
 
@@ -63,16 +64,17 @@ export function ParticipantList({ agents, participants }: ParticipantListProps) 
             const isActive = agent.status === 'active' || agent.status === 'listening';
 
             return (
-              <div
+              <button
                 key={agent.id}
+                onClick={() => onAgentClick?.(agent.id)}
                 className={`
-                  animate-slide-up flex items-center gap-2 rounded-lg p-2
-                  transition-all duration-300
+                  animate-slide-up flex items-center gap-2 rounded-lg p-2 w-full text-left
+                  transition-all duration-300 cursor-pointer
                   ${isSpeaking
-                    ? 'bg-agora-accent/10 border border-agora-accent/30'
+                    ? 'bg-agora-accent/10 border border-agora-accent/30 hover:bg-agora-accent/20'
                     : isActive
-                      ? 'bg-agora-success/10 border border-agora-success/30'
-                      : 'bg-agora-darker'
+                      ? 'bg-agora-success/10 border border-agora-success/30 hover:bg-agora-success/20'
+                      : 'bg-agora-darker hover:bg-agora-border'
                   }
                 `}
                 style={{
@@ -107,7 +109,7 @@ export function ParticipantList({ agents, participants }: ParticipantListProps) 
                     {tAgents(agent.group_name)}
                   </p>
                 </div>
-              </div>
+              </button>
             );
           })
         ) : (
@@ -125,6 +127,7 @@ export function ParticipantList({ agents, participants }: ParticipantListProps) 
             {availableAgents.slice(0, 6).map((agent, index) => (
               <button
                 key={agent.id}
+                onClick={() => onAgentClick?.(agent.id)}
                 className="
                   group flex items-center gap-1 rounded-full bg-agora-darker px-2 py-1 text-xs text-agora-muted
                   transition-all duration-200

@@ -11,12 +11,13 @@ import {
   Loader2,
 } from 'lucide-react';
 
-import { fetchAgents, fetchAgoraSessions, fetchSessionWithMessages, sendAgoraMessage, type AgoraSession, type AgoraMessage } from '@/lib/api';
+import { fetchAgents, fetchAgoraSessions, fetchSessionWithMessages, sendAgoraMessage, type AgoraSession, type AgoraMessage, type Agent } from '@/lib/api';
 import { SessionCard } from '@/components/agora/SessionCard';
 import { ChatMessage } from '@/components/agora/ChatMessage';
 import { ParticipantList } from '@/components/agora/ParticipantList';
 import { NewSessionModal } from '@/components/agora/NewSessionModal';
 import { SessionDetailModal } from '@/components/agora/SessionDetailModal';
+import { AgentDetailModal } from '@/components/agora/AgentDetailModal';
 import { HelpTooltip } from '@/components/guide/HelpTooltip';
 
 // Helper to parse summoned_agents JSON string
@@ -39,6 +40,7 @@ export default function AgoraPage() {
   const [message, setMessage] = useState('');
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   const [detailSession, setDetailSession] = useState<AgoraSession | null>(null);
+  const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
 
   const { data: sessions, isLoading: sessionsLoading } = useQuery({
     queryKey: ['agora-sessions'],
@@ -92,6 +94,18 @@ export default function AgoraPage() {
       e.preventDefault();
       handleSendMessage();
     }
+  };
+
+  const handleAgentClick = (agentId: string) => {
+    const agent = agents?.find(a => a.id === agentId || a.name === agentId);
+    if (agent) {
+      setSelectedAgent(agent);
+    }
+  };
+
+  // Count messages per agent
+  const getAgentMessageCount = (agentId: string) => {
+    return messages.filter(m => m.agent_id === agentId).length;
   };
 
   return (
@@ -247,6 +261,7 @@ export default function AgoraPage() {
                             isSystem: isSystemMessage,
                             isHuman: isHumanMessage,
                           }}
+                          onAgentClick={!isSystemMessage && !isHumanMessage && msg.agent_id ? handleAgentClick : undefined}
                         />
                       );
                     })
@@ -311,6 +326,7 @@ export default function AgoraPage() {
             <ParticipantList
               agents={agents || []}
               participants={parseParticipants(activeSession.summoned_agents)}
+              onAgentClick={handleAgentClick}
             />
           </div>
         )}
@@ -338,6 +354,15 @@ export default function AgoraPage() {
             setActiveSessionId(detailSession.id);
             setDetailSession(null);
           }}
+        />
+      )}
+
+      {/* Agent Detail Modal */}
+      {selectedAgent && (
+        <AgentDetailModal
+          agent={selectedAgent}
+          onClose={() => setSelectedAgent(null)}
+          messageCount={getAgentMessageCount(selectedAgent.id)}
         />
       )}
     </div>
