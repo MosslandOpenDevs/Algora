@@ -19,7 +19,7 @@ import { classifyAction } from '@algora/safe-autonomy';
 import type { Issue as OrchestratorIssue, WorkflowType, TopicCategory } from '@algora/orchestrator';
 import type { DocumentType, Document } from '@algora/document-registry';
 import type { DualHouseVoting, HighRiskApproval, VoteChoice, HouseType } from '@algora/dual-house';
-import type { Task, TaskType } from '@algora/model-router';
+import type { Task, TaskType, DifficultyLevel } from '@algora/model-router';
 
 // Import existing services for integration
 import { llmService } from './llm';
@@ -585,29 +585,19 @@ export class GovernanceOSBridge extends EventEmitter {
 
   /**
    * Execute a task using the model router.
-   * Falls back to existing LLM service if model router is disabled.
+   * Routes requests based on task type and complexity.
+   * Falls back to existing LLM service for actual generation.
    */
   async executeWithModelRouter(params: {
     content: string;
     taskType?: TaskType;
     maxTokens?: number;
+    systemPrompt?: string;
+    temperature?: number;
+    complexity?: 'fast' | 'balanced' | 'quality';
   }): Promise<{ content: string; model: string; tier: number }> {
-    if (!this.config.enableModelRouter) {
-      // Fallback to existing LLM service
-      const response = await llmService.generate({
-        prompt: params.content,
-        maxTokens: params.maxTokens || 512,
-      });
-
-      return {
-        content: response.content,
-        model: response.model,
-        tier: response.tier,
-      };
-    }
-
+    // Use the model router for task classification
     const modelRouter = this.governanceOS.getModelRouter();
-
     const task: Task = {
       id: `task-${Date.now()}`,
       type: params.taskType || 'chatter',
@@ -616,12 +606,109 @@ export class GovernanceOSBridge extends EventEmitter {
       createdAt: new Date(),
     };
 
-    const result = await modelRouter.router.execute(task);
+    // Classify task to determine appropriate model tier
+    const classification = modelRouter.classifier.classify(task);
+    const tierFromClassification = this.difficultyToTier(classification.difficulty);
+
+    // Use the real LLM service for generation
+    const response = await llmService.generate({
+      prompt: params.content,
+      systemPrompt: params.systemPrompt,
+      maxTokens: params.maxTokens || 512,
+      temperature: params.temperature,
+      tier: tierFromClassification,
+      complexity: params.complexity || this.difficultyToComplexity(classification.difficulty),
+    });
+
+    // Track usage statistics
+    this.trackModelRouterUsage(task.type, classification.difficulty, response);
 
     return {
-      content: result.content,
-      model: result.model,
-      tier: result.usage?.totalTokens ? (result.costUsd > 0 ? 2 : 1) : 0,
+      content: response.content,
+      model: response.model,
+      tier: response.tier,
+    };
+  }
+
+  /**
+   * Convert difficulty level to LLM tier
+   */
+  private difficultyToTier(difficulty: DifficultyLevel): 0 | 1 | 2 {
+    switch (difficulty) {
+      case 'trivial':
+        return 0;
+      case 'simple':
+      case 'moderate':
+        return 1;
+      case 'complex':
+      case 'critical':
+        return 2;
+      default:
+        return 1;
+    }
+  }
+
+  /**
+   * Convert difficulty level to model complexity
+   */
+  private difficultyToComplexity(difficulty: DifficultyLevel): 'fast' | 'balanced' | 'quality' {
+    switch (difficulty) {
+      case 'trivial':
+      case 'simple':
+        return 'fast';
+      case 'moderate':
+        return 'balanced';
+      case 'complex':
+      case 'critical':
+        return 'quality';
+      default:
+        return 'balanced';
+    }
+  }
+
+  /**
+   * Track model router usage for analytics
+   */
+  private trackModelRouterUsage(
+    taskType: string,
+    difficulty: DifficultyLevel,
+    response: { tier: number; model: string; tokensUsed?: number }
+  ): void {
+    // Emit usage event for monitoring
+    this.io.emit('governance-os:model-router:usage', {
+      taskType,
+      difficulty,
+      tier: response.tier,
+      model: response.model,
+      tokensUsed: response.tokensUsed || 0,
+      timestamp: new Date().toISOString(),
+    });
+  }
+
+  /**
+   * Get model router statistics
+   */
+  getModelRouterStats(): {
+    totalRequests: number;
+    successfulRequests: number;
+    failedRequests: number;
+    totalTokens: number;
+    totalCostUsd: number;
+    averageLatencyMs: number;
+    tierUsage: Record<number, number>;
+    modelUsage: Record<string, number>;
+  } {
+    const modelRouter = this.governanceOS.getModelRouter();
+    const stats = modelRouter.router.getStats();
+    return {
+      totalRequests: stats.totalRequests,
+      successfulRequests: stats.successfulRequests,
+      failedRequests: stats.failedRequests,
+      totalTokens: stats.totalTokens,
+      totalCostUsd: stats.totalCostUsd,
+      averageLatencyMs: stats.averageLatencyMs,
+      tierUsage: stats.tierUsage,
+      modelUsage: stats.modelUsage,
     };
   }
 
