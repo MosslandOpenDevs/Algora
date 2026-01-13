@@ -131,8 +131,44 @@ export class GovernanceService {
         timestamp: new Date().toISOString(),
       });
 
+      // If HIGH risk, create a lock approval requirement
+      if (riskLevel === 'HIGH') {
+        await this.createHighRiskLock(proposal, voting.id);
+      }
+
     } catch (error) {
       console.error(`[Governance] Failed to create voting session for proposal:`, error);
+    }
+  }
+
+  /**
+   * Create a high-risk lock for proposals requiring Director 3 approval
+   */
+  private async createHighRiskLock(proposal: any, votingId: string): Promise<void> {
+    if (!this.governanceOSBridge) {
+      return;
+    }
+
+    try {
+      const approval = await this.governanceOSBridge.createHighRiskApproval({
+        proposalId: proposal.id,
+        votingId,
+        actionDescription: `High-risk proposal requires Director 3 approval: ${proposal.title}`,
+        actionType: proposal.category || 'general',
+      });
+
+      console.log(`[Governance] Created high-risk lock ${approval.id} for proposal ${proposal.id.slice(0, 8)}`);
+
+      this.io.emit('governance:action:locked', {
+        approvalId: approval.id,
+        proposalId: proposal.id,
+        votingId,
+        riskLevel: 'HIGH',
+        timestamp: new Date().toISOString(),
+      });
+
+    } catch (error) {
+      console.error(`[Governance] Failed to create lock for proposal:`, error);
     }
   }
 

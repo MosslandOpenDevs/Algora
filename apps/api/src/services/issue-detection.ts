@@ -469,12 +469,54 @@ export class IssueDetectionService {
     // Create governance document for all issues
     await this.createIssueDocument(issueId, title, description, pattern, signals);
 
+    // Check for high-risk and create lock if needed
+    if (pattern.priority === 'critical') {
+      await this.createHighRiskLock(issueId, title, pattern.category);
+    }
+
     // Auto-create Agora session for critical/high priority issues
     if (pattern.priority === 'critical' || pattern.priority === 'high') {
       await this.createAutoAgoraSession(issueId, title, pattern.category, pattern.priority);
     } else {
       // For medium/low priority, trigger pipeline directly
       await this.triggerPipelineForIssue(issueId, title, pattern.category, pattern.priority);
+    }
+  }
+
+  /**
+   * Create a high-risk lock for critical issues
+   */
+  private async createHighRiskLock(
+    issueId: string,
+    title: string,
+    category: string
+  ): Promise<void> {
+    if (!this.governanceOSBridge) {
+      console.log('[IssueDetection] GovernanceOS Bridge not available, skipping lock creation');
+      return;
+    }
+
+    try {
+      const riskLevel = this.governanceOSBridge.classifyRisk(category);
+
+      if (riskLevel === 'HIGH') {
+        const approval = await this.governanceOSBridge.createHighRiskApproval({
+          proposalId: issueId, // Using issueId as reference
+          votingId: '', // Will be linked later if voting is created
+          actionDescription: `Critical issue requires approval: ${title}`,
+          actionType: category,
+        });
+
+        console.log(`[IssueDetection] Created high-risk lock ${approval.id} for issue ${issueId.slice(0, 8)}`);
+
+        this.logActivity('APPROVAL', 'critical', `High-risk lock created for: ${title}`, {
+          issueId,
+          approvalId: approval.id,
+          riskLevel: 'HIGH',
+        });
+      }
+    } catch (error) {
+      console.error(`[IssueDetection] Failed to create lock for issue ${issueId}:`, error);
     }
   }
 
