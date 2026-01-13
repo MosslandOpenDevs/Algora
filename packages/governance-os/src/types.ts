@@ -154,6 +154,8 @@ export interface PipelineContext {
   riskLevel: RiskLevel;
   /** Started at */
   startedAt: Date;
+  /** Completed at */
+  completedAt?: Date;
   /** Completed stages */
   completedStages: PipelineStage[];
   /** Error if any */

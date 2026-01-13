@@ -357,18 +357,21 @@ export class GovernancePipeline {
             reason: 'Awaiting approval for HIGH-risk action',
           });
 
+          currentContext.completedAt = new Date();
           const result = this.createResult(currentContext, 'locked', services);
           this.emit('pipeline:completed', { result });
           return result;
         }
       }
 
+      currentContext.completedAt = new Date();
       const result = this.createResult(currentContext, 'completed', services);
       this.emit('pipeline:completed', { result });
       return result;
 
     } catch (error) {
       currentContext.error = error instanceof Error ? error.message : String(error);
+      currentContext.completedAt = new Date();
       this.emit('pipeline:error', {
         context: currentContext,
         error: error instanceof Error ? error : new Error(String(error)),
