@@ -133,10 +133,12 @@ agentsRouter.post('/:id/summon', (req, res) => {
     }
 
     // Log activity
+    const activityId = `summon-${id}-${Date.now()}`;
     db.prepare(`
-      INSERT INTO activities (type, message, severity, agent_id, metadata)
-      VALUES ('AGENT_SUMMONED', ?, 'info', ?, ?)
+      INSERT INTO activity_log (id, type, message, severity, timestamp, agent_id, metadata)
+      VALUES (?, 'AGENT_SUMMONED', ?, 'info', datetime('now'), ?, ?)
     `).run(
+      activityId,
       `${agent.display_name || agent.name} has been summoned`,
       id,
       JSON.stringify({ action: 'summon', agentName: agent.name })
@@ -184,10 +186,12 @@ agentsRouter.post('/:id/dismiss', (req, res) => {
     }
 
     // Log activity
+    const activityId = `dismiss-${id}-${Date.now()}`;
     db.prepare(`
-      INSERT INTO activities (type, message, severity, agent_id, metadata)
-      VALUES ('AGENT_DISMISSED', ?, 'info', ?, ?)
+      INSERT INTO activity_log (id, type, message, severity, timestamp, agent_id, metadata)
+      VALUES (?, 'AGENT_DISMISSED', ?, 'info', datetime('now'), ?, ?)
     `).run(
+      activityId,
       `${agent.display_name || agent.name} has been dismissed`,
       id,
       JSON.stringify({ action: 'dismiss', agentName: agent.name })
