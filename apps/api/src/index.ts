@@ -9,7 +9,7 @@ import { initDatabase } from './db';
 import { setupRoutes } from './routes';
 import { setupSocketHandlers } from './services/socket';
 import { ActivityService } from './activity';
-// import { SchedulerService } from './scheduler'; // Commented out until fully implemented
+import { SchedulerService } from './scheduler';
 import { ChatterService } from './services/chatter';
 import { llmService } from './services/llm';
 import { SignalCollectorService } from './services/collectors';
@@ -90,9 +90,10 @@ async function bootstrap() {
     const signalCollector = new SignalCollectorService(db, io);
     app.locals.signalCollector = signalCollector;
 
-    // Initialize scheduler (commented out until fully implemented)
-    // const schedulerService = new SchedulerService(db, io, activityService);
-    // app.locals.schedulerService = schedulerService;
+    // Initialize scheduler for Tier 0/1/2 operations
+    const schedulerService = new SchedulerService(db, io, activityService);
+    schedulerService.setGovernanceOSBridge(governanceOSBridge);
+    app.locals.schedulerService = schedulerService;
 
     // Start heartbeat
     activityService.startHeartbeat();
@@ -102,6 +103,10 @@ async function bootstrap() {
 
     // Start signal collectors
     signalCollector.start();
+
+    // Start scheduler (Tier 0/1/2 task processing)
+    schedulerService.start();
+    console.info('[Scheduler] Started - Tier 0/1/2 task processing active');
 
     // Initialize issue detection service
     const issueDetection = new IssueDetectionService(db, io);
@@ -159,6 +164,9 @@ function gracefulShutdown(signal: string) {
   console.info(`${signal} received, shutting down...`);
 
   // Stop services
+  if (app.locals.schedulerService) {
+    app.locals.schedulerService.stop();
+  }
   if (app.locals.issueDetection) {
     app.locals.issueDetection.stop();
   }

@@ -1,6 +1,7 @@
 import { Server as SocketServer } from 'socket.io';
 import type Database from 'better-sqlite3';
 import { ActivityService } from '../activity';
+import type { GovernanceOSBridge } from '../services/governance-os-bridge';
 
 export type Tier = 0 | 1 | 2;
 
@@ -14,6 +15,7 @@ export class SchedulerService {
   private db: Database.Database;
   private io: SocketServer;
   private activityService: ActivityService;
+  private governanceOSBridge: GovernanceOSBridge | null = null;
   private config: SchedulerConfig;
   private intervals: Map<string, NodeJS.Timeout> = new Map();
   private isRunning: boolean = false;
@@ -32,6 +34,14 @@ export class SchedulerService {
       tier1Interval: config?.tier1Interval || 10000,
       tier2ScheduledRuns: config?.tier2ScheduledRuns || [6, 12, 18, 23],
     };
+  }
+
+  /**
+   * Set the GovernanceOS Bridge for Tier 2 operations
+   */
+  setGovernanceOSBridge(bridge: GovernanceOSBridge): void {
+    this.governanceOSBridge = bridge;
+    console.info('[Scheduler] GovernanceOS Bridge connected');
   }
 
   start(): void {
@@ -192,10 +202,230 @@ export class SchedulerService {
       metadata: { tier: 2 },
     });
 
-    // TODO: Implement Tier 2 logic
-    // - Check for pending issues
-    // - Summon relevant agents
-    // - Generate decision packets
+    if (!this.governanceOSBridge) {
+      console.warn('[Scheduler] GovernanceOS Bridge not available, skipping Tier 2 tasks');
+      return;
+    }
+
+    try {
+      // 1. Find pending/confirmed issues that need pipeline processing
+      const pendingIssues = this.db.prepare(`
+        SELECT * FROM issues
+        WHERE status IN ('detected', 'confirmed')
+        AND priority IN ('critical', 'high')
+        ORDER BY
+          CASE priority
+            WHEN 'critical' THEN 1
+            WHEN 'high' THEN 2
+            ELSE 3
+          END,
+          created_at ASC
+        LIMIT 5
+      `).all() as Array<{
+        id: string;
+        title: string;
+        description: string;
+        category: string;
+        priority: string;
+        status: string;
+      }>;
+
+      if (pendingIssues.length === 0) {
+        console.info('[Scheduler] No pending issues to process');
+        return;
+      }
+
+      console.info(`[Scheduler] Processing ${pendingIssues.length} pending issues`);
+
+      // 2. Process each issue through the governance pipeline
+      for (const issue of pendingIssues) {
+        try {
+          console.info(`[Scheduler] Running pipeline for issue: ${issue.id.slice(0, 8)} - ${issue.title}`);
+
+          // Determine workflow type based on category
+          const workflowType = this.determineWorkflowType(issue.category);
+
+          // Run the pipeline
+          const result = await this.governanceOSBridge.runPipelineForIssue(issue.id, {
+            workflowType,
+          });
+
+          if (result.success) {
+            this.activityService.log('PIPELINE', 'info', `Pipeline completed for issue: ${issue.title}`, {
+              details: { issueId: issue.id, workflowType, status: result.status },
+              metadata: { tier: 2 },
+            });
+
+            // Emit event for real-time updates
+            this.io.emit('governance:pipeline:completed', {
+              issueId: issue.id,
+              workflowType,
+              success: true,
+              timestamp: new Date().toISOString(),
+            });
+          } else {
+            console.error(`[Scheduler] Pipeline failed for issue ${issue.id}: status=${result.status}`);
+          }
+
+          // Small delay between pipeline runs to avoid overloading
+          await new Promise(resolve => setTimeout(resolve, 2000));
+
+        } catch (error) {
+          console.error(`[Scheduler] Failed to process issue ${issue.id}:`, error);
+          this.activityService.log('PIPELINE', 'error', `Pipeline failed for issue: ${issue.title}`, {
+            details: { issueId: issue.id, error: String(error) },
+            metadata: { tier: 2 },
+          });
+        }
+      }
+
+      // 3. Check for proposals that need voting sessions
+      await this.processProposalsForVoting();
+
+      // 4. Check for high-risk actions that need locking
+      await this.processHighRiskActions();
+
+    } catch (error) {
+      console.error('[Scheduler] Tier 2 task error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Process proposals that need voting sessions
+   */
+  private async processProposalsForVoting(): Promise<void> {
+    if (!this.governanceOSBridge) return;
+
+    try {
+      // Find approved proposals without voting sessions
+      const proposals = this.db.prepare(`
+        SELECT * FROM proposals
+        WHERE status = 'pending'
+        AND id NOT IN (
+          SELECT DISTINCT JSON_EXTRACT(content, '$.proposalId')
+          FROM (
+            SELECT content FROM governance_documents
+            WHERE type = 'PP'
+          )
+        )
+        LIMIT 3
+      `).all() as Array<{
+        id: string;
+        title: string;
+        description: string;
+        category: string;
+        status: string;
+      }>;
+
+      for (const proposal of proposals) {
+        try {
+          // Classify risk level
+          const riskLevel = this.governanceOSBridge.classifyRisk(proposal.category);
+
+          // Create voting session
+          const voting = await this.governanceOSBridge.createDualHouseVoting({
+            proposalId: proposal.id,
+            title: proposal.title,
+            summary: proposal.description?.substring(0, 500) || proposal.title,
+            riskLevel,
+            category: proposal.category,
+            createdBy: 'scheduler-tier2',
+          });
+
+          console.info(`[Scheduler] Created voting session ${voting.id} for proposal ${proposal.id.slice(0, 8)}`);
+
+          this.activityService.log('VOTING', 'info', `Voting session created for: ${proposal.title}`, {
+            details: { proposalId: proposal.id, votingId: voting.id },
+            metadata: { tier: 2 },
+          });
+
+        } catch (error) {
+          console.error(`[Scheduler] Failed to create voting for proposal ${proposal.id}:`, error);
+        }
+      }
+    } catch (error) {
+      console.error('[Scheduler] Failed to process proposals for voting:', error);
+    }
+  }
+
+  /**
+   * Process high-risk actions that need locking
+   */
+  private async processHighRiskActions(): Promise<void> {
+    if (!this.governanceOSBridge) return;
+
+    try {
+      // Find critical issues that might need high-risk approval
+      const criticalIssues = this.db.prepare(`
+        SELECT * FROM issues
+        WHERE priority = 'critical'
+        AND status = 'in_progress'
+        LIMIT 3
+      `).all() as Array<{
+        id: string;
+        title: string;
+        description: string;
+        category: string;
+      }>;
+
+      for (const issue of criticalIssues) {
+        const riskLevel = this.governanceOSBridge.classifyRisk(issue.category);
+
+        if (riskLevel === 'HIGH') {
+          // Check if already has an approval request
+          const existingApprovals = await this.governanceOSBridge.listAllApprovals({ status: 'locked' });
+          const hasApproval = existingApprovals.actions.some(
+            a => JSON.stringify(a).includes(issue.id)
+          );
+
+          if (!hasApproval) {
+            try {
+              const approval = await this.governanceOSBridge.createHighRiskApproval({
+                proposalId: issue.id,
+                votingId: '', // Will be linked when voting is created
+                actionDescription: `High-risk action for critical issue: ${issue.title}`,
+                actionType: issue.category,
+              });
+
+              console.info(`[Scheduler] Created high-risk approval ${approval.id} for issue ${issue.id.slice(0, 8)}`);
+
+              this.activityService.log('APPROVAL', 'warning', `High-risk approval required: ${issue.title}`, {
+                details: { issueId: issue.id, approvalId: approval.id },
+                metadata: { tier: 2, riskLevel: 'HIGH' },
+              });
+
+            } catch (error) {
+              console.error(`[Scheduler] Failed to create approval for issue ${issue.id}:`, error);
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.error('[Scheduler] Failed to process high-risk actions:', error);
+    }
+  }
+
+  /**
+   * Determine workflow type based on issue category
+   */
+  private determineWorkflowType(category: string): 'A' | 'B' | 'C' | 'D' | 'E' {
+    const cat = category.toLowerCase();
+
+    if (cat.includes('ai') || cat.includes('research') || cat.includes('academic')) {
+      return 'A'; // Academic Activity
+    }
+    if (cat.includes('dev') || cat.includes('grant') || cat.includes('developer')) {
+      return 'C'; // Developer Support
+    }
+    if (cat.includes('partnership') || cat.includes('expansion') || cat.includes('ecosystem')) {
+      return 'D'; // Ecosystem Expansion
+    }
+    if (cat.includes('group') || cat.includes('committee') || cat.includes('working')) {
+      return 'E'; // Working Groups
+    }
+    // Default to Free Debate
+    return 'B';
   }
 
   async triggerTier2(): Promise<void> {

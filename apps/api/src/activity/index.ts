@@ -15,9 +15,14 @@ export type ActivityType =
   | 'AGENT_DISMISSED'
   | 'AGORA_SESSION_START'
   | 'AGORA_ROUND_COMPLETE'
+  | 'AGORA_SESSION_COMPLETE'
   | 'AGORA_CONSENSUS'
   | 'DECISION_PACKET'
-  | 'DISCLOSURE_PUBLISH';
+  | 'DISCLOSURE_PUBLISH'
+  | 'PIPELINE'
+  | 'VOTING'
+  | 'APPROVAL'
+  | 'DOCUMENT';
 
 export type Severity = 'info' | 'warning' | 'error' | 'critical';
 
