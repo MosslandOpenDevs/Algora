@@ -140,6 +140,22 @@ export async function fetchSessionWithMessages(sessionId: string): Promise<Sessi
   return fetchAPI<SessionWithMessages>(`/api/agora/sessions/${sessionId}`);
 }
 
+export async function sendAgoraMessage(
+  sessionId: string,
+  content: string,
+  humanId?: string
+): Promise<AgoraMessage> {
+  const response = await fetchAPI<{ message: AgoraMessage }>(`/api/agora/sessions/${sessionId}/message`, {
+    method: 'POST',
+    body: JSON.stringify({
+      content,
+      messageType: 'human',
+      humanId: humanId || 'anonymous',
+    }),
+  });
+  return response.message;
+}
+
 export async function summonAgent(agentId: string): Promise<void> {
   await fetchAPI(`/api/agents/${agentId}/summon`, { method: 'POST' });
 }

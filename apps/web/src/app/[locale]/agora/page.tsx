@@ -8,9 +8,10 @@ import {
   Users,
   Send,
   Plus,
+  Loader2,
 } from 'lucide-react';
 
-import { fetchAgents, fetchAgoraSessions, fetchSessionWithMessages, type AgoraSession, type AgoraMessage } from '@/lib/api';
+import { fetchAgents, fetchAgoraSessions, fetchSessionWithMessages, sendAgoraMessage, type AgoraSession, type AgoraMessage } from '@/lib/api';
 import { SessionCard } from '@/components/agora/SessionCard';
 import { ChatMessage } from '@/components/agora/ChatMessage';
 import { ParticipantList } from '@/components/agora/ParticipantList';
@@ -68,10 +69,22 @@ export default function AgoraPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  const handleSendMessage = () => {
-    if (!message.trim()) return;
-    // TODO: Implement actual message sending via WebSocket
-    setMessage('');
+  const [isSending, setIsSending] = useState(false);
+
+  const handleSendMessage = async () => {
+    if (!message.trim() || !activeSessionId || isSending) return;
+
+    setIsSending(true);
+    try {
+      await sendAgoraMessage(activeSessionId, message.trim());
+      setMessage('');
+      // Refresh messages
+      queryClient.invalidateQueries({ queryKey: ['agora-session', activeSessionId] });
+    } catch (error) {
+      console.error('Failed to send message:', error);
+    } finally {
+      setIsSending(false);
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -243,10 +256,14 @@ export default function AgoraPage() {
                   />
                   <button
                     onClick={handleSendMessage}
-                    disabled={!message.trim()}
+                    disabled={!message.trim() || isSending}
                     className="flex items-center gap-2 rounded-lg bg-agora-primary px-4 py-2 text-slate-900 transition-colors hover:bg-agora-primary/80 disabled:opacity-50"
                   >
-                    <Send className="h-4 w-4" />
+                    {isSending ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Send className="h-4 w-4" />
+                    )}
                   </button>
                 </div>
               </div>
