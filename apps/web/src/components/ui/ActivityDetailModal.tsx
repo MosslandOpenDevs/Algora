@@ -8,6 +8,7 @@ import {
   Radio,
   MessageCircle,
   UserPlus,
+  UserMinus,
   Play,
   FileText,
   Calendar,
@@ -15,7 +16,6 @@ import {
   AlertCircle,
   Database,
   Tag,
-  Share2,
 } from 'lucide-react';
 import type { Activity } from '@/lib/api';
 
@@ -44,6 +44,11 @@ const activityIcons: Record<string, { icon: React.ReactNode; color: string; bg: 
     icon: <UserPlus className="h-5 w-5" />,
     color: 'text-agora-warning',
     bg: 'bg-agora-warning/10',
+  },
+  AGENT_DISMISSED: {
+    icon: <UserMinus className="h-5 w-5" />,
+    color: 'text-gray-400',
+    bg: 'bg-gray-500/10',
   },
   AGORA_SESSION_START: {
     icon: <Play className="h-5 w-5" />,
@@ -234,18 +239,12 @@ export function ActivityDetailModal({ activity, onClose }: ActivityDetailModalPr
               <span>{activity.type}</span>
             </div>
 
-            <div className="flex items-center gap-3">
-              <button className="flex items-center gap-2 rounded-lg bg-agora-card px-4 py-2 text-sm font-medium text-slate-900 transition-colors hover:bg-agora-border">
-                <Share2 className="h-4 w-4" />
-                {t('detail.share')}
-              </button>
-              <button
-                onClick={onClose}
-                className="rounded-lg bg-agora-primary px-4 py-2 text-sm font-medium text-slate-900 transition-colors hover:bg-agora-primary/80"
-              >
-                {t('detail.close')}
-              </button>
-            </div>
+            <button
+              onClick={onClose}
+              className="rounded-lg bg-agora-primary px-4 py-2 text-sm font-medium text-slate-900 transition-colors hover:bg-agora-primary/80"
+            >
+              {t('detail.close')}
+            </button>
           </div>
         </div>
       </div>

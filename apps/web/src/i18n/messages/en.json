@@ -140,6 +140,7 @@
       "COLLECTOR": "Signal Collection",
       "AGENT_CHATTER": "Agent Chatter",
       "AGENT_SUMMONED": "Agent Summoned",
+      "AGENT_DISMISSED": "Agent Dismissed",
       "AGORA_SESSION_START": "Session Started",
       "AGORA_SESSION_AUTO_CREATED": "Auto Session Created",
       "DECISION_PACKET": "Decision Packet",

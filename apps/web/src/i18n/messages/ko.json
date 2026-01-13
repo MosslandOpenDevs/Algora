@@ -140,6 +140,7 @@
       "COLLECTOR": "신호 수집",
       "AGENT_CHATTER": "에이전트 잡담",
       "AGENT_SUMMONED": "에이전트 소환됨",
+      "AGENT_DISMISSED": "에이전트 해제됨",
       "AGORA_SESSION_START": "세션 시작됨",
       "AGORA_SESSION_AUTO_CREATED": "자동 세션 생성됨",
       "DECISION_PACKET": "의사결정 패킷",

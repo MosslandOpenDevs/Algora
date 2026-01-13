@@ -102,6 +102,108 @@ agentsRouter.patch('/:id/state', (req, res) => {
   }
 });
 
+// POST /api/agents/:id/summon - Summon an agent (activate)
+agentsRouter.post('/:id/summon', (req, res) => {
+  const db: Database.Database = req.app.locals.db;
+  const io = req.app.locals.io;
+  const { id } = req.params;
+
+  try {
+    // Check if agent exists
+    const agent = db.prepare('SELECT * FROM agents WHERE id = ?').get(id) as any;
+    if (!agent) {
+      return res.status(404).json({ error: 'Agent not found' });
+    }
+
+    // Update agent state to active
+    const result = db.prepare(`
+      UPDATE agent_states
+      SET status = 'active',
+          current_activity = 'Summoned to participate',
+          last_active = CURRENT_TIMESTAMP
+      WHERE agent_id = ?
+    `).run(id);
+
+    if (result.changes === 0) {
+      // Create state if it doesn't exist
+      db.prepare(`
+        INSERT INTO agent_states (agent_id, status, current_activity, last_active)
+        VALUES (?, 'active', 'Summoned to participate', CURRENT_TIMESTAMP)
+      `).run(id);
+    }
+
+    // Log activity
+    db.prepare(`
+      INSERT INTO activities (type, message, severity, agent_id, metadata)
+      VALUES ('AGENT_SUMMONED', ?, 'info', ?, ?)
+    `).run(
+      `${agent.display_name || agent.name} has been summoned`,
+      id,
+      JSON.stringify({ action: 'summon', agentName: agent.name })
+    );
+
+    // Emit socket events
+    io.emit('agent:state_changed', { agentId: id, status: 'active', currentActivity: 'Summoned to participate' });
+    io.emit('agent:summoned', { agentId: id, agent });
+
+    res.json({ success: true, agent: { ...agent, status: 'active' } });
+  } catch (error) {
+    console.error('Failed to summon agent:', error);
+    res.status(500).json({ error: 'Failed to summon agent' });
+  }
+});
+
+// POST /api/agents/:id/dismiss - Dismiss an agent (deactivate)
+agentsRouter.post('/:id/dismiss', (req, res) => {
+  const db: Database.Database = req.app.locals.db;
+  const io = req.app.locals.io;
+  const { id } = req.params;
+
+  try {
+    // Check if agent exists
+    const agent = db.prepare('SELECT * FROM agents WHERE id = ?').get(id) as any;
+    if (!agent) {
+      return res.status(404).json({ error: 'Agent not found' });
+    }
+
+    // Update agent state to idle
+    const result = db.prepare(`
+      UPDATE agent_states
+      SET status = 'idle',
+          current_activity = NULL,
+          last_active = CURRENT_TIMESTAMP
+      WHERE agent_id = ?
+    `).run(id);
+
+    if (result.changes === 0) {
+      // Create state if it doesn't exist
+      db.prepare(`
+        INSERT INTO agent_states (agent_id, status, current_activity, last_active)
+        VALUES (?, 'idle', NULL, CURRENT_TIMESTAMP)
+      `).run(id);
+    }
+
+    // Log activity
+    db.prepare(`
+      INSERT INTO activities (type, message, severity, agent_id, metadata)
+      VALUES ('AGENT_DISMISSED', ?, 'info', ?, ?)
+    `).run(
+      `${agent.display_name || agent.name} has been dismissed`,
+      id,
+      JSON.stringify({ action: 'dismiss', agentName: agent.name })
+    );
+
+    // Emit socket events
+    io.emit('agent:state_changed', { agentId: id, status: 'idle', currentActivity: null });
+    io.emit('agent:dismissed', { agentId: id, agent });
+
+    res.json({ success: true, agent: { ...agent, status: 'idle' } });
+  } catch (error) {
+    console.error('Failed to dismiss agent:', error);
+    res.status(500).json({ error: 'Failed to dismiss agent' });
+  }
+});
+
 // GET /api/chatter/recent - Get recent chatter
 agentsRouter.get('/chatter/recent', (req, res) => {
   const db: Database.Database = req.app.locals.db;
