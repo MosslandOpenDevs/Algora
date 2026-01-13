@@ -522,23 +522,31 @@ See [docs/algora-v2-upgrade-plan.md](docs/algora-v2-upgrade-plan.md) for the com
 
 ## Next Steps (Priority Order)
 
-### Phase 8: UI Integration & Polish
+### Phase 10: Integration & Polish
 1. Token wallet connection UI (MetaMask, WalletConnect)
 2. Treasury dashboard with balance visualization
 3. Token-weighted voting UI in proposals
 4. Holder profile and voting history pages
 5. Real-time WebSocket integration for token events
 
-### Phase 9: Production Deployment
+### Phase 11: Production Hardening
 1. Mainnet contract integration
 2. Security audit
 3. Performance optimization
-4. Monitoring and alerting
+4. Monitoring and alerting (pm2 monit, log rotation)
+
+### Phase 12: Advanced Features
+1. packages/reality-oracle - Signal collection refactoring
+2. packages/inference-mining - Issue detection refactoring
+3. packages/agentic-consensus - Agent system refactoring
+4. packages/human-governance - Voting refactoring
+5. packages/proof-of-outcome - Result tracking refactoring
 
 ---
 
 ## Running the Project
 
+### Development Mode
 ```bash
 # Install dependencies
 pnpm install
@@ -551,21 +559,41 @@ cd apps/api && pnpm dev   # Backend on :3201
 cd apps/web && pnpm dev   # Frontend on :3200
 ```
 
+### Production Mode (pm2)
+```bash
+# Build all packages
+pnpm build
+
+# Start with pm2
+pm2 start ecosystem.config.cjs
+
+# Management commands
+pm2 status              # View status
+pm2 logs algora-api     # API logs
+pm2 logs algora-web     # Web logs
+pm2 restart all         # Restart all
+pm2 stop all            # Stop all
+
+# Auto-start on reboot
+pm2 save
+pm2 startup
+```
+
+### Production URLs
+- **Production**: https://algora.moss.land
+- **Local Dev**: http://localhost:3200 (web), http://localhost:3201 (api)
+
 ---
 
-## Git Commit History
+## Git Commit History (Recent)
 
 ```
-451a1d0 feat(web): Add Engine Room page with system monitoring
-b1d61a3 feat(web): Add Proposals page with voting interface
-5b1a6de feat(web): Add Issues page with status workflow
-0816720 feat(web): Add Signals page with source filtering
-40b7bcc feat(web): Add Agora page with live deliberation interface
-e388a3a feat(web): Add Agents page with grid view and detail modal
-00d555d docs: Add development status tracking
-e7354e9 fix(api): Add missing /api/stats and /api/activity endpoints
-e413b1b fix(web): Fix API response handling
-66e5dda fix(web): Add missing date-fns dependency
+3086f08 docs: Update USER_GUIDE.md and USER_GUIDE.ko.md with v2.0 features
+2568ccd feat: Add production deployment with pm2 and nginx reverse proxy
+bafeae9 test: Add comprehensive tests for v2.0 packages and fix exports
+835ab91 feat: Complete v2.0 Plan Implementation - Phase 8 Finalization
+541a049 feat(api): Connect backend API to Governance OS UI and remove mock data
+b0e94f6 docs: Update documentation for v0.12.0 - Governance OS UI
 ```
 
 ---
@@ -575,6 +603,7 @@ e413b1b fix(web): Fix API response handling
 1. Next.js 14.1.0 is outdated (minor warning)
 2. Agent states not being persisted on server restart (need initialization)
 3. Database requires re-initialization after schema changes (delete algora.db and run db:init)
+4. Localhost CORS issues when connecting to production API (expected behavior)
 
 ---
 
@@ -584,6 +613,7 @@ e413b1b fix(web): Fix API response handling
 - pnpm (for monorepo)
 - SQLite database stored in `apps/api/data/algora.db`
 - Database auto-initializes on first run
+- Ollama required for Tier 1 LLM (http://localhost:11434)
 
 ---
 
@@ -593,5 +623,19 @@ When continuing development:
 1. Read this file first to understand current status
 2. Check CLAUDE.md for project context and guidelines
 3. Run `git log --oneline -10` to see recent changes
-4. Run `pnpm dev` to start the development servers
+4. Run `pnpm dev` to start the development servers (or `pm2 start ecosystem.config.cjs` for production)
 5. Update this file and CHANGELOG.md after significant changes
+6. Update Korean translations (*.ko.md) when documentation changes
+
+### Key Files to Know
+- `ecosystem.config.cjs` - pm2 configuration
+- `apps/web/src/middleware.ts` - Next.js i18n middleware (exclude `_next` paths)
+- `apps/web/.env.local` - Frontend environment (NEXT_PUBLIC_API_URL)
+- `apps/api/.env` - Backend environment
+
+### Current Architecture
+```
+Internet → algora.moss.land (DNS)
+        → Lightsail 13.209.131.190 (nginx + SSL)
+        → Local 211.196.73.206 (pm2: api:3201, web:3200)
+```

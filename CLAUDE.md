@@ -50,7 +50,7 @@ algora/
 - **Tier 2**: External LLM (Claude/GPT) - Serious deliberation, Decision Packets
 
 ### Scalable AI Agents (Dynamic Persona Spectrum)
-Initial configuration: 30 agents in 7 clusters (architecture supports infinite scaling):
+Current configuration: 38 agents in 11 clusters (architecture supports infinite scaling):
 1. **Visionaries** (5): Future-oriented thinkers
 2. **Builders** (5): Engineering guild
 3. **Investors** (4): Market watchers
@@ -58,6 +58,10 @@ Initial configuration: 30 agents in 7 clusters (architecture supports infinite s
 5. **Operatives** (5): Data collection specialists
 6. **Moderators** (3): Discussion facilitators
 7. **Advisors** (4): Domain experts
+8. **Orchestrators** (2): Workflow coordinators (Nova Prime, Atlas)
+9. **Archivists** (2): Document keepers (Archive Alpha, Trace Master)
+10. **Red Team** (3): Devil's advocates (Contrarian Carl, Breach Tester, Base Questioner)
+11. **Scouts** (1): Opportunity detectors (Horizon Seeker)
 
 ## Development Guidelines
 
@@ -150,12 +154,35 @@ Recommended models:
 
 ## Deployment
 
-- Domain: algora.moss.land
-- Local Development Ports:
-  - Frontend: http://localhost:3200
-  - Backend API: http://localhost:3201
-- Platform: (TBD - likely Vercel for frontend, custom server for API)
-- Database: SQLite with WAL mode (single-server deployment)
+### Production
+- **URL**: https://algora.moss.land
+- **Architecture**: nginx (Lightsail) → pm2 (Local Machine)
+- **Lightsail Server**: 13.209.131.190 (nginx reverse proxy + SSL)
+- **Local Machine**: 211.196.73.206 (pm2 managed services)
+
+### Local Development
+- Frontend: http://localhost:3200
+- Backend API: http://localhost:3201
+
+### Production Commands
+```bash
+# Start with pm2
+pm2 start ecosystem.config.cjs
+
+# View status
+pm2 status
+
+# View logs
+pm2 logs algora-api
+pm2 logs algora-web
+
+# Restart
+pm2 restart all
+```
+
+### Database
+- SQLite with WAL mode (single-server deployment)
+- Path: `apps/api/data/algora.db`
 
 ## File Naming Conventions
 
@@ -188,28 +215,42 @@ When starting a new session, follow these steps:
 
 ---
 
-## Recent Changes (v0.3.0)
+## Recent Changes (v0.12.3)
+
+### Production Deployment
+- pm2 process management (`ecosystem.config.cjs`)
+- nginx reverse proxy on Lightsail with SSL
+- Fixed Next.js i18n middleware for static assets
+
+### Governance OS (v2.0)
+- **Location**: `apps/web/src/app/[locale]/governance/page.tsx`
+- **Components**: `apps/web/src/components/governance/`
+  - `PipelineVisualization.tsx` - 9-stage pipeline display
+  - `WorkflowCard.tsx` - Workflow type cards (A-E)
+  - `DocumentCard.tsx` - Official document cards
+  - `DualHouseVoteCard.tsx` - Dual-house voting
+  - `LockedActionCard.tsx` - Safe autonomy actions
+- **API**: `/governance-os/*` endpoints
+
+### v2.0 Packages
+- `@algora/safe-autonomy` - LOCK/UNLOCK, Risk Classification
+- `@algora/orchestrator` - Workflow State Machine, 5 Workflows (A-E)
+- `@algora/document-registry` - 15 Document Types, Versioning
+- `@algora/model-router` - LLM Routing, Ollama Provider
+- `@algora/dual-house` - Dual-House Governance
+- `@algora/governance-os` - Unified Integration Layer
 
 ### Live Showcase Page (`/live`)
-New IR/PR showcase page displaying the 24/7 AI governance system:
 - **Location**: `apps/web/src/app/[locale]/live/page.tsx`
-- **Components**: `apps/web/src/components/live/`
-  - `LiveHeader.tsx` - Status bar with uptime, version
-  - `SignalStream.tsx` - Real-time signal feed
-  - `SystemBlueprint.tsx` - Pipeline visualization
-  - `LiveMetrics.tsx` - Live statistics
-  - `ActivityLog.tsx` - Terminal-style activity log
-  - `AgentChatter.tsx` - Agent messages preview
-  - `AgoraPreview.tsx` - Active session preview
-  - `TerminalBox.tsx`, `GlowText.tsx` - Shared UI components
-- **Documentation**: `docs/ALGORA_LIVE_IMPLEMENTATION_STATUS.md`
+- Real-time dashboard with WebSocket updates
 
 ### Key Technical Patterns
 - **Hydration Safety**: Use deterministic initial values, randomize only after mount
 - **API URL**: Use `NEXT_PUBLIC_API_URL` env var for API server URL
 - **Socket Events**: `signals:collected`, `agent:chatter`, `activity:event`, `agora:message`
+- **i18n Middleware**: Exclude `_next`, `api`, `favicon.ico` from locale processing
 
 ---
 
-**Last Updated**: 2026-01-10
-**Version**: 0.3.0
+**Last Updated**: 2026-01-13
+**Version**: 0.12.3
