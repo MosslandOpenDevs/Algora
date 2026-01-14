@@ -16,6 +16,8 @@ import {
   Lightbulb,
   CheckCircle,
   Building2,
+  PiggyBank,
+  Wallet,
 } from 'lucide-react';
 
 const TOUR_STORAGE_KEY = 'algora-tour-completed';
@@ -78,6 +80,22 @@ const tourSteps: TourStep[] = [
     color: 'text-agora-success',
     bgColor: 'bg-agora-success/10',
     href: '/proposals',
+    hasScenario: true,
+  },
+  {
+    key: 'treasury',
+    icon: PiggyBank,
+    color: 'text-cyan-500',
+    bgColor: 'bg-cyan-500/10',
+    href: '/treasury',
+    hasScenario: true,
+  },
+  {
+    key: 'profile',
+    icon: Wallet,
+    color: 'text-pink-500',
+    bgColor: 'bg-pink-500/10',
+    href: '/profile',
     hasScenario: true,
   },
   {

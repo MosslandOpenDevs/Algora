@@ -535,6 +535,22 @@
       "dashboard": {
         "title": "Dashboard",
         "desc": "Overview of all system activity"
+      },
+      "live": {
+        "title": "Live Dashboard",
+        "desc": "Real-time view of all governance activities"
+      },
+      "governance": {
+        "title": "Governance OS",
+        "desc": "Autonomous governance with safe autonomy"
+      },
+      "treasury": {
+        "title": "Treasury",
+        "desc": "DAO fund management and token holders"
+      },
+      "profile": {
+        "title": "Wallet & Profile",
+        "desc": "Connect wallet and manage voting delegation"
       }
     },
     "cta": {
@@ -572,6 +588,16 @@
         "title": "Step 4: Human Governance",
         "desc": "MOC token holders have the final say. AI prepares comprehensive Decision Packets, but humans vote on whether to approve actions. High-risk actions are always locked until human approval.",
         "scenario": "Example: AI recommends a grant → Decision Packet shows pros/cons → MOC holders vote → Action is unlocked if approved."
+      },
+      "treasury": {
+        "title": "Step 5: Treasury Management",
+        "desc": "The Treasury dashboard provides visual insights into DAO fund management. View balance distribution, track allocations, monitor transactions, and see token holder information all in one place.",
+        "scenario": "Example: View the donut chart showing token allocation → Check pending allocations → Monitor transaction history → See all verified token holders."
+      },
+      "profile": {
+        "title": "Step 6: Wallet & Delegation",
+        "desc": "Connect your wallet to participate in governance. Verify your wallet for voting rights, and delegate your voting power to trusted addresses when you can't vote directly.",
+        "scenario": "Example: Connect MetaMask → Verify wallet → Delegate voting power to a trusted community member → Your votes are automatically cast by your delegate."
       },
       "safeAutonomy": {
         "title": "Safe Autonomy Guarantee",

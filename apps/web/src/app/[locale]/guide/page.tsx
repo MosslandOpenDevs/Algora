@@ -23,6 +23,9 @@ import {
   Unlock,
   Vote,
   GitBranch,
+  Wallet,
+  PiggyBank,
+  UserPlus,
 } from 'lucide-react';
 
 import { SystemFlowDiagram } from '@/components/guide/SystemFlowDiagram';
@@ -116,6 +119,18 @@ const v2Features = [
     title: 'Document Registry',
     description: 'Official documents with versioning, provenance tracking, and immutable audit trails',
     color: 'text-amber-500',
+  },
+  {
+    icon: PiggyBank,
+    title: 'Treasury Dashboard',
+    description: 'Visual balance distribution, allocation tracking, transaction history, and token holder management',
+    color: 'text-cyan-500',
+  },
+  {
+    icon: UserPlus,
+    title: 'Voting Delegation',
+    description: 'Delegate voting power to trusted addresses with category filters and expiration options',
+    color: 'text-pink-500',
   },
 ];
 
@@ -305,7 +320,7 @@ export default function GuidePage() {
         <h2 className="mb-4 text-xl font-semibold text-slate-900">
           {t('otherMenus.title')}
         </h2>
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <Link
             href={`/${locale}/agents`}
             className="flex items-center gap-3 rounded-lg bg-agora-darker p-4 transition-colors hover:bg-agora-border"
@@ -340,9 +355,9 @@ export default function GuidePage() {
           >
             <Zap className="h-6 w-6 text-red-500" />
             <div>
-              <h3 className="font-medium text-slate-900">Live Dashboard</h3>
+              <h3 className="font-medium text-slate-900">{t('otherMenus.live.title')}</h3>
               <p className="text-xs text-agora-muted">
-                Real-time view of all governance activities
+                {t('otherMenus.live.desc')}
               </p>
             </div>
           </Link>
@@ -352,9 +367,33 @@ export default function GuidePage() {
           >
             <Shield className="h-6 w-6 text-emerald-500" />
             <div>
-              <h3 className="font-medium text-slate-900">Governance OS</h3>
+              <h3 className="font-medium text-slate-900">{t('otherMenus.governance.title')}</h3>
               <p className="text-xs text-agora-muted">
-                Autonomous governance with safe autonomy
+                {t('otherMenus.governance.desc')}
+              </p>
+            </div>
+          </Link>
+          <Link
+            href={`/${locale}/treasury`}
+            className="flex items-center gap-3 rounded-lg bg-agora-darker p-4 transition-colors hover:bg-agora-border"
+          >
+            <PiggyBank className="h-6 w-6 text-cyan-500" />
+            <div>
+              <h3 className="font-medium text-slate-900">{t('otherMenus.treasury.title')}</h3>
+              <p className="text-xs text-agora-muted">
+                {t('otherMenus.treasury.desc')}
+              </p>
+            </div>
+          </Link>
+          <Link
+            href={`/${locale}/profile`}
+            className="flex items-center gap-3 rounded-lg bg-agora-darker p-4 transition-colors hover:bg-agora-border"
+          >
+            <Wallet className="h-6 w-6 text-pink-500" />
+            <div>
+              <h3 className="font-medium text-slate-900">{t('otherMenus.profile.title')}</h3>
+              <p className="text-xs text-agora-muted">
+                {t('otherMenus.profile.desc')}
               </p>
             </div>
           </Link>
