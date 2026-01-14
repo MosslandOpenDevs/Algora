@@ -642,7 +642,9 @@
     },
     "pipeline": {
       "title": "Pipeline Status",
+      "description": "9-stage governance workflow processing",
       "complete": "complete",
+      "stages_completed": "stages",
       "stages": {
         "signal_intake": "Signals",
         "issue_detection": "Detection",
@@ -653,13 +655,27 @@
         "voting": "Voting",
         "execution": "Execution",
         "outcome_verification": "Verification"
+      },
+      "legend": {
+        "completed": "Completed",
+        "current": "In Progress",
+        "pending": "Pending"
       }
     },
     "workflows": {
       "type": "Type",
       "active": "active",
       "today": "today",
-      "pending": "pending"
+      "pending": "pending",
+      "completedToday": "Completed Today",
+      "pendingApproval": "Pending Approval",
+      "purpose": "Purpose",
+      "pipelineStages": "Pipeline Stages",
+      "stakeholders": "Stakeholders",
+      "outputDocuments": "Output Documents",
+      "recentActivity": "Recent Activity (7 days)",
+      "running": "Running",
+      "close": "Close"
     },
     "documents": {
       "states": {
@@ -671,7 +687,18 @@
         "superseded": "Superseded",
         "archived": "Archived",
         "rejected": "Rejected"
-      }
+      },
+      "summary": "Summary",
+      "documentId": "Document ID",
+      "version": "Version",
+      "createdBy": "Created By",
+      "createdAt": "Created At",
+      "timeline": "Timeline",
+      "created": "Document Created",
+      "lastUpdated": "Last Updated",
+      "contentHash": "Content Hash (Integrity Verified)",
+      "close": "Close",
+      "viewIssue": "View Related Issue"
     },
     "voting": {
       "status": {
@@ -682,7 +709,28 @@
         "reconciliation": "Reconciliation"
       },
       "mossCoinHouse": "MossCoin House",
-      "openSourceHouse": "OpenSource House"
+      "openSourceHouse": "OpenSource House",
+      "finalResult": {
+        "passed": "Proposal Passed",
+        "passedDesc": "Both houses have approved this proposal.",
+        "rejected": "Proposal Rejected",
+        "rejectedDesc": "Both houses have rejected this proposal.",
+        "reconciliation": "Reconciliation Required",
+        "reconciliationDesc": "Houses disagree. Reconciliation process initiated."
+      },
+      "votingRules": "Dual-House Voting Rules",
+      "rules": {
+        "bothMustPass": "Both Houses Must Agree",
+        "bothMustPassDesc": "A proposal passes only if both houses approve.",
+        "quorumRequired": "Quorum Required",
+        "quorumRequiredDesc": "Minimum participation threshold must be met.",
+        "reconciliation": "Reconciliation Process",
+        "reconciliationDesc": "If houses disagree, reconciliation is triggered.",
+        "highRisk": "High-Risk Actions",
+        "highRiskDesc": "Require additional approval from Director 3."
+      },
+      "close": "Close",
+      "castVote": "Cast Your Vote"
     },
     "safeAutonomy": {
       "status": {
@@ -693,7 +741,22 @@
       },
       "lockReason": "Lock Reason",
       "approvals": "Approvals",
-      "approve": "Approve"
+      "approve": "Approve",
+      "actionDescription": "Action Description",
+      "approvalProgress": "Approval Progress",
+      "pendingApproval": "Awaiting approval",
+      "approved": "Approved",
+      "verified": "Verified",
+      "createdAt": "Created At",
+      "expiresAt": "Expires At",
+      "proposalId": "Related Proposal",
+      "votingId": "Related Voting",
+      "afterApproval": "What happens after approval?",
+      "afterApproval1": "Action will be unlocked and ready for execution",
+      "afterApproval2": "All approvers will be notified",
+      "afterApproval3": "Execution will be logged in the audit trail",
+      "close": "Close",
+      "approveAction": "Approve This Action"
     }
   },
   "Witty": {

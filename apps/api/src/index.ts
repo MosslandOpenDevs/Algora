@@ -18,6 +18,8 @@ import { GovernanceService } from './services/governance';
 import { ProofOfOutcomeService } from './services/proof-of-outcome';
 import { TokenIntegrationService } from './services/token';
 import { GovernanceOSBridge } from './services/governance-os-bridge';
+import { DisclosureService } from './services/disclosure';
+import { ReportGeneratorService } from './services/report-generator';
 
 const PORT = process.env.PORT || 3201;
 const NODE_ENV = process.env.NODE_ENV || 'development';
@@ -128,6 +130,16 @@ async function bootstrap() {
     // Initialize token integration service
     const tokenIntegration = new TokenIntegrationService(db, io);
     app.locals.tokenIntegration = tokenIntegration;
+
+    // Initialize disclosure service
+    const disclosure = new DisclosureService(db, io);
+    app.locals.disclosure = disclosure;
+
+    // Initialize report generator service
+    const reportGenerator = new ReportGeneratorService(db, io);
+    app.locals.reportGenerator = reportGenerator;
+    schedulerService.setReportGenerator(reportGenerator);
+    console.info('[ReportGenerator] Service initialized - automatic report generation enabled');
 
     // Log LLM availability
     console.info(`[LLM] Tier 1 (Ollama): ${llmService.isTier1Available() ? 'Available' : 'Not Available'}`);

@@ -35,6 +35,11 @@ import { WorkflowCard } from '@/components/governance/WorkflowCard';
 import { DocumentCard } from '@/components/governance/DocumentCard';
 import { DualHouseVoteCard } from '@/components/governance/DualHouseVoteCard';
 import { LockedActionCard } from '@/components/governance/LockedActionCard';
+import { DocumentDetailModal } from '@/components/governance/DocumentDetailModal';
+import { WorkflowDetailModal } from '@/components/governance/WorkflowDetailModal';
+import { VoteDetailModal } from '@/components/governance/VoteDetailModal';
+import { ApprovalDetailModal } from '@/components/governance/ApprovalDetailModal';
+import { StatsDetailModal } from '@/components/governance/StatsDetailModal';
 import { HelpTooltip } from '@/components/guide/HelpTooltip';
 import { WittyLoader, WittyEmptyState } from '@/components/ui/WittyLoader';
 
@@ -44,6 +49,13 @@ export default function GovernancePage() {
   const t = useTranslations('Governance');
   const tGuide = useTranslations('Guide.tooltips');
   const [activeTab, setActiveTab] = useState<TabKey>('overview');
+
+  // Modal state
+  const [selectedDocument, setSelectedDocument] = useState<GovernanceDocument | null>(null);
+  const [selectedWorkflow, setSelectedWorkflow] = useState<WorkflowStatus | null>(null);
+  const [selectedVote, setSelectedVote] = useState<DualHouseVote | null>(null);
+  const [selectedApproval, setSelectedApproval] = useState<LockedAction | null>(null);
+  const [selectedStatsType, setSelectedStatsType] = useState<'uptime' | 'pipelines' | 'documents' | 'locked' | null>(null);
 
   // Fetch all data
   const { data: stats, isLoading: statsLoading, refetch: refetchStats } = useQuery<GovernanceOSStats>({
@@ -157,8 +169,9 @@ export default function GovernancePage() {
         </div>
       ) : (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-          <div
-            className="animate-slide-up rounded-lg border border-agora-border bg-agora-card p-4 transition-all duration-200 hover:scale-[1.02] hover:shadow-lg hover:border-agora-primary/30"
+          <button
+            onClick={() => setSelectedStatsType('uptime')}
+            className="animate-slide-up rounded-lg border border-agora-border bg-agora-card p-4 transition-all duration-200 hover:scale-[1.02] hover:shadow-lg hover:border-agora-primary/30 cursor-pointer text-left"
             style={{ animationDelay: '0ms', animationFillMode: 'backwards' }}
           >
             <div className="flex items-center gap-2 text-agora-muted">
@@ -168,9 +181,10 @@ export default function GovernancePage() {
             <p className="mt-2 text-2xl font-bold text-slate-900">
               {stats?.uptime ? `${Math.floor(stats.uptime / 3600)}h` : '--'}
             </p>
-          </div>
-          <div
-            className="animate-slide-up rounded-lg border border-agora-border bg-agora-card p-4 transition-all duration-200 hover:scale-[1.02] hover:shadow-lg hover:border-agora-success/30"
+          </button>
+          <button
+            onClick={() => setSelectedStatsType('pipelines')}
+            className="animate-slide-up rounded-lg border border-agora-border bg-agora-card p-4 transition-all duration-200 hover:scale-[1.02] hover:shadow-lg hover:border-agora-success/30 cursor-pointer text-left"
             style={{ animationDelay: '50ms', animationFillMode: 'backwards' }}
           >
             <div className="flex items-center gap-2 text-agora-success">
@@ -183,9 +197,10 @@ export default function GovernancePage() {
             <p className="text-xs text-agora-muted">
               {stats?.pipelinesCompleted ?? 0} {t('stats.completed')}
             </p>
-          </div>
-          <div
-            className="animate-slide-up rounded-lg border border-agora-border bg-agora-card p-4 transition-all duration-200 hover:scale-[1.02] hover:shadow-lg hover:border-agora-accent/30"
+          </button>
+          <button
+            onClick={() => setSelectedStatsType('documents')}
+            className="animate-slide-up rounded-lg border border-agora-border bg-agora-card p-4 transition-all duration-200 hover:scale-[1.02] hover:shadow-lg hover:border-agora-accent/30 cursor-pointer text-left"
             style={{ animationDelay: '100ms', animationFillMode: 'backwards' }}
           >
             <div className="flex items-center gap-2 text-agora-accent">
@@ -195,9 +210,10 @@ export default function GovernancePage() {
             <p className="mt-2 text-2xl font-bold text-slate-900">
               {stats?.documentsPublished ?? 0}
             </p>
-          </div>
-          <div
-            className="animate-slide-up rounded-lg border border-agora-border bg-agora-card p-4 transition-all duration-200 hover:scale-[1.02] hover:shadow-lg hover:border-agora-warning/30"
+          </button>
+          <button
+            onClick={() => setSelectedStatsType('locked')}
+            className="animate-slide-up rounded-lg border border-agora-border bg-agora-card p-4 transition-all duration-200 hover:scale-[1.02] hover:shadow-lg hover:border-agora-warning/30 cursor-pointer text-left"
             style={{ animationDelay: '150ms', animationFillMode: 'backwards' }}
           >
             <div className="flex items-center gap-2 text-agora-warning">
@@ -207,7 +223,7 @@ export default function GovernancePage() {
             <p className="mt-2 text-2xl font-bold text-slate-900">
               {stats?.lockedActions ?? 0}
             </p>
-          </div>
+          </button>
         </div>
       )}
 
@@ -237,9 +253,9 @@ export default function GovernancePage() {
 
       {/* Tab Content */}
       {activeTab === 'overview' && (
-        <div className="grid gap-6 lg:grid-cols-2">
+        <div className="grid gap-6 lg:grid-cols-2 animate-fade-in">
           {/* Recent Activity */}
-          <div className="rounded-lg border border-agora-border bg-agora-card p-4">
+          <div className="rounded-lg border border-agora-border bg-agora-card p-4 animate-slide-up" style={{ animationDelay: '0ms', animationFillMode: 'backwards' }}>
             <h3 className="mb-4 flex items-center gap-2 font-semibold text-slate-900">
               <TrendingUp className="h-5 w-5 text-agora-primary" />
               {t('overview.recentWorkflows')}
@@ -251,14 +267,19 @@ export default function GovernancePage() {
             ) : (
               <div className="space-y-3">
                 {workflows?.slice(0, 3).map((wf, index) => (
-                  <WorkflowCard key={wf.type} workflow={wf} index={index} />
+                  <WorkflowCard
+                    key={wf.type}
+                    workflow={wf}
+                    index={index}
+                    onClick={() => setSelectedWorkflow(wf)}
+                  />
                 ))}
               </div>
             )}
           </div>
 
           {/* Active Votes */}
-          <div className="rounded-lg border border-agora-border bg-agora-card p-4">
+          <div className="rounded-lg border border-agora-border bg-agora-card p-4 animate-slide-up" style={{ animationDelay: '100ms', animationFillMode: 'backwards' }}>
             <h3 className="mb-4 flex items-center gap-2 font-semibold text-slate-900">
               <Vote className="h-5 w-5 text-agora-accent" />
               {t('overview.activeVotes')}
@@ -273,14 +294,19 @@ export default function GovernancePage() {
                   ?.filter((v) => v.status === 'voting')
                   .slice(0, 2)
                   .map((vote, index) => (
-                    <DualHouseVoteCard key={vote.id} vote={vote} index={index} />
+                    <DualHouseVoteCard
+                      key={vote.id}
+                      vote={vote}
+                      index={index}
+                      onClick={() => setSelectedVote(vote)}
+                    />
                   ))}
               </div>
             )}
           </div>
 
           {/* Pending Approvals */}
-          <div className="rounded-lg border border-agora-border bg-agora-card p-4 lg:col-span-2">
+          <div className="rounded-lg border border-agora-border bg-agora-card p-4 lg:col-span-2 animate-slide-up" style={{ animationDelay: '200ms', animationFillMode: 'backwards' }}>
             <h3 className="mb-4 flex items-center gap-2 font-semibold text-slate-900">
               <Lock className="h-5 w-5 text-agora-warning" />
               {t('overview.pendingApprovals')}
@@ -298,7 +324,12 @@ export default function GovernancePage() {
                   ?.filter((a) => a.status === 'locked')
                   .slice(0, 4)
                   .map((action, index) => (
-                    <LockedActionCard key={action.id} action={action} index={index} />
+                    <LockedActionCard
+                      key={action.id}
+                      action={action}
+                      index={index}
+                      onClick={() => setSelectedApproval(action)}
+                    />
                   ))}
               </div>
             )}
@@ -307,7 +338,7 @@ export default function GovernancePage() {
       )}
 
       {activeTab === 'workflows' && (
-        <div className="space-y-4">
+        <div className="space-y-4 animate-fade-in">
           {workflowsLoading ? (
             <WittyLoader category="governance" size="lg" />
           ) : workflows?.length === 0 ? (
@@ -318,7 +349,12 @@ export default function GovernancePage() {
           ) : (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {workflows?.map((wf, index) => (
-                <WorkflowCard key={wf.type} workflow={wf} index={index} />
+                <WorkflowCard
+                  key={wf.type}
+                  workflow={wf}
+                  index={index}
+                  onClick={() => setSelectedWorkflow(wf)}
+                />
               ))}
             </div>
           )}
@@ -326,7 +362,7 @@ export default function GovernancePage() {
       )}
 
       {activeTab === 'documents' && (
-        <div className="space-y-4">
+        <div className="space-y-4 animate-fade-in">
           {documentsLoading ? (
             <WittyLoader category="governance" size="lg" />
           ) : documents?.length === 0 ? (
@@ -337,7 +373,12 @@ export default function GovernancePage() {
           ) : (
             <div className="space-y-3">
               {documents?.map((doc, index) => (
-                <DocumentCard key={doc.id} document={doc} index={index} />
+                <DocumentCard
+                  key={doc.id}
+                  document={doc}
+                  index={index}
+                  onClick={() => setSelectedDocument(doc)}
+                />
               ))}
             </div>
           )}
@@ -345,7 +386,7 @@ export default function GovernancePage() {
       )}
 
       {activeTab === 'voting' && (
-        <div className="space-y-4">
+        <div className="space-y-4 animate-fade-in">
           {votesLoading ? (
             <WittyLoader category="governance" size="lg" />
           ) : votes?.length === 0 ? (
@@ -356,7 +397,12 @@ export default function GovernancePage() {
           ) : (
             <div className="space-y-3">
               {votes?.map((vote, index) => (
-                <DualHouseVoteCard key={vote.id} vote={vote} index={index} />
+                <DualHouseVoteCard
+                  key={vote.id}
+                  vote={vote}
+                  index={index}
+                  onClick={() => setSelectedVote(vote)}
+                />
               ))}
             </div>
           )}
@@ -364,7 +410,7 @@ export default function GovernancePage() {
       )}
 
       {activeTab === 'approvals' && (
-        <div className="space-y-4">
+        <div className="space-y-4 animate-fade-in">
           {lockedLoading ? (
             <WittyLoader category="governance" size="lg" />
           ) : lockedActions?.length === 0 ? (
@@ -375,11 +421,59 @@ export default function GovernancePage() {
           ) : (
             <div className="grid gap-4 sm:grid-cols-2">
               {lockedActions?.map((action, index) => (
-                <LockedActionCard key={action.id} action={action} index={index} />
+                <LockedActionCard
+                  key={action.id}
+                  action={action}
+                  index={index}
+                  onClick={() => setSelectedApproval(action)}
+                />
               ))}
             </div>
           )}
         </div>
+      )}
+
+      {/* Modals */}
+      {selectedDocument && (
+        <DocumentDetailModal
+          document={selectedDocument}
+          isOpen={!!selectedDocument}
+          onClose={() => setSelectedDocument(null)}
+        />
+      )}
+
+      {selectedWorkflow && (
+        <WorkflowDetailModal
+          workflow={selectedWorkflow}
+          isOpen={!!selectedWorkflow}
+          onClose={() => setSelectedWorkflow(null)}
+        />
+      )}
+
+      {selectedVote && (
+        <VoteDetailModal
+          vote={selectedVote}
+          isOpen={!!selectedVote}
+          onClose={() => setSelectedVote(null)}
+        />
+      )}
+
+      {selectedApproval && (
+        <ApprovalDetailModal
+          action={selectedApproval}
+          isOpen={!!selectedApproval}
+          onClose={() => setSelectedApproval(null)}
+        />
+      )}
+
+      {selectedStatsType && stats && (
+        <StatsDetailModal
+          type={selectedStatsType}
+          stats={stats}
+          health={health}
+          isOpen={!!selectedStatsType}
+          onClose={() => setSelectedStatsType(null)}
+        />
       )}
     </div>
   );

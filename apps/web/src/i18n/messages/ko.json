@@ -642,7 +642,9 @@
     },
     "pipeline": {
       "title": "파이프라인 상태",
+      "description": "9단계 거버넌스 워크플로우 처리",
       "complete": "완료",
+      "stages_completed": "단계",
       "stages": {
         "signal_intake": "신호",
         "issue_detection": "감지",
@@ -653,13 +655,27 @@
         "voting": "투표",
         "execution": "실행",
         "outcome_verification": "검증"
+      },
+      "legend": {
+        "completed": "완료",
+        "current": "진행 중",
+        "pending": "대기 중"
       }
     },
     "workflows": {
       "type": "유형",
       "active": "활성",
       "today": "오늘",
-      "pending": "대기"
+      "pending": "대기",
+      "completedToday": "오늘 완료",
+      "pendingApproval": "승인 대기",
+      "purpose": "목적",
+      "pipelineStages": "파이프라인 단계",
+      "stakeholders": "이해관계자",
+      "outputDocuments": "출력 문서",
+      "recentActivity": "최근 활동 (7일)",
+      "running": "실행 중",
+      "close": "닫기"
     },
     "documents": {
       "states": {
@@ -671,7 +687,18 @@
         "superseded": "대체됨",
         "archived": "보관됨",
         "rejected": "거부됨"
-      }
+      },
+      "summary": "요약",
+      "documentId": "문서 ID",
+      "version": "버전",
+      "createdBy": "작성자",
+      "createdAt": "작성일",
+      "timeline": "타임라인",
+      "created": "문서 생성",
+      "lastUpdated": "최종 수정",
+      "contentHash": "콘텐츠 해시 (무결성 검증됨)",
+      "close": "닫기",
+      "viewIssue": "관련 이슈 보기"
     },
     "voting": {
       "status": {
@@ -682,7 +709,28 @@
         "reconciliation": "조정 중"
       },
       "mossCoinHouse": "MossCoin 하원",
-      "openSourceHouse": "OpenSource 하원"
+      "openSourceHouse": "OpenSource 하원",
+      "finalResult": {
+        "passed": "제안 통과",
+        "passedDesc": "양원 모두 이 제안을 승인했습니다.",
+        "rejected": "제안 거부",
+        "rejectedDesc": "양원 모두 이 제안을 거부했습니다.",
+        "reconciliation": "조정 필요",
+        "reconciliationDesc": "양원의 의견이 다릅니다. 조정 절차가 시작됩니다."
+      },
+      "votingRules": "양원제 투표 규칙",
+      "rules": {
+        "bothMustPass": "양원 합의 필요",
+        "bothMustPassDesc": "제안이 통과하려면 양원 모두의 승인이 필요합니다.",
+        "quorumRequired": "정족수 필요",
+        "quorumRequiredDesc": "최소 참여 기준을 충족해야 합니다.",
+        "reconciliation": "조정 절차",
+        "reconciliationDesc": "양원의 의견이 다르면 조정이 시작됩니다.",
+        "highRisk": "고위험 조치",
+        "highRiskDesc": "Director 3의 추가 승인이 필요합니다."
+      },
+      "close": "닫기",
+      "castVote": "투표하기"
     },
     "safeAutonomy": {
       "status": {
@@ -693,7 +741,22 @@
       },
       "lockReason": "잠금 사유",
       "approvals": "승인",
-      "approve": "승인하기"
+      "approve": "승인하기",
+      "actionDescription": "조치 설명",
+      "approvalProgress": "승인 진행 상황",
+      "pendingApproval": "승인 대기 중",
+      "approved": "승인됨",
+      "verified": "확인됨",
+      "createdAt": "생성일",
+      "expiresAt": "만료일",
+      "proposalId": "관련 제안",
+      "votingId": "관련 투표",
+      "afterApproval": "승인 후 진행 사항",
+      "afterApproval1": "조치가 잠금 해제되어 실행 준비가 됩니다",
+      "afterApproval2": "모든 승인자에게 알림이 전송됩니다",
+      "afterApproval3": "실행 내역이 감사 로그에 기록됩니다",
+      "close": "닫기",
+      "approveAction": "이 조치 승인하기"
     }
   },
   "Witty": {

@@ -32,7 +32,10 @@ export function Header() {
     refetchInterval: 10000,
   });
 
-  const systemStatus = health?.status || 'unknown';
+  // Normalize status: 'ok' and 'running' both mean healthy
+  const rawStatus = health?.status || 'unknown';
+  const isHealthy = rawStatus === 'ok' || rawStatus === 'running';
+  const isDegraded = rawStatus === 'degraded';
 
   return (
     <header className="flex h-14 items-center justify-between border-b border-agora-border bg-agora-dark px-6">
@@ -43,25 +46,25 @@ export function Header() {
           <span className="text-sm text-agora-muted">{t('systemStatus')}:</span>
           <span
             className={`flex items-center gap-1.5 text-sm font-medium ${
-              systemStatus === 'running'
+              isHealthy
                 ? 'text-agora-success'
-                : systemStatus === 'degraded'
+                : isDegraded
                   ? 'text-agora-warning'
                   : 'text-agora-muted'
             }`}
           >
             <span
               className={`h-2 w-2 rounded-full ${
-                systemStatus === 'running'
+                isHealthy
                   ? 'bg-agora-success animate-pulse'
-                  : systemStatus === 'degraded'
+                  : isDegraded
                     ? 'bg-agora-warning'
                     : 'bg-agora-muted'
               }`}
             />
-            {systemStatus === 'running'
+            {isHealthy
               ? t('running')
-              : systemStatus === 'degraded'
+              : isDegraded
                 ? t('degraded')
                 : t('maintenance')}
           </span>

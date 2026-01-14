@@ -318,7 +318,7 @@ export interface WorkflowStatus {
 
 // Stats Types
 export interface GovernanceOSStats {
-  uptime: number;
+  uptime: number; // in seconds
   pipelinesRunning: number;
   pipelinesCompleted: number;
   documentsPublished: number;
@@ -337,18 +337,77 @@ export interface GovernanceOSHealth {
   }[];
 }
 
+// Backend Stats response (different from frontend interface)
+interface BackendStats {
+  uptimeHours: number;
+  totalPipelines: number;
+  successfulPipelines: number;
+  failedPipelines: number;
+  pendingApprovals: number;
+  lockedActions: number;
+  documentsProduced: number;
+  votingSessions: number;
+  llmCostTodayUsd: number;
+  llmTokensToday: number;
+}
+
+// Backend Health response
+interface BackendHealth {
+  healthy: boolean;
+  status: 'healthy' | 'degraded' | 'unhealthy';
+  uptime: number;
+  components: Record<string, boolean>;
+}
+
 // API Functions
 export async function fetchGovernanceOSStats(): Promise<GovernanceOSStats> {
-  const response = await fetchAPI<{ stats: GovernanceOSStats }>('/api/governance-os/stats');
-  return response.stats;
+  const response = await fetchAPI<{ stats: BackendStats }>('/api/governance-os/stats');
+  const stats = response.stats;
+
+  // Transform backend response to frontend format
+  return {
+    uptime: stats.uptimeHours * 3600, // Convert hours to seconds
+    pipelinesRunning: Math.max(0, stats.totalPipelines - stats.successfulPipelines - stats.failedPipelines),
+    pipelinesCompleted: stats.successfulPipelines,
+    documentsPublished: stats.documentsProduced,
+    votingSessions: stats.votingSessions,
+    lockedActions: stats.lockedActions,
+    llmCostsToday: stats.llmCostTodayUsd,
+    lastHeartbeat: new Date().toISOString(),
+  };
 }
 
 export async function fetchGovernanceOSHealth(): Promise<GovernanceOSHealth> {
-  return fetchAPI<GovernanceOSHealth>('/api/governance-os/health');
+  const response = await fetchAPI<BackendHealth>('/api/governance-os/health');
+
+  // Transform backend response to frontend format
+  return {
+    status: response.status,
+    components: Object.entries(response.components).map(([name, isUp]) => ({
+      name,
+      status: isUp ? 'up' : 'down',
+      lastCheck: new Date().toISOString(),
+    })),
+  };
 }
 
 export async function fetchPipelineStatus(issueId: string): Promise<PipelineStatus> {
   return fetchAPI<PipelineStatus>(`/api/governance-os/pipeline/issue/${issueId}`);
+}
+
+// Backend document response (different field names)
+interface BackendDocument {
+  id: string;
+  type: DocumentType;
+  title: string;
+  summary: string;
+  state: DocumentState;
+  version: { major: number; minor: number; patch: number };
+  createdAt: string;
+  modifiedAt: string; // Backend uses modifiedAt, frontend uses updatedAt
+  createdBy: string;
+  issueId?: string;
+  contentHash: string;
 }
 
 export async function fetchDocuments(
@@ -359,15 +418,44 @@ export async function fetchDocuments(
   const params = new URLSearchParams({ limit: limit.toString() });
   if (type) params.append('type', type);
   if (state) params.append('state', state);
-  const response = await fetchAPI<{ documents: GovernanceDocument[]; total: number }>(
+  const response = await fetchAPI<{ documents: BackendDocument[]; total: number }>(
     `/api/governance-os/documents?${params}`
   );
-  return response.documents || [];
+
+  // Transform backend response to frontend format
+  return (response.documents || []).map((doc) => ({
+    id: doc.id,
+    type: doc.type,
+    title: doc.title,
+    summary: doc.summary,
+    state: doc.state,
+    version: doc.version,
+    createdAt: doc.createdAt,
+    updatedAt: doc.modifiedAt || doc.createdAt, // Map modifiedAt to updatedAt
+    createdBy: doc.createdBy,
+    issueId: doc.issueId,
+    contentHash: doc.contentHash,
+  }));
 }
 
 export async function fetchDocument(documentId: string): Promise<GovernanceDocument> {
-  const response = await fetchAPI<{ document: GovernanceDocument }>(`/api/governance-os/documents/${documentId}`);
-  return response.document;
+  const response = await fetchAPI<{ document: BackendDocument }>(`/api/governance-os/documents/${documentId}`);
+  const doc = response.document;
+
+  // Transform backend response to frontend format
+  return {
+    id: doc.id,
+    type: doc.type,
+    title: doc.title,
+    summary: doc.summary,
+    state: doc.state,
+    version: doc.version,
+    createdAt: doc.createdAt,
+    updatedAt: doc.modifiedAt || doc.createdAt, // Map modifiedAt to updatedAt
+    createdBy: doc.createdBy,
+    issueId: doc.issueId,
+    contentHash: doc.contentHash,
+  };
 }
 
 export async function fetchDualHouseVotes(status?: string): Promise<DualHouseVote[]> {
@@ -413,4 +501,162 @@ export async function castDualHouseVote(
     method: 'POST',
     body: JSON.stringify({ house, vote, voterId, votingPower }),
   });
+}
+
+// ============================================
+// Proposals API Types & Functions
+// ============================================
+
+export type ProposalStatus =
+  | 'draft'
+  | 'pending_review'
+  | 'discussion'
+  | 'voting'
+  | 'passed'
+  | 'rejected'
+  | 'executed'
+  | 'cancelled';
+
+export interface Proposal {
+  id: string;
+  title: string;
+  description: string;
+  proposer: string;
+  proposer_type: 'human' | 'agent' | 'system';
+  status: ProposalStatus;
+  category: string;
+  priority: string;
+  issue_id?: string;
+  decision_packet?: string;
+  voting_starts?: string;
+  voting_ends?: string;
+  quorum_required: number;
+  approval_threshold: number;
+  tally?: string;
+  execution_tx?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ProposalTally {
+  for: number;
+  against: number;
+  abstain: number;
+  total: number;
+}
+
+export interface ProposalsResponse {
+  proposals: Proposal[];
+}
+
+export async function fetchProposals(
+  status?: ProposalStatus,
+  category?: string,
+  limit = 50,
+  offset = 0
+): Promise<Proposal[]> {
+  const params = new URLSearchParams({
+    limit: limit.toString(),
+    offset: offset.toString(),
+  });
+  if (status) params.append('status', status);
+  if (category) params.append('category', category);
+  const response = await fetchAPI<ProposalsResponse>(`/api/proposals?${params}`);
+  return response.proposals || [];
+}
+
+export async function fetchProposal(id: string): Promise<Proposal | null> {
+  try {
+    const response = await fetchAPI<{ proposal: Proposal }>(`/api/proposals/${id}`);
+    return response.proposal;
+  } catch {
+    return null;
+  }
+}
+
+export async function fetchProposalVotes(id: string): Promise<{ votes: any[]; tally: ProposalTally }> {
+  return fetchAPI<{ votes: any[]; tally: ProposalTally }>(`/api/proposals/${id}/votes`);
+}
+
+export async function createProposal(data: {
+  title: string;
+  description: string;
+  proposer: string;
+  category?: string;
+  priority?: string;
+  issueId?: string;
+}): Promise<Proposal> {
+  const response = await fetchAPI<{ proposal: Proposal }>('/api/proposals', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+  return response.proposal;
+}
+
+export async function castProposalVote(
+  proposalId: string,
+  voter: string,
+  choice: 'for' | 'against' | 'abstain',
+  reason?: string
+): Promise<{ vote: any; tally: ProposalTally }> {
+  return fetchAPI<{ vote: any; tally: ProposalTally }>(`/api/proposals/${proposalId}/vote`, {
+    method: 'POST',
+    body: JSON.stringify({ voter, voterType: 'human', choice, reason }),
+  });
+}
+
+// ============================================
+// Disclosure API Types & Functions
+// ============================================
+
+export type DisclosureReportType = 'quarterly' | 'annual' | 'incident' | 'audit';
+export type DisclosureReportStatus = 'draft' | 'pending' | 'published';
+
+export interface DisclosureReport {
+  id: string;
+  title: string;
+  type: DisclosureReportType;
+  status: DisclosureReportStatus;
+  date: string;
+  summary: string;
+  content?: string;
+  file_url?: string;
+  author: string;
+  created_at: string;
+  updated_at: string;
+  published_at?: string;
+}
+
+export interface DisclosureStats {
+  total: number;
+  published: number;
+  pending: number;
+  draft: number;
+  byType: Record<DisclosureReportType, number>;
+}
+
+export async function fetchDisclosureReports(
+  type?: DisclosureReportType,
+  status?: DisclosureReportStatus,
+  limit = 50
+): Promise<DisclosureReport[]> {
+  const params = new URLSearchParams({ limit: limit.toString() });
+  if (type) params.append('type', type);
+  if (status) params.append('status', status);
+  const response = await fetchAPI<{ reports: DisclosureReport[] }>(`/api/disclosure?${params}`);
+  return response.reports || [];
+}
+
+export async function fetchDisclosureReport(id: string): Promise<DisclosureReport | null> {
+  try {
+    const response = await fetchAPI<{ report: DisclosureReport }>(`/api/disclosure/${id}`);
+    return response.report;
+  } catch {
+    return null;
+  }
+}
+
+export async function fetchDisclosureStats(): Promise<DisclosureStats> {
+  const response = await fetchAPI<{ stats: DisclosureStats }>('/api/disclosure/stats');
+  return response.stats;
 }

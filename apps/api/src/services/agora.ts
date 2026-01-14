@@ -1568,7 +1568,7 @@ Recommendation:`,
         kpiCollector.recordDecisionPacket({
           hasAllFields: !!(packet.title && packet.summary && packet.recommendation),
           optionCount: summary.actionItems?.length || 1,
-          hasRedTeamAnalysis: false, // TODO: Implement red team analysis
+          hasRedTeamAnalysis: this.hasRedTeamAnalysis(sessionId),
           sourceCount: summary.keyDiscussionPoints?.length || 0,
           riskLevel: packet.confidence >= 0.7 ? 'LOW' : packet.confidence >= 0.4 ? 'MID' : 'HIGH',
         });
@@ -1802,6 +1802,22 @@ Recommendation:`,
       WHERE status = 'active'
       ORDER BY created_at DESC
     `).all() as AgoraSession[];
+  }
+
+  // Check if Red Team agents participated in a session
+  hasRedTeamAnalysis(sessionId: string): boolean {
+    // Check if any Red Team agents (group_name = 'red-team') contributed to the session
+    const result = this.db.prepare(`
+      SELECT COUNT(*) as count
+      FROM agora_messages m
+      JOIN agents a ON m.agent_id = a.id
+      WHERE m.session_id = ?
+        AND m.message_type = 'agent'
+        AND a.group_name = 'red-team'
+    `).get(sessionId) as { count: number };
+
+    // Consider Red Team analysis present if at least 2 messages from Red Team agents
+    return (result?.count || 0) >= 2;
   }
 
   // Get messages for a session

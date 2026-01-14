@@ -17,7 +17,9 @@ import {
 import { ProposalCard } from '@/components/proposals/ProposalCard';
 import { ProposalDetailModal } from '@/components/proposals/ProposalDetailModal';
 import { HelpTooltip } from '@/components/guide/HelpTooltip';
+import { fetchProposals, type Proposal as APIProposal, type ProposalStatus } from '@/lib/api';
 
+// UI-specific proposal interface
 interface Proposal {
   id: string;
   title: string;
@@ -35,76 +37,58 @@ interface Proposal {
 
 const STATUSES = ['all', 'active', 'passed', 'rejected', 'executed', 'draft'] as const;
 
-// Mock data for demo
-const mockProposals: Proposal[] = [
-  {
-    id: 'PROP-001',
-    title: 'Implement Emergency Security Patch v2.5.1',
-    summary: 'Deploy critical security update to address token approval vulnerability. This proposal authorizes immediate deployment of the patched contract.',
-    status: 'active',
-    issueId: '2',
-    votesFor: 127500,
-    votesAgainst: 23400,
-    votesAbstain: 8100,
-    quorum: 100000,
-    endDate: new Date(Date.now() + 86400000 * 2).toISOString(),
-    created_at: new Date(Date.now() - 86400000).toISOString(),
-    author: 'Security Council',
-  },
-  {
-    id: 'PROP-002',
-    title: 'Treasury Diversification: Allocate 20% to Stablecoins',
-    summary: 'Proposal to convert 20% of treasury holdings to a mix of USDC and DAI to reduce volatility exposure.',
-    status: 'active',
-    issueId: '3',
-    votesFor: 89300,
-    votesAgainst: 67200,
-    votesAbstain: 12500,
-    quorum: 100000,
-    endDate: new Date(Date.now() + 86400000 * 5).toISOString(),
-    created_at: new Date(Date.now() - 172800000).toISOString(),
-    author: 'Treasury Committee',
-  },
-  {
-    id: 'PROP-003',
-    title: 'Increase Staking Rewards by 15%',
-    summary: 'Adjust staking reward parameters to increase APY from current 8% to 9.2% to remain competitive.',
-    status: 'passed',
-    votesFor: 234000,
-    votesAgainst: 45000,
-    votesAbstain: 21000,
-    quorum: 100000,
-    endDate: new Date(Date.now() - 86400000 * 3).toISOString(),
-    created_at: new Date(Date.now() - 604800000).toISOString(),
-    author: 'Community Working Group',
-  },
-  {
-    id: 'PROP-004',
-    title: 'Reduce Transaction Fee to 0.1%',
-    summary: 'Lower platform transaction fee from 0.3% to 0.1% to increase trading volume and user adoption.',
-    status: 'rejected',
-    votesFor: 56000,
-    votesAgainst: 178000,
-    votesAbstain: 34000,
-    quorum: 100000,
-    endDate: new Date(Date.now() - 86400000 * 7).toISOString(),
-    created_at: new Date(Date.now() - 864000000).toISOString(),
-    author: 'anonymous',
-  },
-  {
-    id: 'PROP-005',
-    title: 'Grant Program: Developer Ecosystem Fund',
-    summary: 'Establish a $500,000 grant program to fund developer tools, documentation, and ecosystem projects.',
-    status: 'executed',
-    votesFor: 312000,
-    votesAgainst: 28000,
-    votesAbstain: 15000,
-    quorum: 100000,
-    endDate: new Date(Date.now() - 86400000 * 14).toISOString(),
-    created_at: new Date(Date.now() - 86400000 * 21).toISOString(),
-    author: 'Development Council',
-  },
-];
+// Map API status to UI status
+function mapApiStatus(status: ProposalStatus): Proposal['status'] {
+  switch (status) {
+    case 'voting':
+    case 'discussion':
+    case 'pending_review':
+      return 'active';
+    case 'passed':
+      return 'passed';
+    case 'rejected':
+    case 'cancelled':
+      return 'rejected';
+    case 'executed':
+      return 'executed';
+    case 'draft':
+    default:
+      return 'draft';
+  }
+}
+
+// Transform API proposal to UI proposal
+function transformProposal(apiProposal: APIProposal): Proposal {
+  let votesFor = 0;
+  let votesAgainst = 0;
+  let votesAbstain = 0;
+
+  if (apiProposal.tally) {
+    try {
+      const tally = JSON.parse(apiProposal.tally);
+      votesFor = tally.for || 0;
+      votesAgainst = tally.against || 0;
+      votesAbstain = tally.abstain || 0;
+    } catch {
+      // Ignore parse errors
+    }
+  }
+
+  return {
+    id: apiProposal.id,
+    title: apiProposal.title,
+    summary: apiProposal.description,
+    status: mapApiStatus(apiProposal.status),
+    issueId: apiProposal.issue_id,
+    votesFor,
+    votesAgainst,
+    votesAbstain,
+    quorum: apiProposal.quorum_required || 100000,
+    endDate: apiProposal.voting_ends || apiProposal.created_at,
+    created_at: apiProposal.created_at,
+    author: apiProposal.proposer,
+  };
+}
 
 export default function ProposalsPage() {
   const t = useTranslations('Proposals');
@@ -116,9 +100,10 @@ export default function ProposalsPage() {
   const { data: proposals, isLoading } = useQuery({
     queryKey: ['proposals'],
     queryFn: async () => {
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      return mockProposals;
+      const apiProposals = await fetchProposals();
+      return apiProposals.map(transformProposal);
     },
+    refetchInterval: 30000, // Refetch every 30 seconds
   });
 
   const filteredProposals = proposals?.filter((proposal) => {
