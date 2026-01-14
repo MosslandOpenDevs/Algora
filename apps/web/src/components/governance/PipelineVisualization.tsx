@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useTranslations } from 'next-intl';
 import {
   Radio,
@@ -25,6 +26,11 @@ interface PipelineVisualizationProps {
   compact?: boolean;
 }
 
+interface TooltipPosition {
+  top: number;
+  left: number;
+}
+
 const STAGES: { key: PipelineStage; icon: React.ElementType; description: string; avgDuration: string }[] = [
   { key: 'signal_intake', icon: Radio, description: 'Collecting signals from various sources', avgDuration: '~5m' },
   { key: 'issue_detection', icon: Search, description: 'Analyzing signals for anomalies', avgDuration: '~10m' },
@@ -37,9 +43,64 @@ const STAGES: { key: PipelineStage; icon: React.ElementType; description: string
   { key: 'outcome_verification', icon: CheckCircle, description: 'Verifying execution results', avgDuration: '~30m' },
 ];
 
+// Tooltip component rendered via Portal
+function StageTooltip({
+  stage,
+  position,
+  stageName,
+}: {
+  stage: typeof STAGES[0];
+  position: TooltipPosition;
+  stageName: string;
+}) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) return null;
+
+  const tooltipContent = (
+    <div
+      className="fixed z-[99999] w-48 pointer-events-none"
+      style={{
+        top: position.top - 8,
+        left: position.left,
+        transform: 'translate(-50%, -100%)',
+      }}
+    >
+      <div className="rounded-lg border border-agora-border bg-white p-3 shadow-2xl">
+        <div className="text-xs font-semibold text-slate-900 mb-1">
+          {stageName}
+        </div>
+        <p className="text-xs text-agora-muted leading-relaxed">
+          {stage.description}
+        </p>
+        <div className="flex items-center gap-1 mt-2 text-xs text-agora-muted">
+          <Clock className="h-3 w-3" />
+          <span>Avg: {stage.avgDuration}</span>
+        </div>
+      </div>
+      <div
+        className="absolute w-2 h-2 rotate-45 bg-white border-r border-b border-agora-border"
+        style={{
+          bottom: -4,
+          left: '50%',
+          transform: 'translateX(-50%)',
+        }}
+      />
+    </div>
+  );
+
+  return createPortal(tooltipContent, document.body);
+}
+
 export function PipelineVisualization({ status, compact = false }: PipelineVisualizationProps) {
   const t = useTranslations('Governance.pipeline');
   const [hoveredStage, setHoveredStage] = useState<PipelineStage | null>(null);
+  const [tooltipPosition, setTooltipPosition] = useState<TooltipPosition>({ top: 0, left: 0 });
+  const stageRefs = useRef<Map<PipelineStage, HTMLDivElement>>(new Map());
 
   const getStageStatus = (stage: PipelineStage): 'completed' | 'current' | 'pending' => {
     if (!status) return 'pending';
@@ -48,9 +109,27 @@ export function PipelineVisualization({ status, compact = false }: PipelineVisua
     return 'pending';
   };
 
+  const handleMouseEnter = (stageKey: PipelineStage) => {
+    const element = stageRefs.current.get(stageKey);
+    if (element) {
+      const rect = element.getBoundingClientRect();
+      setTooltipPosition({
+        top: rect.top,
+        left: rect.left + rect.width / 2,
+      });
+    }
+    setHoveredStage(stageKey);
+  };
+
+  const handleMouseLeave = () => {
+    setHoveredStage(null);
+  };
+
   // Simulated progress data when no real status is provided
   const simulatedProgress = status?.progress ?? 45;
   const completedCount = status?.stagesCompleted.length ?? Math.floor(simulatedProgress / 11);
+
+  const hoveredStageData = hoveredStage ? STAGES.find(s => s.key === hoveredStage) : null;
 
   if (compact) {
     return (
@@ -123,20 +202,22 @@ export function PipelineVisualization({ status, compact = false }: PipelineVisua
       </div>
 
       {/* Stages */}
-      <div className="p-4 relative overflow-visible">
+      <div className="p-4">
         <div className="flex flex-wrap items-start justify-between gap-2">
           {STAGES.map((stage, index) => {
             const Icon = stage.icon;
             const stageStatus = getStageStatus(stage.key);
-            const isHovered = hoveredStage === stage.key;
 
             return (
               <div key={stage.key} className="flex items-center">
                 {/* Stage */}
                 <div
-                  className={`relative ${isHovered ? 'z-[9999]' : 'z-0'}`}
-                  onMouseEnter={() => setHoveredStage(stage.key)}
-                  onMouseLeave={() => setHoveredStage(null)}
+                  ref={(el) => {
+                    if (el) stageRefs.current.set(stage.key, el);
+                  }}
+                  className="relative"
+                  onMouseEnter={() => handleMouseEnter(stage.key)}
+                  onMouseLeave={handleMouseLeave}
                 >
                   <div
                     className={`flex flex-col items-center gap-1 rounded-lg p-2 transition-all duration-300 cursor-default ${
@@ -173,25 +254,6 @@ export function PipelineVisualization({ status, compact = false }: PipelineVisua
                       {t(`stages.${stage.key}`)}
                     </span>
                   </div>
-
-                  {/* Tooltip */}
-                  {isHovered && (
-                    <div className="absolute bottom-full left-1/2 mb-3 w-48 -translate-x-1/2 z-[9999]">
-                      <div className="rounded-lg border border-agora-border bg-white p-3 shadow-2xl">
-                        <div className="text-xs font-semibold text-slate-900 mb-1">
-                          {t(`stages.${stage.key}`)}
-                        </div>
-                        <p className="text-xs text-agora-muted leading-relaxed">
-                          {stage.description}
-                        </p>
-                        <div className="flex items-center gap-1 mt-2 text-xs text-agora-muted">
-                          <Clock className="h-3 w-3" />
-                          <span>Avg: {stage.avgDuration}</span>
-                        </div>
-                      </div>
-                      <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 rotate-45 bg-white border-r border-b border-agora-border" />
-                    </div>
-                  )}
                 </div>
 
                 {/* Connector */}
@@ -240,6 +302,15 @@ export function PipelineVisualization({ status, compact = false }: PipelineVisua
             {status.error}
           </div>
         </div>
+      )}
+
+      {/* Tooltip rendered via Portal */}
+      {hoveredStage && hoveredStageData && (
+        <StageTooltip
+          stage={hoveredStageData}
+          position={tooltipPosition}
+          stageName={t(`stages.${hoveredStage}`)}
+        />
       )}
     </div>
   );
