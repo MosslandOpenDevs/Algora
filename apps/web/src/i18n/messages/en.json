@@ -605,7 +605,8 @@
       "treasury": "DAO treasury and token management",
       "agents": "AI agents participating in governance",
       "engine": "System monitoring and configuration",
-      "governance": "Autonomous governance OS with document registry, dual-house voting, and safe autonomy"
+      "governance": "Autonomous governance OS with document registry, dual-house voting, and safe autonomy",
+      "delegation": "Delegate your voting power to trusted addresses. Delegated votes are automatically applied when votes are cast."
     }
   },
   "Live": {
@@ -867,6 +868,72 @@
     "badge": "Mock Data",
     "title": "Simulated Data",
     "description": "This section displays simulated/mock data for demonstration purposes. In production, this will be replaced with real-time data from the governance system."
+  },
+  "Delegation": {
+    "title": "Voting Delegation",
+    "subtitle": "Delegate your voting power to trusted addresses",
+    "stats": {
+      "ownPower": "Own Voting Power",
+      "delegatedIn": "Received Delegations",
+      "delegatedOut": "Given Delegations",
+      "effectivePower": "Effective Voting Power"
+    },
+    "tabs": {
+      "given": "Delegations Given",
+      "received": "Delegations Received"
+    },
+    "delegate": "Delegate",
+    "revoke": "Revoke",
+    "delegateTo": "Delegate To",
+    "delegatedTo": "Delegated to",
+    "delegatedFrom": "Delegated from",
+    "delegateAddress": "Delegate Address",
+    "enterAddress": "Enter wallet address (0x...)",
+    "invalidAddress": "Invalid wallet address",
+    "cannotDelegateToSelf": "Cannot delegate to yourself",
+    "categories": "Categories",
+    "category": {
+      "treasury": "Treasury",
+      "technical": "Technical",
+      "governance": "Governance",
+      "community": "Community"
+    },
+    "allCategories": "All Categories",
+    "allCategoriesHint": "Leave empty to delegate for all categories",
+    "optional": "optional",
+    "expiresAt": "Expiration",
+    "expiration": {
+      "never": "Never",
+      "30days": "30 Days",
+      "90days": "90 Days",
+      "180days": "180 Days"
+    },
+    "noExpiration": "No Expiration",
+    "expired": "Expired",
+    "expiresInDay": "{days} day left",
+    "expiresInDays": "{days} days left",
+    "confirmDelegation": "Confirm Delegation",
+    "delegationSuccess": "Delegation Successful!",
+    "delegationSuccessDesc": "You have delegated {power} VP to {address}",
+    "delegationFailed": "Delegation Failed",
+    "delegationFailedDesc": "Something went wrong. Please try again.",
+    "revokeDelegation": "Revoke Delegation",
+    "revokeConfirm": "Are you sure you want to revoke this delegation?",
+    "noDelegationsGiven": "You haven't delegated to anyone yet",
+    "noDelegationsReceived": "No one has delegated to you yet",
+    "votingPower": "Voting Power",
+    "loading": "Loading delegations...",
+    "modal": {
+      "title": "Delegate Voting Power",
+      "intro": "Delegating allows someone else to vote on your behalf. Your tokens remain in your wallet.",
+      "inputTitle": "Delegation Details",
+      "continue": "Continue",
+      "back": "Back",
+      "processing": "Processing...",
+      "done": "Done",
+      "tryAgain": "Try Again",
+      "close": "Close"
+    }
   },
   "HelpTooltips": {
     "systemStatus": "Real-time status of the Algora governance engine. 'Running' means all systems are operational.",

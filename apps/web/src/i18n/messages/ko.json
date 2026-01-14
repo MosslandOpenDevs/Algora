@@ -605,7 +605,8 @@
       "treasury": "DAO 트레저리 및 토큰 관리",
       "agents": "거버넌스에 참여하는 AI 에이전트",
       "engine": "시스템 모니터링 및 설정",
-      "governance": "문서 레지스트리, 양원제 투표, 안전 자율성을 갖춘 자율 거버넌스 OS"
+      "governance": "문서 레지스트리, 양원제 투표, 안전 자율성을 갖춘 자율 거버넌스 OS",
+      "delegation": "신뢰할 수 있는 주소에 투표권을 위임하세요. 위임된 투표는 투표 시 자동으로 적용됩니다."
     }
   },
   "Live": {
@@ -867,6 +868,72 @@
     "badge": "목업 데이터",
     "title": "시뮬레이션 데이터",
     "description": "이 섹션은 데모 목적의 시뮬레이션/목업 데이터를 표시합니다. 프로덕션에서는 거버넌스 시스템의 실시간 데이터로 대체됩니다."
+  },
+  "Delegation": {
+    "title": "투표권 위임",
+    "subtitle": "신뢰할 수 있는 주소에 투표권을 위임하세요",
+    "stats": {
+      "ownPower": "보유 투표권",
+      "delegatedIn": "받은 위임",
+      "delegatedOut": "위임한 투표권",
+      "effectivePower": "실효 투표권"
+    },
+    "tabs": {
+      "given": "위임한 목록",
+      "received": "받은 위임"
+    },
+    "delegate": "위임하기",
+    "revoke": "취소",
+    "delegateTo": "위임 대상",
+    "delegatedTo": "위임 대상",
+    "delegatedFrom": "위임자",
+    "delegateAddress": "수임자 주소",
+    "enterAddress": "지갑 주소 입력 (0x...)",
+    "invalidAddress": "유효하지 않은 지갑 주소입니다",
+    "cannotDelegateToSelf": "자신에게 위임할 수 없습니다",
+    "categories": "카테고리",
+    "category": {
+      "treasury": "트레저리",
+      "technical": "기술",
+      "governance": "거버넌스",
+      "community": "커뮤니티"
+    },
+    "allCategories": "전체 카테고리",
+    "allCategoriesHint": "비워두면 모든 카테고리에 대해 위임됩니다",
+    "optional": "선택",
+    "expiresAt": "만료",
+    "expiration": {
+      "never": "무기한",
+      "30days": "30일",
+      "90days": "90일",
+      "180days": "180일"
+    },
+    "noExpiration": "만료 없음",
+    "expired": "만료됨",
+    "expiresInDay": "{days}일 남음",
+    "expiresInDays": "{days}일 남음",
+    "confirmDelegation": "위임 확인",
+    "delegationSuccess": "위임 완료!",
+    "delegationSuccessDesc": "{power} VP를 {address}에게 위임했습니다",
+    "delegationFailed": "위임 실패",
+    "delegationFailedDesc": "문제가 발생했습니다. 다시 시도해주세요.",
+    "revokeDelegation": "위임 취소",
+    "revokeConfirm": "이 위임을 취소하시겠습니까?",
+    "noDelegationsGiven": "아직 위임한 내역이 없습니다",
+    "noDelegationsReceived": "아직 받은 위임이 없습니다",
+    "votingPower": "투표권",
+    "loading": "위임 목록 로딩 중...",
+    "modal": {
+      "title": "투표권 위임",
+      "intro": "위임을 통해 다른 사람이 당신을 대신하여 투표할 수 있습니다. 토큰은 지갑에 그대로 유지됩니다.",
+      "inputTitle": "위임 상세 정보",
+      "continue": "계속",
+      "back": "뒤로",
+      "processing": "처리 중...",
+      "done": "완료",
+      "tryAgain": "다시 시도",
+      "close": "닫기"
+    }
   },
   "HelpTooltips": {
     "systemStatus": "Algora 거버넌스 엔진의 실시간 상태입니다. 'Running'은 모든 시스템이 정상 작동 중임을 의미합니다.",

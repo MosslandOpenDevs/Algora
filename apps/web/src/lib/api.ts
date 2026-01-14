@@ -890,3 +890,50 @@ export async function fetchTokenHolders(limit = 50): Promise<TokenHolder[]> {
   const response = await fetchAPI<TokenHolder[]>(`/api/token/holders?${params}`);
   return response || [];
 }
+
+// ==========================================
+// Delegation API
+// ==========================================
+
+export interface Delegation {
+  id: string;
+  delegator: string;
+  delegate: string;
+  categories?: string[];
+  weight: number;
+  expires_at?: string;
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface DelegationResponse {
+  delegatedTo: Delegation[];   // Delegations I've given
+  delegatedFrom: Delegation[]; // Delegations I've received
+}
+
+export async function fetchDelegations(address: string): Promise<DelegationResponse> {
+  const response = await fetchAPI<DelegationResponse>(`/api/proposals/delegation/${address}`);
+  return {
+    delegatedTo: response.delegatedTo || [],
+    delegatedFrom: response.delegatedFrom || [],
+  };
+}
+
+export async function createDelegation(data: {
+  delegator: string;
+  delegate: string;
+  categories?: string[];
+  expiresAt?: string;
+}): Promise<Delegation> {
+  const response = await fetchAPI<{ delegation: Delegation }>('/api/proposals/delegation', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+  return response.delegation;
+}
+
+export async function revokeDelegation(delegationId: string): Promise<void> {
+  await fetchAPI(`/api/proposals/delegation/${delegationId}`, {
+    method: 'DELETE',
+  });
+}

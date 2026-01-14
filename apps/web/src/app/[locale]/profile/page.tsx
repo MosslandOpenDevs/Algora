@@ -3,8 +3,12 @@
 import { useAccount, useSignMessage } from 'wagmi';
 import { useTranslations } from 'next-intl';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Wallet, Vote, History, Shield, Loader2, RefreshCw, CheckCircle, Copy, ExternalLink, AlertCircle } from 'lucide-react';
+import { Wallet, Vote, History, Shield, Loader2, RefreshCw, CheckCircle, Copy, ExternalLink, AlertCircle, Users } from 'lucide-react';
 import { useState } from 'react';
+
+import { HelpTooltip } from '@/components/guide/HelpTooltip';
+import { DelegationStats, DelegationList, DelegationModal } from '@/components/delegation';
+import { fetchDelegations, revokeDelegation, type DelegationResponse } from '@/lib/api';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3201';
 
@@ -19,10 +23,13 @@ interface VoteHistory {
 export default function ProfilePage() {
   const t = useTranslations('Treasury');
   const tWallet = useTranslations('Wallet');
+  const tDelegation = useTranslations('Delegation');
+  const tGuide = useTranslations('Guide.tooltips');
   const { address, isConnected } = useAccount();
   const { signMessageAsync } = useSignMessage();
   const queryClient = useQueryClient();
   const [copied, setCopied] = useState(false);
+  const [showDelegationModal, setShowDelegationModal] = useState(false);
 
   // Get holder profile
   const { data: profile, isLoading: loadingProfile, refetch: refetchProfile } = useQuery({
@@ -68,6 +75,26 @@ export default function ProfilePage() {
       queryClient.invalidateQueries({ queryKey: ['holder-profile', address] });
     },
   });
+
+  // Delegation queries
+  const { data: delegations, isLoading: loadingDelegations } = useQuery<DelegationResponse>({
+    queryKey: ['delegations', address],
+    queryFn: () => fetchDelegations(address!),
+    enabled: isConnected && !!address && !!profile?.holder,
+  });
+
+  const revokeMutation = useMutation({
+    mutationFn: revokeDelegation,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['delegations', address] });
+    },
+  });
+
+  // Calculate delegation stats
+  const delegatedIn = delegations?.delegatedFrom?.reduce((sum, d) => sum + d.weight, 0) || 0;
+  const delegatedOut = delegations?.delegatedTo?.reduce((sum, d) => sum + d.weight, 0) || 0;
+  const ownVotingPower = profile?.holder?.votingPower || 0;
+  const effectiveVotingPower = ownVotingPower + delegatedIn - delegatedOut;
 
   const copyAddress = async () => {
     if (address) {
@@ -224,6 +251,43 @@ export default function ProfilePage() {
         </div>
       )}
 
+      {/* Delegation Section */}
+      {profile?.holder && (
+        <div className="space-y-4">
+          {/* Delegation Header */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <h2 className="text-lg font-semibold text-slate-900">{tDelegation('title')}</h2>
+              <HelpTooltip content={tGuide('delegation')} />
+            </div>
+            <button
+              onClick={() => setShowDelegationModal(true)}
+              className="flex items-center gap-2 rounded-lg bg-agora-accent px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-agora-accent/90"
+            >
+              <Users className="h-4 w-4" />
+              {tDelegation('delegate')}
+            </button>
+          </div>
+          <p className="text-sm text-agora-muted">{tDelegation('subtitle')}</p>
+
+          {/* Delegation Stats */}
+          <DelegationStats
+            ownVotingPower={ownVotingPower}
+            delegatedIn={delegatedIn}
+            delegatedOut={delegatedOut}
+            effectiveVotingPower={effectiveVotingPower}
+          />
+
+          {/* Delegation List */}
+          <DelegationList
+            delegations={delegations || { delegatedTo: [], delegatedFrom: [] }}
+            onRevoke={(id) => revokeMutation.mutate(id)}
+            isLoading={loadingDelegations}
+            isRevoking={revokeMutation.isPending}
+          />
+        </div>
+      )}
+
       {/* Voting History */}
       {profile?.votingHistory && profile.votingHistory.length > 0 && (
         <div className="rounded-xl border border-agora-border bg-agora-card">
@@ -267,6 +331,14 @@ export default function ProfilePage() {
           </p>
         </div>
       )}
+
+      {/* Delegation Modal */}
+      <DelegationModal
+        isOpen={showDelegationModal}
+        onClose={() => setShowDelegationModal(false)}
+        walletAddress={address || ''}
+        votingPower={ownVotingPower}
+      />
     </div>
   );
 }
