@@ -17,7 +17,6 @@ import {
   ThumbsUp,
   ThumbsDown,
   Minus,
-  ExternalLink,
 } from 'lucide-react';
 import { type DualHouseVote } from '@/lib/api';
 
@@ -161,7 +160,7 @@ export function VoteDetailModal({ vote, isOpen, onClose }: VoteDetailModalProps)
 
   const bothPassed = vote.mossCoinHouse.passed && vote.openSourceHouse.passed;
   const bothFailed = vote.mossCoinHouse.passed === false && vote.openSourceHouse.passed === false;
-  const needsReconciliation = vote.mossCoinHouse.passed !== vote.openSourceHouse.passed;
+  const _needsReconciliation = vote.mossCoinHouse.passed !== vote.openSourceHouse.passed;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">

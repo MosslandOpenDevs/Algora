@@ -8,18 +8,14 @@ import {
   Cpu,
   FileText,
   Lock,
-  Activity,
   Clock,
   CheckCircle,
   TrendingUp,
-  TrendingDown,
-  Zap,
   Server,
   Database,
   Wifi,
   AlertCircle,
   PlayCircle,
-  PauseCircle,
   BarChart3,
 } from 'lucide-react';
 import { type GovernanceOSStats, type GovernanceOSHealth } from '@/lib/api';
@@ -370,7 +366,7 @@ function LockedContent({ stats }: { stats: GovernanceOSStats }) {
 }
 
 export function StatsDetailModal({ type, stats, health, isOpen, onClose }: StatsDetailModalProps) {
-  const t = useTranslations('Governance');
+  const _t = useTranslations('Governance');
   const config = typeConfig[type];
   const Icon = config.icon;
 

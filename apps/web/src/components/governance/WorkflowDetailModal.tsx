@@ -14,7 +14,6 @@ import {
   Workflow,
   ArrowRight,
   Play,
-  Pause,
   BarChart3,
 } from 'lucide-react';
 import { type WorkflowStatus } from '@/lib/api';

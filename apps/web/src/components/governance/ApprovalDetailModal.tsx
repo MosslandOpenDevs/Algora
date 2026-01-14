@@ -11,7 +11,6 @@ import {
   Play,
   Shield,
   AlertTriangle,
-  User,
   Calendar,
   Clock,
   FileText,
