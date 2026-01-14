@@ -12,9 +12,7 @@ import {
   Shield,
   AlertTriangle,
   Calendar,
-  Clock,
   FileText,
-  History,
 } from 'lucide-react';
 import { type LockedAction, type RiskLevel } from '@/lib/api';
 
@@ -108,11 +106,11 @@ export function ApprovalDetailModal({ action, isOpen, onClose, onApprove }: Appr
             </div>
           </div>
 
-          {/* Action Description */}
+          {/* Lock Reason */}
           <div className="mb-6">
-            <h3 className="text-sm font-semibold text-slate-900 mb-2">{t('actionDescription')}</h3>
+            <h3 className="text-sm font-semibold text-slate-900 mb-2">{t('lockReason')}</h3>
             <div className="rounded-lg border border-agora-border bg-agora-dark/30 p-4">
-              <p className="text-sm text-agora-muted">{action.actionDescription || 'No description provided'}</p>
+              <p className="text-sm text-agora-muted">{action.lockReason || 'No reason provided'}</p>
             </div>
           </div>
 
@@ -191,40 +189,16 @@ export function ApprovalDetailModal({ action, isOpen, onClose, onApprove }: Appr
               </p>
             </div>
 
-            {action.expiresAt && (
-              <div className="rounded-lg bg-agora-dark/50 p-4">
-                <div className="flex items-center gap-2 text-agora-muted mb-1">
-                  <Clock className="h-4 w-4" />
-                  <span className="text-xs font-medium">{t('expiresAt')}</span>
-                </div>
-                <p className="text-sm text-slate-900">
-                  {format(new Date(action.expiresAt), 'PPP')}
-                </p>
-                <p className="text-xs text-agora-warning mt-0.5">
-                  {formatDistanceToNow(new Date(action.expiresAt), { addSuffix: true })}
-                </p>
-              </div>
-            )}
-
-            {action.proposalId && (
+            {action.documentId && (
               <div className="rounded-lg bg-agora-dark/50 p-4">
                 <div className="flex items-center gap-2 text-agora-muted mb-1">
                   <FileText className="h-4 w-4" />
-                  <span className="text-xs font-medium">{t('proposalId')}</span>
+                  <span className="text-xs font-medium">{t('documentId')}</span>
                 </div>
-                <p className="text-sm font-mono text-slate-900 truncate">{action.proposalId}</p>
+                <p className="text-sm font-mono text-slate-900 truncate">{action.documentId}</p>
               </div>
             )}
 
-            {action.votingId && (
-              <div className="rounded-lg bg-agora-dark/50 p-4">
-                <div className="flex items-center gap-2 text-agora-muted mb-1">
-                  <History className="h-4 w-4" />
-                  <span className="text-xs font-medium">{t('votingId')}</span>
-                </div>
-                <p className="text-sm font-mono text-slate-900 truncate">{action.votingId}</p>
-              </div>
-            )}
           </div>
 
           {/* What happens after approval */}

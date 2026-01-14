@@ -17,6 +17,7 @@ import {
   AlertCircle,
   PlayCircle,
   BarChart3,
+  Activity,
 } from 'lucide-react';
 import { type GovernanceOSStats, type GovernanceOSHealth } from '@/lib/api';
 

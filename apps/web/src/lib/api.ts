@@ -270,12 +270,17 @@ export interface DualHouseVote {
   id: string;
   proposalId: string;
   title: string;
+  summary?: string;
   status: 'pending' | 'voting' | 'passed' | 'rejected' | 'reconciliation';
+  riskLevel?: RiskLevel;
   mossCoinHouse: {
     votesFor: number;
     votesAgainst: number;
     votesAbstain: number;
     quorumReached: boolean;
+    quorumThreshold: number;
+    passThreshold: number;
+    totalVoters?: number;
     passed?: boolean;
   };
   openSourceHouse: {
@@ -283,6 +288,9 @@ export interface DualHouseVote {
     votesAgainst: number;
     votesAbstain: number;
     quorumReached: boolean;
+    quorumThreshold: number;
+    passThreshold: number;
+    totalVoters?: number;
     passed?: boolean;
   };
   createdAt: string;
@@ -458,14 +466,34 @@ export async function fetchDocument(documentId: string): Promise<GovernanceDocum
   };
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function transformVoteResponse(vote: any): DualHouseVote {
+  return {
+    ...vote,
+    mossCoinHouse: {
+      ...vote.mossCoinHouse,
+      quorumThreshold: vote.mossCoinHouse?.quorumThreshold ?? 10,
+      passThreshold: vote.mossCoinHouse?.passThreshold ?? 50,
+      totalVoters: vote.mossCoinHouse?.totalVoters ?? vote.mossCoinHouse?.totalPossiblePower ?? 100,
+    },
+    openSourceHouse: {
+      ...vote.openSourceHouse,
+      quorumThreshold: vote.openSourceHouse?.quorumThreshold ?? 20,
+      passThreshold: vote.openSourceHouse?.passThreshold ?? 50,
+      totalVoters: vote.openSourceHouse?.totalVoters ?? vote.openSourceHouse?.totalPossiblePower ?? 100,
+    },
+  };
+}
+
 export async function fetchDualHouseVotes(status?: string): Promise<DualHouseVote[]> {
   const params = new URLSearchParams();
   if (status) params.append('status', status);
   const queryString = params.toString() ? `?${params.toString()}` : '';
-  const response = await fetchAPI<{ sessions: DualHouseVote[]; total: number }>(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const response = await fetchAPI<{ sessions: any[]; total: number }>(
     `/api/governance-os/voting${queryString}`
   );
-  return response.sessions || [];
+  return (response.sessions || []).map(transformVoteResponse);
 }
 
 export async function fetchLockedActions(status?: string): Promise<LockedAction[]> {
