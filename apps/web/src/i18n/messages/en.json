@@ -179,6 +179,7 @@
     "refresh": "Refresh",
     "uptime": "Uptime",
     "status": {
+      "ok": "All systems operational",
       "running": "All systems operational",
       "degraded": "System performance degraded",
       "maintenance": "System under maintenance"

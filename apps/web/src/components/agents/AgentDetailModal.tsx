@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useTranslations } from 'next-intl';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
@@ -99,9 +100,14 @@ export function AgentDetailModal({ agent, onClose }: AgentDetailModalProps) {
   const queryClient = useQueryClient();
   const status = agent.status || 'idle';
   const [actionSuccess, setActionSuccess] = useState<'summon' | 'dismiss' | null>(null);
+  const [mounted, setMounted] = useState(false);
 
   const group = groupConfig[agent.group_name] || groupConfig.advisors;
   const GroupIcon = group.icon;
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const summonMutation = useMutation({
     mutationFn: () => summonAgent(agent.id),
@@ -127,12 +133,18 @@ export function AgentDetailModal({ agent, onClose }: AgentDetailModalProps) {
     }
   };
 
-  return (
+  if (!mounted) return null;
+
+  const modalContent = (
     <div
-      className="animate-fade-in fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+      className="fixed inset-0 z-[99999] flex items-center justify-center p-4"
       onClick={handleBackdropClick}
     >
-      <div className="animate-scale-in relative mx-4 w-full max-w-lg max-h-[90vh] overflow-hidden rounded-xl border border-agora-border bg-agora-dark shadow-2xl">
+      {/* Backdrop */}
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+
+      {/* Modal */}
+      <div className="relative w-full max-w-lg max-h-[85vh] overflow-hidden rounded-xl border border-agora-border bg-agora-dark shadow-2xl animate-slide-up">
         {/* Close button */}
         <button
           onClick={onClose}
@@ -351,4 +363,6 @@ export function AgentDetailModal({ agent, onClose }: AgentDetailModalProps) {
       </div>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 }

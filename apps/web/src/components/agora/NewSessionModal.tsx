@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useTranslations } from 'next-intl';
 import { X, MessageSquare, Loader2 } from 'lucide-react';
 
@@ -13,6 +14,11 @@ export function NewSessionModal({ onClose, onCreated }: NewSessionModalProps) {
   const t = useTranslations('Agora');
   const [topic, setTopic] = useState('');
   const [isCreating, setIsCreating] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleBackdropClick = (e: React.MouseEvent) => {
     if (e.target === e.currentTarget) {
@@ -45,12 +51,18 @@ export function NewSessionModal({ onClose, onCreated }: NewSessionModalProps) {
     }
   };
 
-  return (
+  if (!mounted) return null;
+
+  const modalContent = (
     <div
-      className="animate-fade-in fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+      className="fixed inset-0 z-[99999] flex items-center justify-center p-4"
       onClick={handleBackdropClick}
     >
-      <div className="animate-scale-in relative mx-4 w-full max-w-md rounded-xl border border-agora-border bg-agora-dark p-6 shadow-2xl">
+      {/* Backdrop */}
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+
+      {/* Modal */}
+      <div className="relative w-full max-w-md rounded-xl border border-agora-border bg-agora-dark p-6 shadow-2xl animate-slide-up">
         {/* Close button */}
         <button
           onClick={onClose}
@@ -117,4 +129,6 @@ export function NewSessionModal({ onClose, onCreated }: NewSessionModalProps) {
       </div>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 }

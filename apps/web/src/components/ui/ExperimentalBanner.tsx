@@ -11,7 +11,7 @@ export function ExperimentalBanner() {
   if (!isVisible) return null;
 
   return (
-    <div className="relative bg-gradient-to-r from-amber-500/20 via-orange-500/20 to-amber-500/20 border-b border-amber-500/30">
+    <div className="relative z-10 bg-gradient-to-r from-amber-500/20 via-orange-500/20 to-amber-500/20 border-b border-amber-500/30">
       <div className="mx-auto max-w-7xl px-4 py-2.5 sm:px-6 lg:px-8">
         <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
           <div className="flex items-center gap-2">

@@ -1,5 +1,7 @@
 'use client';
 
+import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useTranslations } from 'next-intl';
 import { X, MessageSquare, Zap, Shield } from 'lucide-react';
 import type { Agent } from '@/lib/api';
@@ -47,22 +49,28 @@ const groupIcons: Record<string, string> = {
 
 export function AgentDetailModal({ agent, onClose, messageCount = 0 }: AgentDetailModalProps) {
   const tAgents = useTranslations('Agents.groups');
+  const [mounted, setMounted] = useState(false);
 
   const status = statusConfig[agent.status || 'idle'] || statusConfig.idle;
   const groupDescription = groupDescriptions[agent.group_name] || 'Governance participant';
   const groupIcon = groupIcons[agent.group_name] || '🤖';
 
-  return (
-    <>
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) return null;
+
+  const modalContent = (
+    <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4">
       {/* Backdrop */}
       <div
-        className="animate-fade-in fixed inset-0 z-50 bg-black/60 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
         onClick={onClose}
       />
 
       {/* Modal */}
-      <div className="fixed inset-4 z-50 flex items-center justify-center sm:inset-10">
-        <div className="animate-scale-in w-full max-w-md max-h-full overflow-hidden rounded-xl border border-agora-border bg-agora-dark shadow-2xl">
+      <div className="relative w-full max-w-md max-h-[85vh] overflow-hidden rounded-xl border border-agora-border bg-agora-dark shadow-2xl animate-slide-up">
           {/* Header with Avatar */}
           <div className="relative">
             {/* Background gradient */}
@@ -172,8 +180,9 @@ export function AgentDetailModal({ agent, onClose, messageCount = 0 }: AgentDeta
               Close
             </button>
           </div>
-        </div>
       </div>
-    </>
+    </div>
   );
+
+  return createPortal(modalContent, document.body);
 }

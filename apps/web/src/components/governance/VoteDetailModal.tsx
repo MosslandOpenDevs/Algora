@@ -1,5 +1,7 @@
 'use client';
 
+import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useTranslations } from 'next-intl';
 import { formatDistanceToNow, format } from 'date-fns';
 import {
@@ -153,17 +155,22 @@ function HouseDetailCard({
 
 export function VoteDetailModal({ vote, isOpen, onClose }: VoteDetailModalProps) {
   const t = useTranslations('Governance.voting');
+  const [mounted, setMounted] = useState(false);
   const StatusIcon = statusIcons[vote.status] || Clock;
   const statusColor = statusColors[vote.status] || 'text-agora-muted bg-agora-muted/10';
 
-  if (!isOpen) return null;
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!isOpen || !mounted) return null;
 
   const bothPassed = vote.mossCoinHouse.passed && vote.openSourceHouse.passed;
   const bothFailed = vote.mossCoinHouse.passed === false && vote.openSourceHouse.passed === false;
   const _needsReconciliation = vote.mossCoinHouse.passed !== vote.openSourceHouse.passed;
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+  const modalContent = (
+    <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4">
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/50 backdrop-blur-sm"
@@ -345,4 +352,6 @@ export function VoteDetailModal({ vote, isOpen, onClose }: VoteDetailModalProps)
       </div>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 }

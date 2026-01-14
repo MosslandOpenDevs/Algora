@@ -1,5 +1,7 @@
 'use client';
 
+import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useTranslations } from 'next-intl';
 import { X, TrendingUp, TrendingDown, Activity, Clock, BarChart3 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
@@ -23,6 +25,11 @@ interface StatsDetailModalProps {
 
 export function StatsDetailModal({ stat, onClose }: StatsDetailModalProps) {
   const t = useTranslations('Dashboard');
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Fetch related activities
   const { data: activities } = useQuery({
@@ -78,9 +85,11 @@ export function StatsDetailModal({ stat, onClose }: StatsDetailModalProps) {
   const breakdown = getBreakdown();
   const total = breakdown.reduce((sum, item) => sum + item.value, 0);
 
-  return (
+  if (!mounted) return null;
+
+  const modalContent = (
     <div
-      className="animate-fade-in fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+      className="animate-fade-in fixed inset-0 z-[99999] flex items-center justify-center bg-black/60 backdrop-blur-sm"
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
       <div className="animate-scale-in relative w-full max-w-lg mx-4 rounded-xl border border-agora-border bg-agora-dark shadow-2xl">
@@ -218,4 +227,6 @@ export function StatsDetailModal({ stat, onClose }: StatsDetailModalProps) {
       </div>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 }

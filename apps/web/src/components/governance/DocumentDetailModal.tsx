@@ -1,5 +1,7 @@
 'use client';
 
+import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useTranslations } from 'next-intl';
 import { formatDistanceToNow, format } from 'date-fns';
 import {
@@ -69,14 +71,19 @@ const documentTypeLabels: Record<string, { name: string; description: string }> 
 
 export function DocumentDetailModal({ document, isOpen, onClose }: DocumentDetailModalProps) {
   const t = useTranslations('Governance.documents');
+  const [mounted, setMounted] = useState(false);
   const StateIcon = stateIcons[document.state] || FileText;
   const stateColor = stateColors[document.state] || 'text-agora-muted bg-agora-muted/10';
   const typeInfo = documentTypeLabels[document.type] || { name: document.type, description: '' };
 
-  if (!isOpen) return null;
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+  if (!isOpen || !mounted) return null;
+
+  const modalContent = (
+    <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4">
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/50 backdrop-blur-sm"
@@ -217,4 +224,6 @@ export function DocumentDetailModal({ document, isOpen, onClose }: DocumentDetai
       </div>
     </div>
   );
+
+  return createPortal(modalContent, globalThis.document.body);
 }

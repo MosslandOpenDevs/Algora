@@ -1,5 +1,7 @@
 'use client';
 
+import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { format, formatDistanceToNow } from 'date-fns';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -234,6 +236,7 @@ const MarkdownComponents = {
 };
 
 export function DisclosureDetailModal({ report, onClose, onDownload }: DisclosureDetailModalProps) {
+  const [mounted, setMounted] = useState(false);
   const type = typeConfig[report.type];
   const status = statusConfig[report.status];
   const TypeIcon = type.icon;
@@ -246,6 +249,10 @@ export function DisclosureDetailModal({ report, onClose, onDownload }: Disclosur
     report.content.includes('| ') ||
     report.content.includes('---')
   );
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleDownload = () => {
     if (onDownload) {
@@ -306,17 +313,18 @@ Report ID: ${report.id}
     }
   };
 
-  return (
-    <>
+  if (!mounted) return null;
+
+  const modalContent = (
+    <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4">
       {/* Backdrop */}
       <div
-        className="animate-fade-in fixed inset-0 z-50 bg-black/60 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
         onClick={onClose}
       />
 
       {/* Modal */}
-      <div className="fixed inset-4 z-50 flex items-center justify-center sm:inset-10">
-        <div className="animate-scale-in w-full max-w-4xl max-h-full overflow-hidden rounded-xl border border-agora-border bg-agora-dark shadow-2xl">
+      <div className="relative w-full max-w-4xl max-h-[85vh] overflow-hidden rounded-xl border border-agora-border bg-agora-dark shadow-2xl animate-slide-up">
           {/* Header */}
           <div className="flex items-start justify-between border-b border-agora-border p-6">
             <div className="flex items-start gap-4">
@@ -507,8 +515,9 @@ Report ID: ${report.id}
               )}
             </div>
           </div>
-        </div>
       </div>
-    </>
+    </div>
   );
+
+  return createPortal(modalContent, document.body);
 }

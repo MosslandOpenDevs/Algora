@@ -179,6 +179,7 @@
     "refresh": "새로고침",
     "uptime": "가동시간",
     "status": {
+      "ok": "모든 시스템 정상 작동 중",
       "running": "모든 시스템 정상 작동 중",
       "degraded": "시스템 성능 저하됨",
       "maintenance": "시스템 유지보수 중"

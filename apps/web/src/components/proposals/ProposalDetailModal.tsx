@@ -1,5 +1,7 @@
 'use client';
 
+import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useTranslations } from 'next-intl';
 import { formatDistanceToNow, format } from 'date-fns';
 import {
@@ -86,6 +88,7 @@ function formatNumber(num: number): string {
 
 export function ProposalDetailModal({ proposal, onClose }: ProposalDetailModalProps) {
   const t = useTranslations('Proposals');
+  const [mounted, setMounted] = useState(false);
   const StatusIcon = statusConfig[proposal.status].icon;
 
   const totalVotes = proposal.votesFor + proposal.votesAgainst + proposal.votesAbstain;
@@ -99,17 +102,22 @@ export function ProposalDetailModal({ proposal, onClose }: ProposalDetailModalPr
   const endDate = new Date(proposal.endDate);
   const hasEnded = endDate < new Date();
 
-  return (
-    <>
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) return null;
+
+  const modalContent = (
+    <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4">
       {/* Backdrop */}
       <div
-        className="animate-fade-in fixed inset-0 z-50 bg-black/60 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
         onClick={onClose}
       />
 
       {/* Modal */}
-      <div className="fixed inset-4 z-50 flex items-center justify-center sm:inset-10">
-        <div className="animate-scale-in w-full max-w-3xl max-h-full overflow-hidden rounded-xl border border-agora-border bg-agora-dark shadow-2xl">
+      <div className="relative w-full max-w-3xl max-h-[85vh] overflow-hidden rounded-xl border border-agora-border bg-agora-dark shadow-2xl animate-slide-up">
           {/* Header */}
           <div className="flex items-start justify-between border-b border-agora-border p-6">
             <div className="flex items-start gap-4">
@@ -316,8 +324,9 @@ export function ProposalDetailModal({ proposal, onClose }: ProposalDetailModalPr
               )}
             </div>
           </div>
-        </div>
       </div>
-    </>
+    </div>
   );
+
+  return createPortal(modalContent, document.body);
 }

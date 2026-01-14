@@ -1,5 +1,7 @@
 'use client';
 
+import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useTranslations } from 'next-intl';
 import { format } from 'date-fns';
 import {
@@ -368,13 +370,18 @@ function LockedContent({ stats }: { stats: GovernanceOSStats }) {
 
 export function StatsDetailModal({ type, stats, health, isOpen, onClose }: StatsDetailModalProps) {
   const _t = useTranslations('Governance');
+  const [mounted, setMounted] = useState(false);
   const config = typeConfig[type];
   const Icon = config.icon;
 
-  if (!isOpen) return null;
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+  if (!isOpen || !mounted) return null;
+
+  const modalContent = (
+    <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4">
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/50 backdrop-blur-sm animate-fade-in"
@@ -427,4 +434,6 @@ export function StatsDetailModal({ type, stats, health, isOpen, onClose }: Stats
       </div>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 }

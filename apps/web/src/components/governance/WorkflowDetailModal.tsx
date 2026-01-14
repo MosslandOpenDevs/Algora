@@ -1,5 +1,7 @@
 'use client';
 
+import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useTranslations } from 'next-intl';
 import {
   X,
@@ -86,6 +88,7 @@ const workflowDetails: Record<string, {
 
 export function WorkflowDetailModal({ workflow, isOpen, onClose }: WorkflowDetailModalProps) {
   const t = useTranslations('Governance.workflows');
+  const [mounted, setMounted] = useState(false);
   const Icon = workflowIcons[workflow.type] || MessageSquare;
   const gradient = workflowColors[workflow.type] || 'from-gray-500 to-gray-600';
   const details = workflowDetails[workflow.type] || {
@@ -96,10 +99,14 @@ export function WorkflowDetailModal({ workflow, isOpen, onClose }: WorkflowDetai
     outcomes: [],
   };
 
-  if (!isOpen) return null;
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+  if (!isOpen || !mounted) return null;
+
+  const modalContent = (
+    <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4">
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/50 backdrop-blur-sm"
@@ -259,4 +266,6 @@ export function WorkflowDetailModal({ workflow, isOpen, onClose }: WorkflowDetai
       </div>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 }

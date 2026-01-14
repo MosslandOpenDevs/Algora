@@ -1,5 +1,7 @@
 'use client';
 
+import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useTranslations } from 'next-intl';
 import { formatDistanceToNow, format } from 'date-fns';
 import {
@@ -38,19 +40,24 @@ const statusConfig: Record<string, { icon: React.ElementType; color: string; bgC
 
 export function ApprovalDetailModal({ action, isOpen, onClose, onApprove }: ApprovalDetailModalProps) {
   const t = useTranslations('Governance.safeAutonomy');
+  const [mounted, setMounted] = useState(false);
   const riskStyle = riskColors[action.riskLevel];
   const statusStyle = statusConfig[action.status] || statusConfig.locked;
   const StatusIcon = statusStyle.icon;
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const approvalProgress =
     action.requiredApprovals.length > 0
       ? (action.receivedApprovals.length / action.requiredApprovals.length) * 100
       : 0;
 
-  if (!isOpen) return null;
+  if (!isOpen || !mounted) return null;
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+  const modalContent = (
+    <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4">
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/50 backdrop-blur-sm"
@@ -242,4 +249,6 @@ export function ApprovalDetailModal({ action, isOpen, onClose, onApprove }: Appr
       </div>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 }

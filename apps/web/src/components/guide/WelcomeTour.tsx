@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useTranslations } from 'next-intl';
 import { usePathname, useRouter } from 'next/navigation';
 import {
@@ -158,9 +159,13 @@ export function WelcomeTour({ forceShow = false, onComplete }: WelcomeTourProps)
   const isFirstStep = currentStep === 0;
   const isLastStep = currentStep === tourSteps.length - 1;
 
-  return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm">
-      <div className="relative w-full max-w-lg overflow-hidden rounded-2xl border border-agora-border bg-agora-dark shadow-2xl">
+  const modalContent = (
+    <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4">
+      {/* Backdrop */}
+      <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" />
+
+      {/* Modal */}
+      <div className="relative w-full max-w-lg overflow-hidden rounded-2xl border border-agora-border bg-agora-dark shadow-2xl animate-slide-up">
         {/* Close button */}
         <button
           onClick={handleClose}
@@ -295,6 +300,8 @@ export function WelcomeTour({ forceShow = false, onComplete }: WelcomeTourProps)
       </div>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 }
 
 export function resetTour() {
