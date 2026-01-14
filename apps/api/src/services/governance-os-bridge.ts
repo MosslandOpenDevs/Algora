@@ -22,7 +22,8 @@ import type { DualHouseVoting, HighRiskApproval, VoteChoice, HouseType } from '@
 import type { Task, TaskType, DifficultyLevel } from '@algora/model-router';
 
 // Import existing services for integration
-import { llmService } from './llm';
+import { llmService } from './llm.js';
+import { GovernanceStorage } from './governance-storage.js';
 
 // ============================================
 // Types
@@ -86,6 +87,7 @@ export class GovernanceOSBridge extends EventEmitter {
   private io: SocketServer;
   private config: BridgeConfig;
   private governanceOS: GovernanceOS;
+  private storage: GovernanceStorage;
   private pipelinesByIssue: Map<string, string[]> = new Map();
   private eventHandlers: Map<keyof BridgeEvents, Set<BridgeEventHandler<keyof BridgeEvents>>> = new Map();
 
@@ -99,6 +101,9 @@ export class GovernanceOSBridge extends EventEmitter {
     this.io = io;
     this.config = { ...DEFAULT_BRIDGE_CONFIG, ...config };
 
+    // Initialize SQLite-backed storage for v2.0 packages
+    this.storage = new GovernanceStorage(db);
+
     // Initialize GovernanceOS
     this.governanceOS = createGovernanceOS();
 
@@ -108,7 +113,19 @@ export class GovernanceOSBridge extends EventEmitter {
     // Set up bidirectional feedback listeners
     this.setupFeedbackListeners();
 
-    console.log('[GovernanceOSBridge] Service initialized');
+    // Set up storage sync listeners
+    this.setupStorageSync();
+
+    console.log('[GovernanceOSBridge] Service initialized with SQLite storage');
+  }
+
+  // ==========================================
+  // Storage Access
+  // ==========================================
+
+  /** Get the SQLite storage service for v2.0 persistence */
+  getStorage(): GovernanceStorage {
+    return this.storage;
   }
 
   // ==========================================
@@ -156,6 +173,128 @@ export class GovernanceOSBridge extends EventEmitter {
     this.io.on('connection', (socket) => {
       // Note: The actual Agora session handling is done in AgoraService.integrateWithGovernanceOS()
       // This listener can be used for additional coordination if needed
+    });
+  }
+
+  /**
+   * Set up listeners to sync GovernanceOS events to SQLite storage
+   */
+  private setupStorageSync(): void {
+    // Track pipeline start time for execution time calculation
+    const pipelineStartTimes = new Map<string, number>();
+
+    // Track pipeline start
+    this.governanceOS.on('pipeline:started', (data) => {
+      pipelineStartTimes.set(data.context.id, Date.now());
+    });
+
+    // Sync pipeline runs to SQLite
+    this.governanceOS.on('pipeline:completed', (data) => {
+      try {
+        // Record pipeline completion in storage
+        const existingRuns = this.storage.pipeline.getByIssueId(data.result.context.issueId || '');
+        const runId = existingRuns.length > 0 ? existingRuns[0].id : null;
+
+        if (runId) {
+          this.storage.pipeline.updateRun(runId, {
+            status: data.result.success ? 'completed' : 'failed',
+            result: JSON.stringify(data.result),
+            completed_at: new Date().toISOString(),
+          });
+        }
+
+        // Calculate execution time
+        const startTime = pipelineStartTimes.get(data.result.context.id);
+        const executionTimeMs = startTime ? Date.now() - startTime : 0;
+        pipelineStartTimes.delete(data.result.context.id);
+
+        // Record KPI sample for pipeline completion time
+        if (executionTimeMs > 0) {
+          this.storage.kpi.recordSample({
+            metric_name: 'pipeline_completion_time_ms',
+            value: executionTimeMs,
+            target: 300000, // 5 minute target
+            unit: 'ms',
+            category: 'pipeline',
+            tags: JSON.stringify({ workflowType: data.result.context.workflowType }),
+          });
+        }
+
+        // Record pipeline success/failure KPI
+        this.storage.kpi.recordSample({
+          metric_name: 'pipeline_success',
+          value: data.result.success ? 1 : 0,
+          target: 1,
+          unit: 'boolean',
+          category: 'pipeline',
+          tags: JSON.stringify({ status: data.result.status }),
+        });
+
+        console.log('[StorageSync] Synced pipeline completion to SQLite');
+      } catch (error) {
+        console.error('[StorageSync] Failed to sync pipeline completion:', error);
+      }
+    });
+
+    // Sync locked actions to SQLite
+    this.governanceOS.on('execution:locked', (data) => {
+      try {
+        this.storage.locks.createLock({
+          action_type: 'governance_action',
+          action_data: JSON.stringify(data),
+          risk_level: 'HIGH', // Locked actions are typically HIGH risk
+          status: 'locked',
+          required_approvals: JSON.stringify(['director3']),
+          reason: data.reason,
+          created_by: 'governance-os',
+          timeout_at: null,
+        });
+        console.log('[StorageSync] Synced locked action to SQLite');
+      } catch (error) {
+        console.error('[StorageSync] Failed to sync locked action:', error);
+      }
+    });
+
+    // Sync approvals to SQLite
+    this.governanceOS.on('approval:received', (data) => {
+      try {
+        // Find the corresponding lock
+        const pendingLocks = this.storage.locks.getPendingLocks();
+        const lock = pendingLocks.find(l =>
+          (JSON.parse(l.action_data) as { actionId?: string }).actionId === data.actionId);
+
+        if (lock) {
+          this.storage.locks.addApproval({
+            lock_id: lock.id,
+            reviewer_id: data.approver,
+            reviewer_type: 'human',
+            action: 'approve',
+            comments: null,
+          });
+        }
+        console.log('[StorageSync] Synced approval to SQLite');
+      } catch (error) {
+        console.error('[StorageSync] Failed to sync approval:', error);
+      }
+    });
+
+    // Sync unlocked actions to SQLite
+    this.governanceOS.on('execution:unlocked', (data) => {
+      try {
+        const pendingLocks = this.storage.locks.getPendingLocks();
+        const lock = pendingLocks.find(l =>
+          (JSON.parse(l.action_data) as { actionId?: string }).actionId === data.actionId);
+
+        if (lock) {
+          this.storage.locks.updateLock(lock.id, {
+            status: 'unlocked',
+            unlocked_at: new Date().toISOString(),
+          });
+        }
+        console.log('[StorageSync] Synced unlocked action to SQLite');
+      } catch (error) {
+        console.error('[StorageSync] Failed to sync unlocked action:', error);
+      }
     });
   }
 
@@ -264,6 +403,19 @@ export class GovernanceOSBridge extends EventEmitter {
     const pipelineId = `pipe-${Date.now()}-${issueId.slice(0, 8)}`;
     this.emitBridgeEvent('bridge:pipeline_started', { issueId, pipelineId });
     this.io.emit('governance-os:pipeline:started', { issueId, pipelineId });
+
+    // Record pipeline run in SQLite storage
+    this.storage.pipeline.createRun({
+      issue_id: issueId,
+      workflow_type: workflowType,
+      current_stage: 'signal_intake',
+      context: JSON.stringify({
+        pipelineId,
+        riskLevel,
+        category: issue.category,
+        priority: issue.priority,
+      }),
+    });
 
     // Run the pipeline
     const result = await this.governanceOS.runPipeline({

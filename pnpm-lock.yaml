@@ -290,6 +290,9 @@ importers:
       '@algora/core':
         specifier: workspace:*
         version: link:../core
+      '@algora/model-router':
+        specifier: workspace:*
+        version: link:../model-router
       '@algora/safe-autonomy':
         specifier: workspace:*
         version: link:../safe-autonomy

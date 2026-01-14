@@ -148,16 +148,11 @@ export class SchedulerService {
   }
 
   private async runTier0Tasks(): Promise<void> {
-    // Placeholder for data collection tasks
-    this.activityService.log('COLLECTOR', 'info', 'Running Tier 0 data collection', {
-      metadata: { tier: 0 },
+    // Signal collection is handled by SignalCollectorService (RSS, GitHub, Blockchain, Social)
+    // This method logs periodic status for monitoring purposes
+    this.activityService.log('COLLECTOR', 'info', 'Tier 0 data collection active', {
+      metadata: { tier: 0, note: 'Signal collectors running independently' },
     });
-
-    // TODO: Implement signal collection from various sources
-    // - RSS feeds
-    // - GitHub events
-    // - On-chain data
-    // - Social media
   }
 
   private async runTier1Tasks(): Promise<void> {
@@ -228,6 +223,8 @@ export class SchedulerService {
         category: string;
         priority: string;
         status: string;
+        detected_at: string;
+        created_at: string;
       }>;
 
       if (pendingIssues.length === 0) {
@@ -263,6 +260,17 @@ export class SchedulerService {
               success: true,
               timestamp: new Date().toISOString(),
             });
+
+            // Record KPI timing: issue to decision packet
+            try {
+              const kpiCollector = this.governanceOSBridge.getGovernanceOS().getKPICollector();
+              const issueDetectedAt = new Date(issue.detected_at || issue.created_at).getTime();
+              const issueToDecisionMs = Date.now() - issueDetectedAt;
+              kpiCollector.recordExecutionTiming('issueToDecisionMs', issueToDecisionMs);
+              console.log(`[Scheduler] Recorded KPI: issue to decision = ${(issueToDecisionMs / 1000 / 60).toFixed(1)} minutes`);
+            } catch (kpiError) {
+              console.warn('[Scheduler] Failed to record KPI timing:', kpiError);
+            }
           } else {
             console.error(`[Scheduler] Pipeline failed for issue ${issue.id}: status=${result.status}`);
           }

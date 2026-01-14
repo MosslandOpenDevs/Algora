@@ -1561,6 +1561,23 @@ Recommendation:`,
     // Emit event
     this.io.emit('governance:decisionPacket', packet);
 
+    // Record KPI metrics for Decision Packet quality
+    if (this.governanceOSBridge) {
+      try {
+        const kpiCollector = this.governanceOSBridge.getGovernanceOS().getKPICollector();
+        kpiCollector.recordDecisionPacket({
+          hasAllFields: !!(packet.title && packet.summary && packet.recommendation),
+          optionCount: summary.actionItems?.length || 1,
+          hasRedTeamAnalysis: false, // TODO: Implement red team analysis
+          sourceCount: summary.keyDiscussionPoints?.length || 0,
+          riskLevel: packet.confidence >= 0.7 ? 'LOW' : packet.confidence >= 0.4 ? 'MID' : 'HIGH',
+        });
+        console.log(`[Orchestrator] Recorded KPI metrics for decision packet ${packet.id.slice(0, 8)}`);
+      } catch (error) {
+        console.warn('[Orchestrator] Failed to record KPI metrics:', error);
+      }
+    }
+
     return packet;
   }
 

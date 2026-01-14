@@ -57,6 +57,18 @@ import {
   type MilestoneReport,
   type RetroactiveReward,
 } from './workflows/workflow-c.js';
+import {
+  WorkflowDHandler,
+  type ExpansionOpportunity,
+  type OpportunityAssessment,
+  type EcosystemReport,
+} from './workflows/workflow-d.js';
+import {
+  WorkflowEHandler,
+  type WorkingGroupProposal,
+  type WGProposalEvaluation,
+  type WGStatusReport,
+} from './workflows/workflow-e.js';
 
 /**
  * Event listener type for orchestrator events.
@@ -154,6 +166,8 @@ export class Orchestrator {
   private workflowAHandler: WorkflowAHandler;
   private workflowBHandler: WorkflowBHandler;
   private workflowCHandler: WorkflowCHandler;
+  private workflowDHandler: WorkflowDHandler;
+  private workflowEHandler: WorkflowEHandler;
   private stateMachines: Map<string, WorkflowStateMachine> = new Map();
   private eventListeners: Map<keyof OrchestratorEvents, Set<OrchestratorEventListener<keyof OrchestratorEvents>>> = new Map();
   private heartbeatInterval: ReturnType<typeof setInterval> | null = null;
@@ -178,6 +192,8 @@ export class Orchestrator {
     this.workflowAHandler = new WorkflowAHandler(options.llmProvider);
     this.workflowBHandler = new WorkflowBHandler(options.llmProvider);
     this.workflowCHandler = new WorkflowCHandler(options.llmProvider);
+    this.workflowDHandler = new WorkflowDHandler(options.llmProvider);
+    this.workflowEHandler = new WorkflowEHandler(options.llmProvider);
   }
 
   /**
@@ -841,6 +857,179 @@ Agent Opinions: ${JSON.stringify(context.agentOpinions || [])}`,
       approved,
       adjustedAmount,
       requiresDirector3,
+    };
+  }
+
+  /**
+   * Execute Workflow D (Ecosystem Expansion) for an issue.
+   * This workflow evaluates partnership and expansion opportunities.
+   */
+  async executeWorkflowD(
+    issueId: string,
+    opportunity?: Partial<ExpansionOpportunity>
+  ): Promise<{
+    ecosystemReport?: EcosystemReport;
+    opportunityAssessment?: OpportunityAssessment;
+    success: boolean;
+  }> {
+    const context = await this.workflowStorage.getContext(issueId);
+    if (!context) {
+      throw new Error(`Context not found for issue: ${issueId}`);
+    }
+
+    if (context.workflowType !== 'D') {
+      throw new Error(`Issue ${issueId} is not assigned to Workflow D`);
+    }
+
+    // Create opportunity from issue if not provided
+    const expansionOpportunity: Omit<ExpansionOpportunity, 'id' | 'origin' | 'status' | 'detectedAt' | 'createdAt' | 'updatedAt'> = {
+      title: opportunity?.title || context.issue.title,
+      description: opportunity?.description || context.issue.description,
+      category: (opportunity?.category as ExpansionOpportunity['category']) || 'partnership',
+      significanceScore: opportunity?.significanceScore || 50,
+      strategicFitScore: opportunity?.strategicFitScore || 50,
+      riskScore: opportunity?.riskScore || 30,
+      counterpartyName: opportunity?.counterpartyName,
+      counterpartyType: opportunity?.counterpartyType,
+      counterpartyWebsite: opportunity?.counterpartyWebsite,
+    };
+
+    // Process the opportunity
+    const { opportunity: processedOpp, assessment, opinions } = await this.workflowDHandler.processCallBasedOpportunity(
+      context,
+      expansionOpportunity
+    );
+
+    // Update context with assessment
+    const stateMachine = this.stateMachines.get(issueId);
+    if (stateMachine) {
+      stateMachine.updateContext({
+        agentOpinions: opinions,
+        consensusScore: assessment.overallScore,
+      });
+      await this.workflowStorage.saveContext(stateMachine.getContext());
+    }
+
+    // Generate ecosystem report if opportunity is qualified
+    let ecosystemReport: EcosystemReport | undefined;
+    if (processedOpp.status === 'qualified') {
+      const now = new Date();
+      const periodStart = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000); // 30 days ago
+      ecosystemReport = await this.workflowDHandler.generateEcosystemReport(
+        context,
+        periodStart,
+        now,
+        [processedOpp],
+        [] // No partnerships for now
+      );
+    }
+
+    // Emit workflow completed event
+    const todo = await this.todoManager.getTodoByIssueId(issueId);
+    if (todo) {
+      this.emitEvent('workflow:completed', {
+        todo,
+        outputs: {
+          workflowType: 'D',
+          opportunityId: processedOpp.id,
+          status: processedOpp.status,
+          assessmentScore: assessment.overallScore,
+          recommendation: assessment.recommendation,
+        },
+      });
+    }
+
+    return {
+      ecosystemReport,
+      opportunityAssessment: assessment,
+      success: true,
+    };
+  }
+
+  /**
+   * Execute Workflow E (Working Groups) for an issue.
+   * This workflow manages Working Group formation and operations.
+   */
+  async executeWorkflowE(
+    issueId: string,
+    proposal?: Partial<WorkingGroupProposal>
+  ): Promise<{
+    wgProposal?: WorkingGroupProposal;
+    evaluation?: WGProposalEvaluation;
+    statusReport?: WGStatusReport;
+    success: boolean;
+  }> {
+    const context = await this.workflowStorage.getContext(issueId);
+    if (!context) {
+      throw new Error(`Context not found for issue: ${issueId}`);
+    }
+
+    if (context.workflowType !== 'E') {
+      throw new Error(`Issue ${issueId} is not assigned to Workflow E`);
+    }
+
+    // Create WG proposal from issue if not provided
+    const wgProposal: Omit<WorkingGroupProposal, 'id' | 'status' | 'approvalStatus' | 'createdAt' | 'updatedAt'> = {
+      name: proposal?.name || `WG: ${context.issue.title}`,
+      purpose: proposal?.purpose || context.issue.description,
+      scope: proposal?.scope || [context.issue.category],
+      chairAgent: proposal?.chairAgent || 'nova-prime',
+      memberAgents: proposal?.memberAgents || ['atlas', 'archive-alpha'],
+      humanLiaison: proposal?.humanLiaison,
+      charterDuration: proposal?.charterDuration || '6m',
+      publishingAuthority: proposal?.publishingAuthority || ['wg_report', 'status_update'],
+      origin: proposal?.origin || 'orchestrator',
+      originDetails: `Auto-generated from issue ${issueId}`,
+      requiredApprovals: proposal?.requiredApprovals || {
+        mossCoinHouse: true,
+        openSourceHouse: true,
+        director3: false,
+      },
+      proposedBy: proposal?.proposedBy || 'orchestrator',
+      proposedAt: proposal?.proposedAt || new Date(),
+    };
+
+    // Process the WG proposal
+    const { proposal: processedProposal, evaluation, opinions } = await this.workflowEHandler.processWGProposal(
+      context,
+      wgProposal
+    );
+
+    // Update context with evaluation
+    const stateMachine = this.stateMachines.get(issueId);
+    if (stateMachine) {
+      stateMachine.updateContext({
+        agentOpinions: opinions,
+        consensusScore: evaluation.overallScore,
+      });
+      await this.workflowStorage.saveContext(stateMachine.getContext());
+    }
+
+    // Generate status report if proposal is approved (skip for now as it requires WG to be registered)
+    const statusReport: WGStatusReport | undefined = undefined;
+    // Note: Status reports require a registered working group with ID
+    // This will be generated when the WG is formally created after approval
+
+    // Emit workflow completed event
+    const todo = await this.todoManager.getTodoByIssueId(issueId);
+    if (todo) {
+      this.emitEvent('workflow:completed', {
+        todo,
+        outputs: {
+          workflowType: 'E',
+          proposalId: processedProposal.id,
+          status: processedProposal.status,
+          evaluationScore: evaluation.overallScore,
+          recommendation: evaluation.recommendation,
+        },
+      });
+    }
+
+    return {
+      wgProposal: processedProposal,
+      evaluation,
+      statusReport,
+      success: true,
     };
   }
 

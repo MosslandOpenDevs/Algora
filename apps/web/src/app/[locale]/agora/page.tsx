@@ -9,7 +9,9 @@ import {
   Send,
   Plus,
   Loader2,
+  Languages,
 } from 'lucide-react';
+import { useTranslationToggle } from '@/hooks/useTranslation';
 
 import { fetchAgents, fetchAgoraSessions, fetchSessionWithMessages, sendAgoraMessage, type AgoraSession, type AgoraMessage, type Agent } from '@/lib/api';
 import { SessionCard } from '@/components/agora/SessionCard';
@@ -41,6 +43,7 @@ export default function AgoraPage() {
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   const [detailSession, setDetailSession] = useState<AgoraSession | null>(null);
   const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
+  const { showTranslation, toggle: toggleTranslation } = useTranslationToggle();
 
   const { data: sessions, isLoading: sessionsLoading } = useQuery({
     queryKey: ['agora-sessions'],
@@ -219,9 +222,24 @@ export default function AgoraPage() {
                     Session started {activeSession.created_at ? new Date(activeSession.created_at).toLocaleString() : 'Unknown'}
                   </p>
                 </div>
-                <div className="flex items-center gap-2 text-sm text-agora-muted">
-                  <Users className="h-4 w-4" />
-                  <span>{parseParticipants(activeSession.summoned_agents).length} participants</span>
+                <div className="flex items-center gap-4">
+                  {/* Translation Toggle */}
+                  <button
+                    onClick={toggleTranslation}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg transition-colors ${
+                      showTranslation
+                        ? 'bg-agora-primary/20 text-agora-primary'
+                        : 'bg-agora-card text-agora-muted hover:text-slate-900'
+                    }`}
+                    title={showTranslation ? 'Show original (English)' : 'Show Korean translation'}
+                  >
+                    <Languages className="h-3.5 w-3.5" />
+                    <span>{showTranslation ? '한글' : 'EN'}</span>
+                  </button>
+                  <div className="flex items-center gap-2 text-sm text-agora-muted">
+                    <Users className="h-4 w-4" />
+                    <span>{parseParticipants(activeSession.summoned_agents).length} participants</span>
+                  </div>
                 </div>
               </div>
 
@@ -262,6 +280,7 @@ export default function AgoraPage() {
                             isHuman: isHumanMessage,
                           }}
                           onAgentClick={!isSystemMessage && !isHumanMessage && msg.agent_id ? handleAgentClick : undefined}
+                          showTranslation={showTranslation}
                         />
                       );
                     })

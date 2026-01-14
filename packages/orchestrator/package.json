@@ -22,6 +22,7 @@
   },
   "dependencies": {
     "@algora/core": "workspace:*",
+    "@algora/model-router": "workspace:*",
     "@algora/safe-autonomy": "workspace:*"
   },
   "devDependencies": {

@@ -220,3 +220,85 @@ collectorsRouter.get('/blockchain/sources', (req, res) => {
     res.status(500).json({ error: 'Failed to get blockchain sources' });
   }
 });
+
+// Social Source Management
+// GET /api/collectors/social/sources - Get all social sources
+collectorsRouter.get('/social/sources', (req, res) => {
+  const signalCollector: SignalCollectorService = req.app.locals.signalCollector;
+
+  if (!signalCollector) {
+    return res.status(503).json({ error: 'Signal collector not available' });
+  }
+
+  try {
+    const sources = signalCollector.getSocialCollector().getSources();
+    res.json({ sources });
+  } catch (error) {
+    console.error('Failed to get social sources:', error);
+    res.status(500).json({ error: 'Failed to get social sources' });
+  }
+});
+
+// POST /api/collectors/social/sources - Add a social source
+collectorsRouter.post('/social/sources', (req, res) => {
+  const signalCollector: SignalCollectorService = req.app.locals.signalCollector;
+  const { platform, name, endpoint, category, fetchInterval } = req.body;
+
+  if (!signalCollector) {
+    return res.status(503).json({ error: 'Signal collector not available' });
+  }
+
+  if (!platform || !name || !endpoint) {
+    return res.status(400).json({ error: 'Platform, name, and endpoint are required' });
+  }
+
+  try {
+    const newSource = signalCollector.getSocialCollector().addSource({
+      platform,
+      name,
+      endpoint,
+      category: category || 'general',
+      enabled: true,
+      fetchInterval: fetchInterval || 30,
+    });
+    res.status(201).json({ source: newSource });
+  } catch (error) {
+    console.error('Failed to add social source:', error);
+    res.status(500).json({ error: 'Failed to add social source' });
+  }
+});
+
+// DELETE /api/collectors/social/sources/:id - Remove a social source
+collectorsRouter.delete('/social/sources/:id', (req, res) => {
+  const signalCollector: SignalCollectorService = req.app.locals.signalCollector;
+  const { id } = req.params;
+
+  if (!signalCollector) {
+    return res.status(503).json({ error: 'Signal collector not available' });
+  }
+
+  try {
+    const success = signalCollector.getSocialCollector().removeSource(id);
+    res.json({ success });
+  } catch (error) {
+    console.error('Failed to remove social source:', error);
+    res.status(500).json({ error: 'Failed to remove social source' });
+  }
+});
+
+// GET /api/collectors/social/stats - Get social collector stats
+collectorsRouter.get('/social/stats', (req, res) => {
+  const signalCollector: SignalCollectorService = req.app.locals.signalCollector;
+
+  if (!signalCollector) {
+    return res.status(503).json({ error: 'Signal collector not available' });
+  }
+
+  try {
+    const stats = signalCollector.getSocialCollector().getStats();
+    res.json({ stats });
+  } catch (error) {
+    console.error('Failed to get social stats:', error);
+    res.status(500).json({ error: 'Failed to get social stats' });
+  }
+});

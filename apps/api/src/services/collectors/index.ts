@@ -3,6 +3,7 @@ import { Server as SocketServer } from 'socket.io';
 import { RSSCollectorService } from './rss';
 import { GitHubCollectorService } from './github';
 import { BlockchainCollectorService } from './blockchain';
+import { SocialCollectorService } from './social';
 
 export interface CollectorStatus {
   name: string;
@@ -17,6 +18,7 @@ export class SignalCollectorService {
   private rssCollector: RSSCollectorService;
   private githubCollector: GitHubCollectorService;
   private blockchainCollector: BlockchainCollectorService;
+  private socialCollector: SocialCollectorService;
   private isRunning: boolean = false;
 
   constructor(db: Database.Database, io: SocketServer) {
@@ -25,6 +27,7 @@ export class SignalCollectorService {
     this.rssCollector = new RSSCollectorService(db, io);
     this.githubCollector = new GitHubCollectorService(db, io);
     this.blockchainCollector = new BlockchainCollectorService(db, io);
+    this.socialCollector = new SocialCollectorService(db, io);
   }
 
   start(): void {
@@ -36,6 +39,7 @@ export class SignalCollectorService {
     this.rssCollector.start();
     this.githubCollector.start();
     this.blockchainCollector.start();
+    this.socialCollector.start();
 
     console.log('[SignalCollector] All collectors started');
   }
@@ -49,6 +53,7 @@ export class SignalCollectorService {
     this.rssCollector.stop();
     this.githubCollector.stop();
     this.blockchainCollector.stop();
+    this.socialCollector.stop();
 
     console.log('[SignalCollector] All collectors stopped');
   }
@@ -70,6 +75,11 @@ export class SignalCollectorService {
         isRunning: this.isRunning,
         sourceCount: this.blockchainCollector.getSources().length,
       },
+      {
+        name: 'Social',
+        isRunning: this.isRunning,
+        sourceCount: this.socialCollector.getSources().length,
+      },
     ];
   }
 
@@ -84,6 +94,10 @@ export class SignalCollectorService {
 
   getBlockchainCollector(): BlockchainCollectorService {
     return this.blockchainCollector;
+  }
+
+  getSocialCollector(): SocialCollectorService {
+    return this.socialCollector;
   }
 
   // Get signal statistics
@@ -107,6 +121,7 @@ export class SignalCollectorService {
           WHEN source LIKE 'rss:%' THEN 'RSS'
           WHEN source LIKE 'github:%' THEN 'GitHub'
           WHEN source LIKE 'blockchain:%' THEN 'Blockchain'
+          WHEN source LIKE 'social:%' THEN 'Social'
           ELSE 'Other'
         END as source_type,
         COUNT(*) as count
@@ -159,3 +174,4 @@ export class SignalCollectorService {
 export { RSSCollectorService } from './rss';
 export { GitHubCollectorService } from './github';
 export { BlockchainCollectorService } from './blockchain';
+export { SocialCollectorService } from './social';

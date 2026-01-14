@@ -163,6 +163,20 @@ export type {
 } from './specialist-manager.js';
 
 // ============================================
+// Real LLM Provider
+// ============================================
+
+export {
+  RealLLMProvider,
+  createRealLLMProvider,
+  createTier1LLMProvider,
+  createTier2LLMProvider,
+  DEFAULT_REAL_LLM_PROVIDER_CONFIG,
+} from './real-llm-provider.js';
+
+export type { RealLLMProviderConfig } from './real-llm-provider.js';
+
+// ============================================
 // Orchestrator
 // ============================================
 

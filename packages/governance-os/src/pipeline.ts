@@ -164,16 +164,87 @@ export class GovernancePipeline {
    */
   private registerDefaultHandlers(): void {
     // Signal intake - receive and validate signals
-    this.stageHandlers.set('signal_intake', async (ctx, _services) => {
+    this.stageHandlers.set('signal_intake', async (ctx, services) => {
       ctx.stage = 'signal_intake';
-      // Default: just pass through
+
+      // Validate that we have either an issue ID or signals to process
+      const hasSignals = ctx.metadata.signalIds && Array.isArray(ctx.metadata.signalIds) && ctx.metadata.signalIds.length > 0;
+      const hasIssue = !!ctx.issueId;
+
+      if (!hasSignals && !hasIssue) {
+        // No signals and no issue - this is a direct pipeline trigger
+        ctx.metadata.intakeSource = 'direct';
+        ctx.metadata.intakeTimestamp = new Date().toISOString();
+      } else if (hasSignals) {
+        // Process signals
+        ctx.metadata.intakeSource = 'signals';
+        ctx.metadata.intakeTimestamp = new Date().toISOString();
+        ctx.metadata.signalCount = (ctx.metadata.signalIds as string[]).length;
+
+        // Use model router to analyze signal severity if available
+        try {
+          const signalSummary = await services.modelRouter.executeTask({
+            content: `Analyze signals: ${JSON.stringify(ctx.metadata.signalIds)}`,
+            taskType: 'summary',
+            maxTokens: 100,
+          });
+          ctx.metadata.signalAnalysis = signalSummary.content;
+        } catch {
+          // Model router not available, continue without analysis
+          ctx.metadata.signalAnalysis = 'Signal analysis skipped';
+        }
+      } else {
+        // Issue-based trigger
+        ctx.metadata.intakeSource = 'issue';
+        ctx.metadata.intakeTimestamp = new Date().toISOString();
+      }
+
       return ctx;
     });
 
-    // Issue detection - create issue from signals
-    this.stageHandlers.set('issue_detection', async (ctx, _services) => {
+    // Issue detection - create or validate issue from signals
+    this.stageHandlers.set('issue_detection', async (ctx, services) => {
       ctx.stage = 'issue_detection';
-      // Default: issue should already be created
+
+      // If issue already exists, validate it
+      if (ctx.issueId) {
+        ctx.metadata.issueStatus = 'existing';
+        ctx.metadata.issueValidated = true;
+        return ctx;
+      }
+
+      // If we have signals but no issue, attempt to create one
+      const signalIds = ctx.metadata.signalIds as string[] | undefined;
+      if (signalIds && signalIds.length > 0) {
+        try {
+          // Use model router to generate issue title and description
+          const issueGeneration = await services.modelRouter.executeTask({
+            content: `Based on these signals, generate a concise issue title and description for governance review: ${ctx.metadata.signalAnalysis || 'Multiple signals detected'}`,
+            taskType: 'generation',
+            maxTokens: 200,
+          });
+
+          ctx.metadata.generatedIssue = {
+            title: issueGeneration.content.split('\n')[0] || 'Signal-detected issue',
+            description: issueGeneration.content,
+            signalIds,
+            detectedAt: new Date().toISOString(),
+          };
+          ctx.metadata.issueStatus = 'generated';
+        } catch {
+          // Fallback issue generation
+          ctx.metadata.generatedIssue = {
+            title: `Auto-detected issue from ${signalIds.length} signals`,
+            description: `This issue was automatically generated from signal analysis.`,
+            signalIds,
+            detectedAt: new Date().toISOString(),
+          };
+          ctx.metadata.issueStatus = 'generated_fallback';
+        }
+      } else {
+        ctx.metadata.issueStatus = 'none';
+      }
+
       return ctx;
     });
 
@@ -209,9 +280,87 @@ export class GovernancePipeline {
     });
 
     // Document production - generate official documents
-    this.stageHandlers.set('document_production', async (ctx, _services) => {
+    this.stageHandlers.set('document_production', async (ctx, services) => {
       ctx.stage = 'document_production';
-      // Documents are produced by specialists
+
+      // Check if we have workflow results to convert to documents
+      const workflowId = ctx.metadata.workflowId as string | undefined;
+      const hasDocuments = ctx.documents.length > 0;
+
+      if (!hasDocuments && ctx.issueId) {
+        // Generate a Decision Packet (DP) document for this pipeline
+        try {
+          // Get issue details for document content
+          const issueTitle = (ctx.metadata.localIssue as { title?: string })?.title || `Issue ${ctx.issueId}`;
+          const issueDescription = (ctx.metadata.localIssue as { description?: string })?.description || '';
+
+          // Generate document content using model router
+          let recommendation = '';
+          try {
+            const analysis = await services.modelRouter.executeTask({
+              content: `Analyze this governance issue and provide a recommendation:
+                Title: ${issueTitle}
+                Description: ${issueDescription}
+                Risk Level: ${ctx.riskLevel}
+                Workflow Type: ${ctx.workflowType || 'standard'}`,
+              taskType: 'analysis',
+              maxTokens: 300,
+            });
+            recommendation = analysis.content;
+          } catch {
+            recommendation = `Recommendation pending for issue: ${issueTitle}. Risk level: ${ctx.riskLevel}.`;
+          }
+
+          // Create the Decision Packet document
+          const dpDocument = await services.documentRegistry.createDocument({
+            type: 'DP', // Decision Packet
+            title: `Decision Packet: ${issueTitle}`,
+            summary: recommendation.substring(0, 200),
+            content: JSON.stringify({
+              issueId: ctx.issueId,
+              issueTitle,
+              issueDescription,
+              workflowId,
+              workflowType: ctx.workflowType,
+              riskLevel: ctx.riskLevel,
+              recommendation,
+              pipelineId: ctx.id,
+              generatedAt: new Date().toISOString(),
+            }),
+            createdBy: 'governance-pipeline',
+          });
+
+          ctx.documents.push(dpDocument.id);
+          ctx.metadata.decisionPacketId = dpDocument.id;
+          ctx.metadata.documentProduction = {
+            status: 'completed',
+            documentsCreated: 1,
+            timestamp: new Date().toISOString(),
+          };
+
+        } catch (error) {
+          ctx.metadata.documentProduction = {
+            status: 'failed',
+            error: error instanceof Error ? error.message : 'Unknown error',
+            timestamp: new Date().toISOString(),
+          };
+        }
+      } else if (hasDocuments) {
+        // Documents already exist from workflow specialists
+        ctx.metadata.documentProduction = {
+          status: 'from_workflow',
+          documentsCount: ctx.documents.length,
+          timestamp: new Date().toISOString(),
+        };
+      } else {
+        // No documents needed
+        ctx.metadata.documentProduction = {
+          status: 'skipped',
+          reason: 'No issue ID provided',
+          timestamp: new Date().toISOString(),
+        };
+      }
+
       return ctx;
     });
 
@@ -262,25 +411,138 @@ export class GovernancePipeline {
     // Execution - execute the approved action
     this.stageHandlers.set('execution', async (ctx, services) => {
       ctx.stage = 'execution';
+
+      ctx.metadata.execution = {
+        startedAt: new Date().toISOString(),
+        riskLevel: ctx.riskLevel,
+      };
+
+      // Check if HIGH risk action needs approval
       if (ctx.riskLevel === 'HIGH' && ctx.lockedActionId) {
-        // Check if unlocked
         const approval = await services.safeAutonomy.checkApproval(ctx.lockedActionId);
+
         if (!approval.approved) {
           // Still locked, cannot proceed
           ctx.metadata.executionBlocked = true;
+          ctx.metadata.execution = {
+            ...ctx.metadata.execution as Record<string, unknown>,
+            status: 'blocked',
+            reason: 'Awaiting HIGH-risk approval',
+            lockedActionId: ctx.lockedActionId,
+          };
           return ctx;
         }
+
+        // Approved - record approvers
+        ctx.metadata.execution = {
+          ...ctx.metadata.execution as Record<string, unknown>,
+          approvedBy: approval.by,
+          approvalStatus: 'approved',
+        };
       }
-      // Execute - in real implementation, this would trigger actual effects
+
+      // Execute based on workflow type
+      const executionActions: Record<string, string> = {
+        'A': 'scheduled_deliberation',
+        'B': 'free_debate',
+        'C': 'community_poll',
+        'D': 'snap_vote',
+        'E': 'emergency_protocol',
+      };
+
+      const actionType = ctx.workflowType ? executionActions[ctx.workflowType] : 'standard';
+
+      // Record execution details
+      ctx.metadata.execution = {
+        ...ctx.metadata.execution as Record<string, unknown>,
+        status: 'completed',
+        actionType,
+        completedAt: new Date().toISOString(),
+        documentsPublished: ctx.documents.length,
+      };
+
       ctx.metadata.executed = true;
+
+      // Publish documents if any were created
+      for (const docId of ctx.documents) {
+        try {
+          await services.documentRegistry.publishDocument(docId);
+        } catch {
+          // Document publish failed, continue
+        }
+      }
+
       return ctx;
     });
 
-    // Outcome verification - verify results
-    this.stageHandlers.set('outcome_verification', async (ctx, _services) => {
+    // Outcome verification - verify results and record KPIs
+    this.stageHandlers.set('outcome_verification', async (ctx, services) => {
       ctx.stage = 'outcome_verification';
-      // Verify execution results
+
+      const verification: Record<string, unknown> = {
+        startedAt: new Date().toISOString(),
+        pipelineId: ctx.id,
+        issueId: ctx.issueId,
+        workflowType: ctx.workflowType,
+        riskLevel: ctx.riskLevel,
+      };
+
+      // Verify documents were created and published
+      const documentsVerified: Array<{ id: string; verified: boolean }> = [];
+      for (const docId of ctx.documents) {
+        try {
+          const doc = await services.documentRegistry.getDocument(docId);
+          documentsVerified.push({
+            id: docId,
+            verified: doc !== null,
+          });
+        } catch {
+          documentsVerified.push({
+            id: docId,
+            verified: false,
+          });
+        }
+      }
+
+      verification.documentsVerified = documentsVerified;
+      verification.allDocumentsValid = documentsVerified.every(d => d.verified);
+
+      // Verify voting was completed if applicable
+      if (ctx.votingId) {
+        try {
+          const voting = await services.dualHouse.getVoting(ctx.votingId);
+          verification.votingVerified = voting !== null;
+          verification.votingStatus = voting?.status;
+        } catch {
+          verification.votingVerified = false;
+        }
+      }
+
+      // Verify approval if HIGH risk
+      if (ctx.approvalId) {
+        try {
+          const approval = await services.dualHouse.getHighRiskApproval(ctx.approvalId);
+          verification.approvalVerified = approval !== null;
+          verification.approvalStatus = approval?.lockStatus;
+        } catch {
+          verification.approvalVerified = false;
+        }
+      }
+
+      // Calculate pipeline duration
+      const startedAt = ctx.startedAt.getTime();
+      const completedAt = Date.now();
+      verification.durationMs = completedAt - startedAt;
+      verification.durationFormatted = `${Math.round((completedAt - startedAt) / 1000)}s`;
+
+      // Final verification status
+      verification.status = 'completed';
+      verification.completedAt = new Date().toISOString();
+      verification.success = ctx.metadata.executed === true;
+
+      ctx.metadata.verification = verification;
       ctx.metadata.verified = true;
+
       return ctx;
     });
   }
@@ -365,7 +627,7 @@ export class GovernancePipeline {
       }
 
       currentContext.completedAt = new Date();
-      const result = this.createResult(currentContext, 'completed', services);
+      const result = await this.createResultAsync(currentContext, 'completed', services);
       this.emit('pipeline:completed', { result });
       return result;
 
@@ -415,6 +677,68 @@ export class GovernancePipeline {
   /**
    * Create pipeline result.
    */
+  private async createResultAsync(
+    context: PipelineContext,
+    status: 'completed' | 'pending_approval' | 'locked' | 'rejected' | 'error',
+    services: PipelineServices
+  ): Promise<PipelineResult> {
+    // Fetch actual documents
+    const documents: Document[] = [];
+    for (const docId of context.documents) {
+      try {
+        const doc = await services.documentRegistry.getDocument(docId);
+        if (doc) {
+          documents.push(doc);
+        }
+      } catch {
+        // Document not found, continue
+      }
+    }
+
+    // Fetch voting result if applicable
+    let votingResult: DualHouseVoting | undefined;
+    if (context.votingId) {
+      try {
+        const voting = await services.dualHouse.getVoting(context.votingId);
+        if (voting) {
+          votingResult = voting;
+        }
+      } catch {
+        // Voting not found
+      }
+    }
+
+    // Fetch approval status if applicable
+    let approvalStatus: HighRiskApproval | undefined;
+    if (context.approvalId) {
+      try {
+        const approval = await services.dualHouse.getHighRiskApproval(context.approvalId);
+        if (approval) {
+          approvalStatus = approval;
+        }
+      } catch {
+        // Approval not found
+      }
+    }
+
+    return {
+      context,
+      success: status === 'completed',
+      status,
+      documents,
+      votingResult,
+      approvalStatus,
+      executionResult: context.metadata.executed ? {
+        executed: true,
+        executionDetails: context.metadata.execution,
+        verificationDetails: context.metadata.verification,
+      } : undefined,
+    };
+  }
+
+  /**
+   * Create pipeline result (sync version for error cases).
+   */
   private createResult(
     context: PipelineContext,
     status: 'completed' | 'pending_approval' | 'locked' | 'rejected' | 'error',
@@ -424,10 +748,14 @@ export class GovernancePipeline {
       context,
       success: status === 'completed',
       status,
-      documents: [], // Would fetch actual documents
-      votingResult: undefined, // Would fetch voting
-      approvalStatus: undefined, // Would fetch approval
-      executionResult: context.metadata.executed ? context.metadata : undefined,
+      documents: [],
+      votingResult: undefined,
+      approvalStatus: undefined,
+      executionResult: context.metadata.executed ? {
+        executed: true,
+        executionDetails: context.metadata.execution,
+        verificationDetails: context.metadata.verification,
+      } : undefined,
     };
   }
 

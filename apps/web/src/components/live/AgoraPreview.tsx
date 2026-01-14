@@ -2,9 +2,12 @@
 
 import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import clsx from 'clsx';
 import { TerminalBox, StatusGlyph, BlinkingCursor } from './TerminalBox';
 import { ASCIIProgress } from './GlowText';
 import { useSocket } from '@/hooks/useSocket';
+import { useTranslationToggle } from '@/hooks/useTranslation';
+import { TranslatedText } from '@/components/ui/TranslatedText';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3201';
 
@@ -62,6 +65,7 @@ async function fetchActiveSession(): Promise<AgoraSession | null> {
 export function AgoraPreview({ className }: AgoraPreviewProps) {
   const [session, setSession] = useState<AgoraSession | null>(null);
   const { subscribe, isConnected } = useSocket();
+  const { showTranslation, toggle: toggleTranslation } = useTranslationToggle();
 
   // Initial fetch
   const { data: initialSession } = useQuery({
@@ -110,7 +114,24 @@ export function AgoraPreview({ className }: AgoraPreviewProps) {
       title={`AGORA SESSION #${session.id.slice(0, 4).toUpperCase()}`}
       className={className}
       headerRight={
-        <StatusGlyph status="active" size="sm" />
+        <div className="flex items-center gap-2">
+          <button
+            onClick={toggleTranslation}
+            className={clsx(
+              'flex items-center gap-1 px-2 py-0.5 text-[10px] rounded transition-colors',
+              showTranslation
+                ? 'bg-[var(--live-glow)]/20 text-[var(--live-glow)]'
+                : 'bg-[var(--live-border)]/50 text-[var(--text-muted)] hover:text-[var(--text-secondary)]'
+            )}
+            title={showTranslation ? 'Show original (English)' : 'Show Korean translation'}
+          >
+            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
+            </svg>
+            <span>{showTranslation ? '한글' : 'EN'}</span>
+          </button>
+          <StatusGlyph status="active" size="sm" />
+        </div>
       }
     >
       <div className="space-y-3">
@@ -151,8 +172,12 @@ export function AgoraPreview({ className }: AgoraPreviewProps) {
             </div>
             {session.lastMessage && (
               <p className="text-xs text-[var(--text-muted)] leading-relaxed pl-4 border-l border-[var(--live-border)]">
-                {session.lastMessage.content.slice(0, 150)}
-                {session.lastMessage.content.length > 150 && '...'}
+                <TranslatedText
+                  text={session.lastMessage.content.slice(0, 150) + (session.lastMessage.content.length > 150 ? '...' : '')}
+                  showTranslation={showTranslation}
+                  targetLanguage="ko"
+                  loadingText="..."
+                />
                 <BlinkingCursor className="ml-0.5" />
               </p>
             )}

@@ -2,6 +2,7 @@
 
 import { formatDistanceToNow, isValid } from 'date-fns';
 import { Info, User } from 'lucide-react';
+import { TranslatedText } from '@/components/ui/TranslatedText';
 
 interface ChatMessageProps {
   message: {
@@ -17,6 +18,7 @@ interface ChatMessageProps {
   };
   index?: number;
   onAgentClick?: (agentId: string) => void;
+  showTranslation?: boolean;
 }
 
 function formatTimestamp(timestamp: string | undefined): string {
@@ -44,7 +46,7 @@ const tierBgColors: Record<number, string> = {
   2: 'bg-agora-accent/10',
 };
 
-export function ChatMessage({ message, index = 0, onAgentClick }: ChatMessageProps) {
+export function ChatMessage({ message, index = 0, onAgentClick, showTranslation = false }: ChatMessageProps) {
   // Calculate stagger delay
   const delayMs = Math.min(index * 30, 300);
 
@@ -75,7 +77,12 @@ export function ChatMessage({ message, index = 0, onAgentClick }: ChatMessagePro
             </span>
           </div>
           <p className="mt-1 text-sm text-slate-600 leading-relaxed">
-            {message.content}
+            <TranslatedText
+              text={message.content}
+              showTranslation={showTranslation}
+              targetLanguage="ko"
+              loadingText="..."
+            />
           </p>
         </div>
       </div>
@@ -106,7 +113,12 @@ export function ChatMessage({ message, index = 0, onAgentClick }: ChatMessagePro
             </span>
           </div>
           <p className="mt-1 text-sm text-slate-700 leading-relaxed">
-            {message.content}
+            <TranslatedText
+              text={message.content}
+              showTranslation={showTranslation}
+              targetLanguage="ko"
+              loadingText="..."
+            />
           </p>
         </div>
       </div>
@@ -161,7 +173,12 @@ export function ChatMessage({ message, index = 0, onAgentClick }: ChatMessagePro
           </span>
         </div>
         <p className="mt-1 text-sm text-slate-700 leading-relaxed">
-          {message.content}
+          <TranslatedText
+            text={message.content}
+            showTranslation={showTranslation}
+            targetLanguage="ko"
+            loadingText="..."
+          />
         </p>
       </div>
     </div>

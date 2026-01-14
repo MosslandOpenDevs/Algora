@@ -229,9 +229,15 @@ export {
   OLLAMA_INSTALL_COMMANDS,
   OLLAMA_HARDWARE_REQUIREMENTS,
   DEFAULT_OLLAMA_CONFIG,
+  AnthropicProvider,
+  AnthropicLLMProvider,
+  AnthropicError,
+  createAnthropicProvider,
+  createAnthropicLLMProvider,
+  DEFAULT_ANTHROPIC_CONFIG,
 } from './providers/index.js';
 
-export type { OllamaProviderConfig } from './providers/index.js';
+export type { OllamaProviderConfig, AnthropicProviderConfig } from './providers/index.js';
 
 // ============================================
 // Factory Functions

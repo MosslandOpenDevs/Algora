@@ -27,7 +27,7 @@ import type { RiskLevel, SafeAutonomySystem } from '@algora/safe-autonomy';
 import { createSafeAutonomySystem } from '@algora/safe-autonomy';
 
 import type { Issue, WorkflowType } from '@algora/orchestrator';
-import { Orchestrator, createOrchestrator, createMockLLMProvider } from '@algora/orchestrator';
+import { Orchestrator, createOrchestrator, createRealLLMProvider, createMockLLMProvider } from '@algora/orchestrator';
 
 import type { DocumentType } from '@algora/document-registry';
 import { createDocumentRegistry } from '@algora/document-registry';
@@ -106,14 +106,30 @@ export class GovernanceOS {
 
     // Initialize subsystems with actual factory functions
     this.safeAutonomy = createSafeAutonomySystem();
+
+    // Use real LLM provider (Ollama primary, Anthropic fallback) unless explicitly using mock
+    const useMockLLM = process.env.USE_MOCK_LLM === 'true';
+    const llmProvider = useMockLLM
+      ? createMockLLMProvider()
+      : createRealLLMProvider({
+          ollamaDefaultModel: process.env.LOCAL_LLM_MODEL_ENHANCED || 'qwen2.5:32b',
+          anthropicDefaultModel: 'claude-sonnet-4-20250514',
+          enableFallback: true,
+          preferAnthropicForCritical: true,
+        });
+
     this.orchestrator = createOrchestrator({
-      llmProvider: createMockLLMProvider(),
+      llmProvider,
     });
     this.documentRegistry = createDocumentRegistry();
     this.modelRouter = createModelRoutingSystem();
     this.dualHouse = createDualHouseGovernance();
     this.pipeline = createPipeline();
     this.kpiCollector = createKPICollector();
+
+    if (!useMockLLM) {
+      console.info('[GovernanceOS] Using Real LLM Provider (Ollama + Anthropic fallback)');
+    }
 
     // Wire up event integrations
     this.wireIntegrations();
@@ -259,12 +275,43 @@ export class GovernanceOS {
           this.emit('execution:locked', { actionId: id, reason: `${p.riskLevel}-risk action: ${p.description}` });
           return { id };
         },
-        checkApproval: async (_actionId: string) => {
-          // For now, return not approved - real implementation would check storage
-          return {
-            approved: false,
-            by: [],
-          };
+        checkApproval: async (actionId: string) => {
+          // Check high-risk approval status from dual-house system
+          try {
+            const approval = await this.dualHouse.highRisk.getApproval(actionId);
+
+            if (!approval) {
+              // No approval record found - check if it's a voting-based approval
+              const voting = await this.dualHouse.voting.getVoting(actionId);
+              if (voting && voting.status === 'both_passed') {
+                return {
+                  approved: true,
+                  by: ['mosscoin_house', 'opensource_house'],
+                };
+              }
+              return { approved: false, by: [] };
+            }
+
+            // Check if unlocked (fully approved)
+            if (approval.lockStatus === 'UNLOCKED') {
+              const approvers: string[] = [];
+              if (approval.approvals.mossCoinHouse) approvers.push('mosscoin_house');
+              if (approval.approvals.openSourceHouse) approvers.push('opensource_house');
+              if (approval.approvals.director3) approvers.push('director_3');
+              return { approved: true, by: approvers };
+            }
+
+            // Still locked - return partial approvals
+            const partialApprovers: string[] = [];
+            if (approval.approvals.mossCoinHouse) partialApprovers.push('mosscoin_house');
+            if (approval.approvals.openSourceHouse) partialApprovers.push('opensource_house');
+            if (approval.approvals.director3) partialApprovers.push('director_3');
+
+            return { approved: false, by: partialApprovers };
+          } catch (error) {
+            console.warn('[GovernanceOS] Error checking approval:', error);
+            return { approved: false, by: [] };
+          }
         },
       },
       orchestrator: {
@@ -272,12 +319,166 @@ export class GovernanceOS {
           const todo = await this.orchestrator.processIssue(issue);
           return { id: todo.id };
         },
-        runWorkflow: async (_workflowId: string) => {
-          // Orchestrator processes workflows automatically
-          return { documents: [] };
+        runWorkflow: async (workflowId: string) => {
+          // Get the workflow context to determine workflow type
+          try {
+            const status = await this.orchestrator.getWorkflowStatus(workflowId);
+            if (!status.context) {
+              console.warn(`[GovernanceOS] No workflow context found for ${workflowId}`);
+              return { documents: [] };
+            }
+
+            const workflowType = status.context.workflowType;
+            const documents: string[] = [];
+
+            // Execute the appropriate workflow based on type
+            switch (workflowType) {
+              case 'A': {
+                const result = await this.orchestrator.executeWorkflowA(workflowId);
+                if (result.success) {
+                  // Create document from research digest
+                  if (result.researchDigest) {
+                    const doc = await this.documentRegistry.documents.create({
+                      type: 'RD' as DocumentType,
+                      title: `Research Digest: ${status.context.issue.title}`,
+                      summary: result.researchDigest.introduction || 'Research findings',
+                      content: JSON.stringify(result.researchDigest),
+                      createdBy: 'orchestrator-workflow-a',
+                    });
+                    documents.push(doc.id);
+                  }
+                  if (result.technologyAssessment) {
+                    const doc = await this.documentRegistry.documents.create({
+                      type: 'TA' as DocumentType,
+                      title: `Technology Assessment: ${status.context.issue.title}`,
+                      summary: result.technologyAssessment.executiveSummary || 'Technology assessment',
+                      content: JSON.stringify(result.technologyAssessment),
+                      createdBy: 'orchestrator-workflow-a',
+                    });
+                    documents.push(doc.id);
+                  }
+                }
+                break;
+              }
+              case 'B': {
+                const result = await this.orchestrator.executeWorkflowB(workflowId);
+                if (result.success && result.debateSummary) {
+                  const doc = await this.documentRegistry.documents.create({
+                    type: 'DS' as DocumentType,
+                    title: `Debate Summary: ${status.context.issue.title}`,
+                    summary: result.debateSummary.executiveSummary || 'Debate findings',
+                    content: JSON.stringify(result.debateSummary),
+                    createdBy: 'orchestrator-workflow-b',
+                  });
+                  documents.push(doc.id);
+                }
+                break;
+              }
+              case 'C': {
+                // Workflow C requires grant application data
+                // For now, just return empty - the pipeline handles this
+                console.info(`[GovernanceOS] Workflow C requires grant application data`);
+                break;
+              }
+              case 'D': {
+                // Workflow D (Ecosystem Expansion)
+                const resultD = await this.orchestrator.executeWorkflowD(workflowId);
+                if (resultD.success) {
+                  // Create document from ecosystem report
+                  if (resultD.ecosystemReport) {
+                    const doc = await this.documentRegistry.documents.create({
+                      type: 'ER' as DocumentType,
+                      title: `Ecosystem Report: ${status.context.issue.title}`,
+                      summary: resultD.ecosystemReport.executiveSummary || 'Ecosystem expansion analysis',
+                      content: JSON.stringify(resultD.ecosystemReport),
+                      createdBy: 'orchestrator-workflow-d',
+                    });
+                    documents.push(doc.id);
+                  }
+                  // Create assessment document
+                  if (resultD.opportunityAssessment) {
+                    const doc = await this.documentRegistry.documents.create({
+                      type: 'OA' as DocumentType,
+                      title: `Opportunity Assessment: ${status.context.issue.title}`,
+                      summary: resultD.opportunityAssessment.recommendationReasoning || 'Opportunity assessment',
+                      content: JSON.stringify(resultD.opportunityAssessment),
+                      createdBy: 'orchestrator-workflow-d',
+                    });
+                    documents.push(doc.id);
+                  }
+                }
+                break;
+              }
+              case 'E': {
+                // Workflow E (Working Groups)
+                const resultE = await this.orchestrator.executeWorkflowE(workflowId);
+                if (resultE.success) {
+                  // Create WG proposal document
+                  if (resultE.wgProposal) {
+                    const doc = await this.documentRegistry.documents.create({
+                      type: 'WGP' as DocumentType,
+                      title: `Working Group Proposal: ${resultE.wgProposal.name}`,
+                      summary: resultE.wgProposal.purpose || 'Working group proposal',
+                      content: JSON.stringify(resultE.wgProposal),
+                      createdBy: 'orchestrator-workflow-e',
+                    });
+                    documents.push(doc.id);
+                  }
+                  // Create status report document
+                  if (resultE.statusReport) {
+                    const doc = await this.documentRegistry.documents.create({
+                      type: 'SR' as DocumentType,
+                      title: `WG Status Report: ${resultE.statusReport.workingGroupId}`,
+                      summary: resultE.statusReport.executiveSummary || 'Working group status update',
+                      content: JSON.stringify(resultE.statusReport),
+                      createdBy: 'orchestrator-workflow-e',
+                    });
+                    documents.push(doc.id);
+                  }
+                }
+                break;
+              }
+              default:
+                console.warn(`[GovernanceOS] Unknown workflow type: ${workflowType}`);
+            }
+
+            this.stats.documentsProduced += documents.length;
+            return { documents };
+          } catch (error) {
+            console.error('[GovernanceOS] Error running workflow:', error);
+            return { documents: [] };
+          }
         },
-        getWorkflowState: async (_workflowId: string) => {
-          return { state: 'unknown' };
+        getWorkflowState: async (workflowId: string) => {
+          try {
+            const status = await this.orchestrator.getWorkflowStatus(workflowId);
+
+            if (!status.context) {
+              // Try to find by todo if context not found
+              if (status.todo) {
+                return {
+                  state: status.todo.currentState || 'unknown',
+                  todoId: status.todo.id,
+                  availableTransitions: status.availableTransitions,
+                };
+              }
+              return { state: 'not_found' };
+            }
+
+            return {
+              state: status.context.currentState,
+              workflowType: status.context.workflowType,
+              issueId: status.context.issueId,
+              availableTransitions: status.availableTransitions,
+              consensusScore: status.context.consensusScore,
+              reviewStatus: status.context.reviewStatus,
+              createdAt: status.context.createdAt,
+              updatedAt: status.context.updatedAt,
+            };
+          } catch (error) {
+            console.warn('[GovernanceOS] Error getting workflow state:', error);
+            return { state: 'error' };
+          }
         },
       },
       documentRegistry: {

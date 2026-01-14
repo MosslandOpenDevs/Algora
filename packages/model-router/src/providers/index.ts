@@ -13,3 +13,13 @@ export {
   DEFAULT_OLLAMA_CONFIG,
   type OllamaProviderConfig,
 } from './ollama.js';
+
+export {
+  AnthropicProvider,
+  AnthropicLLMProvider,
+  AnthropicError,
+  createAnthropicProvider,
+  createAnthropicLLMProvider,
+  DEFAULT_ANTHROPIC_CONFIG,
+  type AnthropicProviderConfig,
+} from './anthropic.js';

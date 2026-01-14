@@ -14,6 +14,7 @@ import {
   CheckCircle,
   Clock,
   AlertCircle,
+  MessageCircle,
 } from 'lucide-react';
 
 import { fetchSignals, type Signal, type SignalsResponse } from '@/lib/api';
@@ -23,12 +24,13 @@ import { LiveSignalPulse } from '@/components/signals/LiveSignalPulse';
 import { HelpTooltip } from '@/components/guide/HelpTooltip';
 import { WittyLoader, WittyEmptyState } from '@/components/ui/WittyLoader';
 
-const SOURCES = ['all', 'rss', 'github', 'blockchain', 'api', 'manual'] as const;
+const SOURCES = ['all', 'rss', 'github', 'blockchain', 'social', 'api', 'manual'] as const;
 
 const sourceIcons: Record<string, React.ReactNode> = {
   rss: <Rss className="h-4 w-4" />,
   github: <Github className="h-4 w-4" />,
   blockchain: <Database className="h-4 w-4" />,
+  social: <MessageCircle className="h-4 w-4" />,
   api: <Link2 className="h-4 w-4" />,
   manual: <Radio className="h-4 w-4" />,
 };
@@ -36,7 +38,7 @@ const sourceIcons: Record<string, React.ReactNode> = {
 // Helper to extract source type from source string (e.g., "rss:Cointelegraph" -> "rss")
 function getSourceType(source: string): string {
   const type = source.split(':')[0].toLowerCase();
-  if (['rss', 'github', 'blockchain', 'api', 'manual'].includes(type)) {
+  if (['rss', 'github', 'blockchain', 'social', 'api', 'manual'].includes(type)) {
     return type;
   }
   return 'api';

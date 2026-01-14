@@ -347,6 +347,204 @@ function createSchema(db: Database.Database): void {
       outcome_recorded_at TEXT,
       FOREIGN KEY (issue_id) REFERENCES issues(id)
     );
+
+    -- ========================================
+    -- Governance OS v2.0 - Documents
+    -- ========================================
+
+    CREATE TABLE IF NOT EXISTS governance_documents (
+      id TEXT PRIMARY KEY,
+      type TEXT NOT NULL,
+      title TEXT NOT NULL,
+      summary TEXT,
+      content TEXT NOT NULL,
+      state TEXT DEFAULT 'draft',
+      version INTEGER DEFAULT 1,
+      created_by TEXT NOT NULL,
+      workflow_id TEXT,
+      metadata TEXT,
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_governance_documents_type ON governance_documents(type);
+    CREATE INDEX IF NOT EXISTS idx_governance_documents_state ON governance_documents(state);
+
+    CREATE TABLE IF NOT EXISTS governance_document_versions (
+      id TEXT PRIMARY KEY,
+      document_id TEXT NOT NULL,
+      version INTEGER NOT NULL,
+      content TEXT NOT NULL,
+      changed_by TEXT NOT NULL,
+      change_reason TEXT,
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (document_id) REFERENCES governance_documents(id),
+      UNIQUE(document_id, version)
+    );
+
+    CREATE TABLE IF NOT EXISTS governance_document_provenance (
+      id TEXT PRIMARY KEY,
+      document_id TEXT NOT NULL,
+      action TEXT NOT NULL,
+      actor TEXT NOT NULL,
+      details TEXT,
+      timestamp TEXT DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (document_id) REFERENCES governance_documents(id)
+    );
+
+    -- ========================================
+    -- Governance OS v2.0 - Dual-House Voting
+    -- ========================================
+
+    CREATE TABLE IF NOT EXISTS governance_votings (
+      id TEXT PRIMARY KEY,
+      document_id TEXT,
+      issue_id TEXT,
+      title TEXT NOT NULL,
+      description TEXT,
+      voting_type TEXT NOT NULL,
+      status TEXT DEFAULT 'pending',
+      config TEXT NOT NULL,
+      agent_house_tally TEXT,
+      human_house_tally TEXT,
+      final_result TEXT,
+      starts_at TEXT,
+      ends_at TEXT,
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      finalized_at TEXT
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_governance_votings_status ON governance_votings(status);
+    CREATE INDEX IF NOT EXISTS idx_governance_votings_document ON governance_votings(document_id);
+
+    CREATE TABLE IF NOT EXISTS governance_votes (
+      id TEXT PRIMARY KEY,
+      voting_id TEXT NOT NULL,
+      voter_id TEXT NOT NULL,
+      voter_type TEXT NOT NULL,
+      house TEXT NOT NULL,
+      choice TEXT NOT NULL,
+      weight REAL DEFAULT 1.0,
+      reasoning TEXT,
+      confidence REAL,
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (voting_id) REFERENCES governance_votings(id),
+      UNIQUE(voting_id, voter_id, house)
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_governance_votes_voting ON governance_votes(voting_id);
+
+    CREATE TABLE IF NOT EXISTS governance_delegations (
+      id TEXT PRIMARY KEY,
+      delegator_id TEXT NOT NULL,
+      delegator_type TEXT NOT NULL,
+      delegate_id TEXT NOT NULL,
+      delegate_type TEXT NOT NULL,
+      house TEXT NOT NULL,
+      scope TEXT,
+      weight REAL DEFAULT 1.0,
+      is_active INTEGER DEFAULT 1,
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      expires_at TEXT,
+      revoked_at TEXT
+    );
+
+    -- ========================================
+    -- Governance OS v2.0 - Safe Autonomy (Locks)
+    -- ========================================
+
+    CREATE TABLE IF NOT EXISTS governance_locked_actions (
+      id TEXT PRIMARY KEY,
+      action_type TEXT NOT NULL,
+      action_data TEXT NOT NULL,
+      risk_level TEXT NOT NULL,
+      status TEXT DEFAULT 'locked',
+      required_approvals TEXT NOT NULL,
+      current_approvals INTEGER DEFAULT 0,
+      reason TEXT,
+      created_by TEXT NOT NULL,
+      timeout_at TEXT,
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      unlocked_at TEXT,
+      executed_at TEXT
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_governance_locks_status ON governance_locked_actions(status);
+    CREATE INDEX IF NOT EXISTS idx_governance_locks_risk ON governance_locked_actions(risk_level);
+
+    CREATE TABLE IF NOT EXISTS governance_lock_approvals (
+      id TEXT PRIMARY KEY,
+      lock_id TEXT NOT NULL,
+      reviewer_id TEXT NOT NULL,
+      reviewer_type TEXT NOT NULL,
+      action TEXT NOT NULL,
+      comments TEXT,
+      timestamp TEXT DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (lock_id) REFERENCES governance_locked_actions(id)
+    );
+
+    CREATE TABLE IF NOT EXISTS governance_lock_audit (
+      id TEXT PRIMARY KEY,
+      lock_id TEXT NOT NULL,
+      event_type TEXT NOT NULL,
+      details TEXT,
+      timestamp TEXT DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (lock_id) REFERENCES governance_locked_actions(id)
+    );
+
+    -- ========================================
+    -- Governance OS v2.0 - KPI & Metrics
+    -- ========================================
+
+    CREATE TABLE IF NOT EXISTS governance_kpi_samples (
+      id TEXT PRIMARY KEY,
+      metric_name TEXT NOT NULL,
+      value REAL NOT NULL,
+      target REAL,
+      unit TEXT,
+      category TEXT,
+      tags TEXT,
+      timestamp TEXT DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_governance_kpi_metric ON governance_kpi_samples(metric_name);
+    CREATE INDEX IF NOT EXISTS idx_governance_kpi_time ON governance_kpi_samples(timestamp DESC);
+
+    CREATE TABLE IF NOT EXISTS governance_kpi_alerts (
+      id TEXT PRIMARY KEY,
+      metric_name TEXT NOT NULL,
+      alert_type TEXT NOT NULL,
+      severity TEXT NOT NULL,
+      current_value REAL,
+      threshold REAL,
+      message TEXT NOT NULL,
+      acknowledged INTEGER DEFAULT 0,
+      timestamp TEXT DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_governance_kpi_alerts_time ON governance_kpi_alerts(timestamp DESC);
+
+    -- ========================================
+    -- Governance OS v2.0 - Pipeline Execution
+    -- ========================================
+
+    CREATE TABLE IF NOT EXISTS governance_pipeline_runs (
+      id TEXT PRIMARY KEY,
+      issue_id TEXT,
+      workflow_type TEXT NOT NULL,
+      status TEXT DEFAULT 'running',
+      current_stage TEXT,
+      stages_completed TEXT,
+      context TEXT,
+      result TEXT,
+      started_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      completed_at TEXT
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_governance_pipeline_status ON governance_pipeline_runs(status);
+    CREATE INDEX IF NOT EXISTS idx_governance_pipeline_issue ON governance_pipeline_runs(issue_id);
   `);
 
   console.info('Database schema initialized');

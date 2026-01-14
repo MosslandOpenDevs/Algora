@@ -12,6 +12,7 @@ import {
   Clock,
   AlertTriangle,
   ChevronRight,
+  MessageCircle,
 } from 'lucide-react';
 import type { Signal } from '@/lib/api';
 
@@ -24,7 +25,7 @@ interface SignalCardProps {
 // Helper to extract source type from source string (e.g., "rss:Cointelegraph" -> "rss")
 function getSourceType(source: string): string {
   const type = source.split(':')[0].toLowerCase();
-  if (['rss', 'github', 'blockchain', 'api', 'manual'].includes(type)) {
+  if (['rss', 'github', 'blockchain', 'social', 'api', 'manual'].includes(type)) {
     return type;
   }
   return 'api';
@@ -62,6 +63,7 @@ const sourceIcons: Record<string, React.ReactNode> = {
   rss: <Rss className="h-4 w-4" />,
   github: <Github className="h-4 w-4" />,
   blockchain: <Database className="h-4 w-4" />,
+  social: <MessageCircle className="h-4 w-4" />,
   api: <Link2 className="h-4 w-4" />,
   manual: <Radio className="h-4 w-4" />,
 };
@@ -70,6 +72,7 @@ const sourceColors: Record<string, string> = {
   rss: 'text-orange-500 bg-orange-500/10',
   github: 'text-gray-400 bg-gray-500/10',
   blockchain: 'text-blue-500 bg-blue-500/10',
+  social: 'text-pink-500 bg-pink-500/10',
   api: 'text-purple-500 bg-purple-500/10',
   manual: 'text-green-500 bg-green-500/10',
 };

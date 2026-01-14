@@ -6,6 +6,8 @@ import clsx from 'clsx';
 import { formatDistanceToNow, isValid } from 'date-fns';
 import { TerminalBox, BlinkingCursor } from './TerminalBox';
 import { useSocket } from '@/hooks/useSocket';
+import { useTranslationToggle } from '@/hooks/useTranslation';
+import { TranslatedText } from '@/components/ui/TranslatedText';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3201';
 
@@ -50,6 +52,7 @@ export function AgentChatter({ className, maxItems = 10 }: AgentChatterProps) {
   const [messages, setMessages] = useState<ChatterMessage[]>([]);
   const [typingAgent, setTypingAgent] = useState<string | null>(null);
   const { subscribe, isConnected } = useSocket();
+  const { showTranslation, toggle: toggleTranslation } = useTranslationToggle();
 
   // Initial fetch
   const { data: initialMessages } = useQuery({
@@ -86,7 +89,27 @@ export function AgentChatter({ className, maxItems = 10 }: AgentChatterProps) {
   }, [isConnected, subscribe, maxItems]);
 
   return (
-    <TerminalBox title="AGENT CHATTER" className={className}>
+    <TerminalBox
+      title="AGENT CHATTER"
+      className={className}
+      headerRight={
+        <button
+          onClick={toggleTranslation}
+          className={clsx(
+            'flex items-center gap-1 px-2 py-0.5 text-[10px] rounded transition-colors',
+            showTranslation
+              ? 'bg-[var(--live-glow)]/20 text-[var(--live-glow)]'
+              : 'bg-[var(--live-border)]/50 text-[var(--text-muted)] hover:text-[var(--text-secondary)]'
+          )}
+          title={showTranslation ? 'Show original (English)' : 'Show Korean translation'}
+        >
+          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
+          </svg>
+          <span>{showTranslation ? '한글' : 'EN'}</span>
+        </button>
+      }
+    >
       <div className="space-y-3 max-h-[250px] overflow-y-auto pr-2">
         {/* Typing indicator */}
         {typingAgent && (
@@ -121,7 +144,12 @@ export function AgentChatter({ className, maxItems = 10 }: AgentChatterProps) {
                 </span>
               </div>
               <p className="text-[var(--text-muted)] leading-relaxed pl-2 border-l border-[var(--live-border)]">
-                {msg.message}
+                <TranslatedText
+                  text={msg.message}
+                  showTranslation={showTranslation}
+                  targetLanguage="ko"
+                  loadingText="..."
+                />
                 {index === 0 && <BlinkingCursor className="ml-0.5" />}
               </p>
             </div>
