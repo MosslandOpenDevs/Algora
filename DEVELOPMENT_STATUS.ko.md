@@ -3,7 +3,7 @@
 이 파일은 세션 간 개발 연속성을 위해 현재 개발 진행 상황을 추적합니다.
 
 **최종 업데이트**: 2026-01-15
-**현재 버전**: 0.12.4
+**현재 버전**: 0.12.5
 **프로덕션 URL**: https://algora.moss.land
 
 ---
@@ -558,14 +558,54 @@
 
 ---
 
+### Phase 10: 토큰 UI 및 거버넌스 기능 (진행 중)
+
+#### Step 1: 지갑 연결 UI (완료)
+- [x] MetaMask/WalletConnect/Coinbase 지원 WalletConnect v2 모달
+- [x] 잔액과 주소를 표시하는 ConnectedWallet 헤더 컴포넌트
+- [x] 지갑 검증 플로우가 있는 프로필 페이지
+- [x] 실시간 업데이트가 되는 MOC 토큰 잔액 표시
+- [x] 토큰 잔액에서 투표권 계산
+- [x] 지갑 UI i18n 번역 (EN/KO)
+
+#### Step 2: 트레저리 대시보드 개선 (완료)
+- [x] 트레저리 시각화 컴포넌트 (`apps/web/src/components/treasury/`)
+  - [x] AllocationCard - 상태 배지가 있는 예산 할당 항목
+  - [x] TransactionCard - 타입 표시기가 있는 거래 내역
+  - [x] HolderCard - 검증 상태가 있는 토큰 홀더 카드
+  - [x] BalanceDistributionChart - CSS conic-gradient 도넛 차트
+  - [x] AllocationStatusBreakdown - 스택 진행 막대
+  - [x] SpendingLimitsCard - 카테고리별 지출 한도
+  - [x] AllocationDetailModal - 상태 타임라인이 있는 상세 모달
+  - [x] TransactionDetailModal - 익스플로러 링크가 있는 거래 상세
+- [x] `api.ts`에 Treasury API 함수
+- [x] 트레저리 컴포넌트 i18n 번역 (EN/KO)
+
+#### Step 3: 투표권 위임 UI (완료)
+- [x] 위임 컴포넌트 (`apps/web/src/components/delegation/`)
+  - [x] DelegationCard - 주소/투표권/만료일이 있는 위임 항목 표시
+  - [x] DelegationStats - 4개 통계 카드 (보유/받은/위임한/실효 투표권)
+  - [x] DelegationModal - 다단계 모달 (소개 → 입력 → 확인 → 성공)
+  - [x] DelegationList - 탭으로 구분된 목록 (보낸/받은 위임)
+- [x] Delegation API 함수 (fetchDelegations, createDelegation, revokeDelegation)
+- [x] 위임 섹션이 있는 프로필 페이지 통합
+- [x] 카테고리별 위임 (트레저리/기술/거버넌스/커뮤니티)
+- [x] 만료 옵션 (30/90/180일 또는 무기한)
+- [x] 위임 UI i18n 번역 (EN/KO)
+
+#### Step 4: 토큰 가중 투표 UI (대기)
+- [ ] 연결된 지갑으로 제안 투표
+- [ ] 투표권 표시와 함께 투표 확인
+- [ ] 위임된 투표 자동 적용
+- [ ] 프로필 페이지에 투표 이력
+
+---
+
 ## 다음 단계 (우선순위 순)
 
-### Phase 10: 통합 및 폴리싱
-1. 토큰 지갑 연결 UI (MetaMask, WalletConnect)
-2. 잔액 시각화가 포함된 트레저리 대시보드
-3. 제안의 토큰 가중 투표 UI
-4. 홀더 프로필 및 투표 이력 페이지
-5. 토큰 이벤트를 위한 실시간 WebSocket 통합
+### Phase 10 나머지
+1. 제안의 토큰 가중 투표 UI
+2. 토큰 이벤트를 위한 실시간 WebSocket 통합
 
 ### Phase 11: 프로덕션 강화
 1. 메인넷 컨트랙트 통합
@@ -626,12 +666,12 @@ pm2 startup
 ## Git 커밋 히스토리 (최근)
 
 ```
+568ec18 feat: Add voting delegation UI with stats, list, and modal components
+0461d1c feat: Enhance Treasury Dashboard with visualization and components
+9475650 feat: Implement wallet connection UI with MOC token display and verification
 3086f08 docs: Update USER_GUIDE.md and USER_GUIDE.ko.md with v2.0 features
 2568ccd feat: Add production deployment with pm2 and nginx reverse proxy
 bafeae9 test: Add comprehensive tests for v2.0 packages and fix exports
-835ab91 feat: Complete v2.0 Plan Implementation - Phase 8 Finalization
-541a049 feat(api): Connect backend API to Governance OS UI and remove mock data
-b0e94f6 docs: Update documentation for v0.12.0 - Governance OS UI
 ```
 
 ---

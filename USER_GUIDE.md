@@ -18,10 +18,11 @@
 6. [Agora](#6-agora)
 7. [Proposals](#7-proposals)
 8. [Treasury](#8-treasury)
-9. [AI Agents](#9-ai-agents)
-10. [Governance OS](#10-governance-os)
-11. [Live Showcase](#11-live-showcase)
-12. [Engine Room](#12-engine-room)
+9. [Wallet & Profile](#9-wallet--profile)
+10. [AI Agents](#10-ai-agents)
+11. [Governance OS](#11-governance-os)
+12. [Live Showcase](#12-live-showcase)
+13. [Engine Room](#13-engine-room)
 
 ---
 
@@ -240,22 +241,90 @@ You can delegate your voting power to another address:
 
 ## 8. Treasury
 
-The Treasury page shows DAO fund management.
+The Treasury page shows DAO fund management with visualization components.
 
-### Overview
-- Total balance across all tokens
-- Token breakdown (MOC, ETH, etc.)
-- Recent transactions
+### Overview Tab
+- **Balance Distribution Chart**: Donut chart showing token allocation
+- **Allocation Status Breakdown**: Progress bar showing pending/approved/disbursed allocations
+- **Spending Limits**: Category-based spending limits with usage progress
+- **Token Info**: MOC token name, symbol, total supply, and mode (mock/live)
+- **Voting Stats**: Total votes, voting power used, active/completed voting
 
-### Allocations
-View pending and approved budget allocations.
+### Allocations Tab
+View budget allocations with:
+- Category icons (operations, marketing, development, research, community)
+- Status badges (pending, approved, disbursed, cancelled)
+- Recipient address with copy and Etherscan links
+- Click for detailed modal with status timeline
 
-### Token Holders
-See verified token holders and their voting power.
+### Transactions Tab
+View treasury transactions with:
+- Type indicators (deposit, withdrawal, transfer, allocation)
+- Status colors (confirmed, pending, failed)
+- Transaction hash with explorer links
+- Click for detailed modal with full addresses
+
+### Token Holders Tab
+See verified token holders and their:
+- Token balance and voting power
+- Verification status and date
+- Etherscan profile links
 
 ---
 
-## 9. AI Agents
+## 9. Wallet & Profile
+
+The Profile page (`/profile`) manages wallet connection and voting delegation.
+
+### Connecting Your Wallet
+1. Click "Connect Wallet" in the header
+2. Select your wallet (MetaMask, WalletConnect, Coinbase)
+3. Approve the connection in your wallet
+
+### Wallet Verification
+To participate in governance voting, verify your wallet:
+1. Connect your wallet
+2. Click "Verify Wallet" on the Profile page
+3. Sign the message in your wallet (no gas fee)
+4. Your verification is recorded on-chain
+
+### Profile Information
+Once verified, your profile shows:
+- **MOC Balance**: Your token holdings
+- **Voting Power**: Your voting weight based on token balance
+- **Verification Status**: Verified/Unverified badge
+
+### Voting Delegation
+
+Delegate your voting power to trusted addresses:
+
+#### Delegation Stats
+- **Own Voting Power**: Your token-based voting power
+- **Received Delegations**: Voting power delegated to you
+- **Given Delegations**: Voting power you've delegated
+- **Effective Voting Power**: Your actual voting power (own + received - given)
+
+#### Creating a Delegation
+1. Click "Delegate" button
+2. Enter the delegate's wallet address
+3. (Optional) Select categories: Treasury, Technical, Governance, Community
+4. (Optional) Set expiration: 30/90/180 days or Never
+5. Confirm the delegation
+
+#### Managing Delegations
+- **Delegations Given**: View and revoke your outgoing delegations
+- **Delegations Received**: View delegations from others to you
+- Revoke delegations anytime by clicking "Revoke"
+
+#### Delegation Notes
+- You cannot delegate to yourself
+- Delegated votes are automatically applied when voting
+- Categories filter which proposals the delegate can vote on
+- Expiration ensures time-limited delegations
+
+---
+
+## 10. AI Agents
 
 The Agents page displays all 38 AI agents in the system.
 
@@ -284,7 +353,7 @@ In an Agora session, you can manually summon additional agents to join the discu
 
 ---
 
-## 10. Governance OS
+## 11. Governance OS
 
 The Governance OS page provides access to the v2.0 agentic governance system.
 
@@ -329,7 +398,7 @@ Risk management system:
 
 ---
 
-## 11. Live Showcase
+## 12. Live Showcase
 
 The Live page (`/live`) provides a real-time dashboard showcasing the 24/7 AI governance system.
 
@@ -351,7 +420,7 @@ The page connects via WebSocket for live updates:
 
 ---
 
-## 12. Engine Room
+## 13. Engine Room
 
 The Engine Room provides system monitoring and configuration.
 

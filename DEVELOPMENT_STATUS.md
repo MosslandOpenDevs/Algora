@@ -3,7 +3,7 @@
 This file tracks the current development progress for continuity between sessions.
 
 **Last Updated**: 2026-01-15
-**Current Version**: 0.12.4
+**Current Version**: 0.12.5
 **Production URL**: https://algora.moss.land
 
 ---
@@ -558,14 +558,54 @@ See [docs/algora-v2-upgrade-plan.md](docs/algora-v2-upgrade-plan.md) for the com
 
 ---
 
+### Phase 10: Token UI & Governance Features (IN PROGRESS)
+
+#### Step 1: Wallet Connection UI (COMPLETED)
+- [x] WalletConnect v2 modal with MetaMask/WalletConnect/Coinbase support
+- [x] ConnectedWallet header component showing balance and address
+- [x] Profile page with wallet verification flow
+- [x] MOC token balance display with real-time updates
+- [x] Voting power calculation from token balance
+- [x] i18n translations (EN/KO) for wallet UI
+
+#### Step 2: Treasury Dashboard Enhancement (COMPLETED)
+- [x] Treasury visualization components (`apps/web/src/components/treasury/`)
+  - [x] AllocationCard - Budget allocation items with status badges
+  - [x] TransactionCard - Transaction history with type indicators
+  - [x] HolderCard - Token holder cards with verification status
+  - [x] BalanceDistributionChart - CSS conic-gradient donut chart
+  - [x] AllocationStatusBreakdown - Stacked progress bar
+  - [x] SpendingLimitsCard - Category-based spending limits
+  - [x] AllocationDetailModal - Detail modal with status timeline
+  - [x] TransactionDetailModal - Transaction detail with explorer links
+- [x] Treasury API functions in `api.ts`
+- [x] i18n translations (EN/KO) for treasury components
+
+#### Step 3: Voting Delegation UI (COMPLETED)
+- [x] Delegation components (`apps/web/src/components/delegation/`)
+  - [x] DelegationCard - Delegation item display with address/power/expiration
+  - [x] DelegationStats - 4 stats cards (own/received/given/effective power)
+  - [x] DelegationModal - Multi-step modal (intro → input → confirm → success)
+  - [x] DelegationList - Tabbed list (given/received delegations)
+- [x] Delegation API functions (fetchDelegations, createDelegation, revokeDelegation)
+- [x] Profile page integration with delegation section
+- [x] Category-based delegation (treasury/technical/governance/community)
+- [x] Expiration options (30/90/180 days or never)
+- [x] i18n translations (EN/KO) for delegation UI
+
+#### Step 4: Token-weighted Voting UI (PENDING)
+- [ ] Proposal voting with connected wallet
+- [ ] Vote confirmation with voting power display
+- [ ] Delegated vote auto-application
+- [ ] Vote history on profile page
+
+---
+
 ## Next Steps (Priority Order)
 
-### Phase 10: Integration & Polish
-1. Token wallet connection UI (MetaMask, WalletConnect)
-2. Treasury dashboard with balance visualization
-3. Token-weighted voting UI in proposals
-4. Holder profile and voting history pages
-5. Real-time WebSocket integration for token events
+### Phase 10 Remaining
+1. Token-weighted voting UI in proposals
+2. Real-time WebSocket integration for token events
 
 ### Phase 11: Production Hardening
 1. Mainnet contract integration
@@ -626,12 +666,12 @@ pm2 startup
 ## Git Commit History (Recent)
 
 ```
+568ec18 feat: Add voting delegation UI with stats, list, and modal components
+0461d1c feat: Enhance Treasury Dashboard with visualization and components
+9475650 feat: Implement wallet connection UI with MOC token display and verification
 3086f08 docs: Update USER_GUIDE.md and USER_GUIDE.ko.md with v2.0 features
 2568ccd feat: Add production deployment with pm2 and nginx reverse proxy
 bafeae9 test: Add comprehensive tests for v2.0 packages and fix exports
-835ab91 feat: Complete v2.0 Plan Implementation - Phase 8 Finalization
-541a049 feat(api): Connect backend API to Governance OS UI and remove mock data
-b0e94f6 docs: Update documentation for v0.12.0 - Governance OS UI
 ```
 
 ---

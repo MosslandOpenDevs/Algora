@@ -16,6 +16,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.12.5] - 2026-01-15
+
+### Added
+- **Voting Delegation UI** (`apps/web/src/components/delegation/`):
+  - `DelegationCard` - Delegation item display with address, voting power, expiration, categories
+  - `DelegationStats` - 4 stats cards grid (own/received/given/effective voting power)
+  - `DelegationModal` - Multi-step delegation creation modal with:
+    - Intro step explaining delegation
+    - Input step with delegate address, category selection, expiration options
+    - Confirm step showing delegation summary
+    - Success/Error result states
+  - `DelegationList` - Tabbed list component (given/received delegations)
+  - Index barrel export for all delegation components
+
+- **Delegation API Functions** (`apps/web/src/lib/api.ts`):
+  - `Delegation` interface with id, delegator, delegate, categories, weight, expires_at, is_active
+  - `DelegationResponse` interface for delegatedTo/delegatedFrom arrays
+  - `fetchDelegations(address)` - Get delegations for address
+  - `createDelegation(data)` - Create new delegation
+  - `revokeDelegation(id)` - Revoke existing delegation
+
+- **Profile Page Delegation Section** (`apps/web/src/app/[locale]/profile/page.tsx`):
+  - DelegationStats component showing voting power breakdown
+  - DelegationList with tabbed given/received views
+  - "Delegate" button opening DelegationModal
+  - Real-time delegation data with TanStack Query
+
+- **Internationalization**:
+  - 65+ new translation keys for delegation UI (EN/KO)
+  - Stats labels, modal steps, error messages, empty states
+
+### Changed
+- Updated USER_GUIDE.md with detailed Treasury and Wallet & Profile sections
+- Updated USER_GUIDE.ko.md with Korean translations
+- Updated DEVELOPMENT_STATUS.md/ko.md with Phase 10 progress
+
+---
+
 ## [0.12.4] - 2026-01-15
 
 ### Added
