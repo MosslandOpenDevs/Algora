@@ -176,7 +176,7 @@ export function PipelineVisualization({ status, compact = false }: PipelineVisua
 
                   {/* Tooltip */}
                   {isHovered && (
-                    <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 z-20 w-48 animate-scale-in">
+                    <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 z-50 w-48 animate-scale-in">
                       <div className="rounded-lg border border-agora-border bg-agora-card p-3 shadow-xl">
                         <div className="text-xs font-semibold text-slate-900 mb-1">
                           {t(`stages.${stage.key}`)}
