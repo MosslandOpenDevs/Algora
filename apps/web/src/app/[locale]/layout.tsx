@@ -17,6 +17,16 @@ export const metadata: Metadata = {
   description:
     'A living Agora where infinitely scalable AI personas engage in continuous deliberation',
   keywords: ['governance', 'ai', 'agents', 'mossland', 'moc', 'blockchain'],
+  manifest: '/manifest.json',
+  themeColor: '#16f6ab',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'Algora',
+  },
+  formatDetection: {
+    telephone: false,
+  },
 };
 
 const locales = ['en', 'ko'];
