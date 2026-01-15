@@ -92,6 +92,8 @@ function createSchema(db: Database.Database): void {
 
     CREATE INDEX IF NOT EXISTS idx_activity_log_time ON activity_log(timestamp DESC);
     CREATE INDEX IF NOT EXISTS idx_activity_log_type ON activity_log(type);
+    CREATE INDEX IF NOT EXISTS idx_activity_log_type_time ON activity_log(type, timestamp DESC);
+    CREATE INDEX IF NOT EXISTS idx_activity_log_agent ON activity_log(agent_id);
 
     CREATE TABLE IF NOT EXISTS disclosure_logs (
       id TEXT PRIMARY KEY,
@@ -142,6 +144,9 @@ function createSchema(db: Database.Database): void {
     CREATE INDEX IF NOT EXISTS idx_signals_timestamp ON signals(timestamp DESC);
     CREATE INDEX IF NOT EXISTS idx_signals_category ON signals(category);
     CREATE INDEX IF NOT EXISTS idx_signals_severity ON signals(severity);
+    CREATE INDEX IF NOT EXISTS idx_signals_created_at ON signals(created_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_signals_source ON signals(source);
+    CREATE INDEX IF NOT EXISTS idx_signals_category_time ON signals(category, timestamp DESC);
 
     CREATE TABLE IF NOT EXISTS issues (
       id TEXT PRIMARY KEY,
@@ -159,6 +164,12 @@ function createSchema(db: Database.Database): void {
       created_at TEXT DEFAULT CURRENT_TIMESTAMP,
       updated_at TEXT DEFAULT CURRENT_TIMESTAMP
     );
+
+    CREATE INDEX IF NOT EXISTS idx_issues_status ON issues(status);
+    CREATE INDEX IF NOT EXISTS idx_issues_priority ON issues(priority);
+    CREATE INDEX IF NOT EXISTS idx_issues_category ON issues(category);
+    CREATE INDEX IF NOT EXISTS idx_issues_created_at ON issues(created_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_issues_status_priority ON issues(status, priority);
 
     -- ========================================
     -- Agents
@@ -191,6 +202,9 @@ function createSchema(db: Database.Database): void {
       last_active TEXT,
       FOREIGN KEY (agent_id) REFERENCES agents(id)
     );
+
+    CREATE INDEX IF NOT EXISTS idx_agent_states_status ON agent_states(status);
+    CREATE INDEX IF NOT EXISTS idx_agent_states_session ON agent_states(current_session_id);
 
     CREATE TABLE IF NOT EXISTS agent_chatter (
       id TEXT PRIMARY KEY,
@@ -240,6 +254,10 @@ function createSchema(db: Database.Database): void {
       concluded_at TEXT,
       FOREIGN KEY (issue_id) REFERENCES issues(id)
     );
+
+    CREATE INDEX IF NOT EXISTS idx_agora_sessions_status ON agora_sessions(status);
+    CREATE INDEX IF NOT EXISTS idx_agora_sessions_issue ON agora_sessions(issue_id);
+    CREATE INDEX IF NOT EXISTS idx_agora_sessions_created_at ON agora_sessions(created_at DESC);
 
     CREATE TABLE IF NOT EXISTS agora_participants (
       id TEXT PRIMARY KEY,
@@ -314,6 +332,11 @@ function createSchema(db: Database.Database): void {
       FOREIGN KEY (issue_id) REFERENCES issues(id)
     );
 
+    CREATE INDEX IF NOT EXISTS idx_proposals_status ON proposals(status);
+    CREATE INDEX IF NOT EXISTS idx_proposals_created_at ON proposals(created_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_proposals_status_created ON proposals(status, created_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_proposals_issue ON proposals(issue_id);
+
     CREATE TABLE IF NOT EXISTS votes (
       id TEXT PRIMARY KEY,
       proposal_id TEXT NOT NULL,
@@ -326,6 +349,10 @@ function createSchema(db: Database.Database): void {
       UNIQUE(proposal_id, voter)
     );
 
+    CREATE INDEX IF NOT EXISTS idx_votes_proposal ON votes(proposal_id);
+    CREATE INDEX IF NOT EXISTS idx_votes_voter ON votes(voter);
+    CREATE INDEX IF NOT EXISTS idx_votes_created_at ON votes(created_at DESC);
+
     CREATE TABLE IF NOT EXISTS delegations (
       id TEXT PRIMARY KEY,
       delegator TEXT NOT NULL,
@@ -335,6 +362,12 @@ function createSchema(db: Database.Database): void {
       is_active INTEGER DEFAULT 1,
       created_at TEXT DEFAULT CURRENT_TIMESTAMP
     );
+
+    CREATE INDEX IF NOT EXISTS idx_delegations_delegator ON delegations(delegator);
+    CREATE INDEX IF NOT EXISTS idx_delegations_delegate ON delegations(delegate);
+    CREATE INDEX IF NOT EXISTS idx_delegations_active ON delegations(is_active);
+    CREATE INDEX IF NOT EXISTS idx_delegations_delegator_active ON delegations(delegator, is_active);
+    CREATE INDEX IF NOT EXISTS idx_delegations_delegate_active ON delegations(delegate, is_active);
 
     -- ========================================
     -- Decision History & Learning
@@ -355,6 +388,10 @@ function createSchema(db: Database.Database): void {
       outcome_recorded_at TEXT,
       FOREIGN KEY (issue_id) REFERENCES issues(id)
     );
+
+    CREATE INDEX IF NOT EXISTS idx_decision_history_issue ON decision_history(issue_id);
+    CREATE INDEX IF NOT EXISTS idx_decision_history_outcome ON decision_history(outcome_status);
+    CREATE INDEX IF NOT EXISTS idx_decision_history_created ON decision_history(created_at DESC);
 
     -- ========================================
     -- Governance OS v2.0 - Documents
