@@ -37,19 +37,22 @@ export function cacheMiddleware(req: Request, res: Response, next: NextFunction)
     return next();
   }
 
+  // Use originalUrl to get the full path including query params
+  const requestPath = req.originalUrl.split('?')[0];
+
   // Check if this path should never be cached
   for (const noCache of NO_CACHE_PATHS) {
-    if (req.path.startsWith(noCache)) {
-      res.set('Cache-Control', 'no-store, no-cache, must-revalidate');
+    if (requestPath.startsWith(noCache)) {
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
       return next();
     }
   }
 
   // Find matching cache config
   for (const [path, maxAge] of Object.entries(CACHE_CONFIG)) {
-    if (req.path.startsWith(path)) {
-      res.set('Cache-Control', `public, max-age=${maxAge}, must-revalidate`);
-      res.set('Vary', 'Accept-Encoding');
+    if (requestPath.startsWith(path)) {
+      res.setHeader('Cache-Control', `public, max-age=${maxAge}, must-revalidate`);
+      res.setHeader('Vary', 'Accept-Encoding');
       return next();
     }
   }
