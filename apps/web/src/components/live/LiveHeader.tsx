@@ -70,37 +70,35 @@ export function LiveHeader({ className }: LiveHeaderProps) {
   return (
     <div
       className={clsx(
-        'terminal-box flex items-center justify-between px-4 py-2',
+        'terminal-box flex flex-wrap items-center justify-between gap-2 px-3 py-2 sm:px-4 sm:gap-4',
         className
       )}
     >
       {/* Left - Logo and version */}
-      <div className="flex items-center gap-4">
-        <span className="text-[var(--live-glow)] font-bold text-sm tracking-wider">
+      <div className="flex items-center gap-2 sm:gap-4">
+        <span className="text-[var(--live-glow)] font-bold text-xs sm:text-sm tracking-wider whitespace-nowrap">
           ALGORA LIVE
         </span>
-        <span className="text-[var(--text-dim)] text-xs">v0.3.0-beta</span>
+        <span className="text-[var(--text-dim)] text-[10px] sm:text-xs whitespace-nowrap hidden xs:inline">v0.3.0-beta</span>
       </div>
 
       {/* Center - Status */}
-      <div className="flex items-center gap-6">
-        <div className="flex items-center gap-2">
+      <div className="flex items-center gap-3 sm:gap-6 order-3 sm:order-2 w-full sm:w-auto justify-center sm:justify-start">
+        <div className="flex items-center gap-1.5 sm:gap-2">
           <StatusGlyph status="online" size="md" />
-          <span className="text-[var(--text-bright)] text-xs font-medium">ONLINE</span>
+          <span className="text-[var(--text-bright)] text-[10px] sm:text-xs font-medium">ONLINE</span>
         </div>
-        <div className="flex items-center gap-2 text-xs text-[var(--text-muted)]">
-          <span>Uptime:</span>
-          <span className="text-[var(--text-bright)] tabular-nums font-terminal">
-            {uptime.days}d {String(uptime.hours).padStart(2, '0')}:
-            {String(uptime.minutes).padStart(2, '0')}:
-            {String(uptime.seconds).padStart(2, '0')}
+        <div className="flex items-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs text-[var(--text-muted)]">
+          <span className="hidden sm:inline">Uptime:</span>
+          <span className="text-[var(--text-bright)] tabular-nums font-terminal whitespace-nowrap">
+            {uptime.days}d {String(uptime.hours).padStart(2, '0')}:{String(uptime.minutes).padStart(2, '0')}:{String(uptime.seconds).padStart(2, '0')}
           </span>
         </div>
       </div>
 
       {/* Right - Time and Live indicator */}
-      <div className="flex items-center gap-4">
-        <span className="text-[var(--text-muted)] text-xs tabular-nums font-terminal">
+      <div className="flex items-center gap-2 sm:gap-4 order-2 sm:order-3">
+        <span className="text-[var(--text-muted)] text-[10px] sm:text-xs tabular-nums font-terminal hidden sm:inline">
           {currentTime}
         </span>
         <LiveIndicator />

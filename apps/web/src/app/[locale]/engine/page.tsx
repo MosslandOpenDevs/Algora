@@ -2,6 +2,7 @@
 
 import { useTranslations } from 'next-intl';
 import { useQuery } from '@tanstack/react-query';
+import { useState } from 'react';
 import {
   Cpu,
   Database,
@@ -10,6 +11,7 @@ import {
   AlertTriangle,
   CheckCircle,
   TrendingUp,
+  Check,
 } from 'lucide-react';
 
 import { BudgetCard } from '@/components/engine/BudgetCard';
@@ -21,8 +23,10 @@ import { HelpTooltip } from '@/components/guide/HelpTooltip';
 export default function EngineRoomPage() {
   const t = useTranslations('Engine');
   const tGuide = useTranslations('Guide.tooltips');
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
 
-  const { data: health, refetch } = useQuery({
+  const { data: health, refetch, isFetching } = useQuery({
     queryKey: ['health'],
     queryFn: async () => {
       const res = await fetch(
@@ -97,11 +101,32 @@ export default function EngineRoomPage() {
           <p className="text-agora-muted">{t('subtitle')}</p>
         </div>
         <button
-          onClick={() => refetch()}
-          className="flex items-center gap-2 rounded-lg bg-agora-card px-4 py-2 text-slate-900 transition-colors hover:bg-agora-border"
+          onClick={async () => {
+            setIsRefreshing(true);
+            setShowSuccess(false);
+            await refetch();
+            setIsRefreshing(false);
+            setShowSuccess(true);
+            setTimeout(() => setShowSuccess(false), 2000);
+          }}
+          disabled={isRefreshing || isFetching}
+          className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-all duration-200 ${
+            showSuccess
+              ? 'bg-agora-success/20 text-agora-success'
+              : 'bg-agora-card text-slate-900 hover:bg-agora-border'
+          } disabled:opacity-50`}
         >
-          <RefreshCw className="h-4 w-4" />
-          {t('refresh')}
+          {showSuccess ? (
+            <>
+              <Check className="h-4 w-4" />
+              {t('refreshed') || 'Refreshed'}
+            </>
+          ) : (
+            <>
+              <RefreshCw className={`h-4 w-4 ${(isRefreshing || isFetching) ? 'animate-spin' : ''}`} />
+              {t('refresh')}
+            </>
+          )}
         </button>
       </div>
 

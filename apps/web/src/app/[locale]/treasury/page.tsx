@@ -194,13 +194,13 @@ export default function TreasuryPage() {
       </div>
 
       {/* Tabs */}
-      <div className="border-b border-agora-border">
-        <div className="flex gap-6">
+      <div className="border-b border-agora-border overflow-x-auto scrollbar-hide">
+        <div className="flex gap-4 sm:gap-6 min-w-max">
           {(['overview', 'allocations', 'transactions', 'holders'] as const).map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`border-b-2 px-1 pb-3 text-sm font-medium transition-colors ${
+              className={`border-b-2 px-1 pb-3 text-sm font-medium transition-colors whitespace-nowrap ${
                 activeTab === tab
                   ? 'border-agora-accent text-slate-900'
                   : 'border-transparent text-agora-muted hover:text-slate-900'

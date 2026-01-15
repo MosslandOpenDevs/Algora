@@ -289,35 +289,35 @@ export function ProposalDetailModal({ proposal, onClose }: ProposalDetailModalPr
                     </span>
                   )}
                 </div>
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div className="flex items-center gap-2">
-                    <Tag className="h-4 w-4 text-agora-muted" />
-                    <span className="text-agora-muted">{tDetail('header.id')}:</span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 text-sm">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <Tag className="h-4 w-4 text-agora-muted flex-shrink-0" />
+                    <span className="text-agora-muted flex-shrink-0">{tDetail('header.id')}:</span>
                     <CopyableHash hash={proposal.id} truncateLength={8} className="text-slate-900" />
                     {proposal.version && <span className="text-agora-muted">v{proposal.version}</span>}
                   </div>
-                  <div className="flex items-center gap-2">
-                    <User className="h-4 w-4 text-agora-muted" />
-                    <span className="text-agora-muted">{tDetail('header.proposer')}:</span>
-                    <span className="text-slate-900">{formatAddress(proposal.author)}</span>
+                  <div className="flex items-center gap-2 min-w-0">
+                    <User className="h-4 w-4 text-agora-muted flex-shrink-0" />
+                    <span className="text-agora-muted flex-shrink-0">{tDetail('header.proposer')}:</span>
+                    <span className="text-slate-900 truncate">{formatAddress(proposal.author)}</span>
                   </div>
                   {proposal.coProposers && proposal.coProposers.length > 0 && (
-                    <div className="flex items-center gap-2 col-span-2">
-                      <Users className="h-4 w-4 text-agora-muted" />
-                      <span className="text-agora-muted">{tDetail('header.coProposers')}:</span>
-                      <span className="text-slate-900">{proposal.coProposers.map(formatAddress).join(', ')}</span>
+                    <div className="flex items-center gap-2 sm:col-span-2 min-w-0">
+                      <Users className="h-4 w-4 text-agora-muted flex-shrink-0" />
+                      <span className="text-agora-muted flex-shrink-0">{tDetail('header.coProposers')}:</span>
+                      <span className="text-slate-900 truncate">{proposal.coProposers.map(formatAddress).join(', ')}</span>
                     </div>
                   )}
-                  <div className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4 text-agora-muted" />
-                    <span className="text-agora-muted">{tDetail('header.created')}:</span>
-                    <span className="text-slate-900">{format(new Date(proposal.created_at), 'PPP')}</span>
+                  <div className="flex items-center gap-2 min-w-0">
+                    <Calendar className="h-4 w-4 text-agora-muted flex-shrink-0" />
+                    <span className="text-agora-muted flex-shrink-0">{tDetail('header.created')}:</span>
+                    <span className="text-slate-900 whitespace-nowrap">{format(new Date(proposal.created_at), 'PPP')}</span>
                   </div>
                   {proposal.executionDate && (
-                    <div className="flex items-center gap-2">
-                      <Clock className="h-4 w-4 text-agora-muted" />
-                      <span className="text-agora-muted">{tDetail('header.executionDate')}:</span>
-                      <span className="text-slate-900">{format(new Date(proposal.executionDate), 'PPP')}</span>
+                    <div className="flex items-center gap-2 min-w-0">
+                      <Clock className="h-4 w-4 text-agora-muted flex-shrink-0" />
+                      <span className="text-agora-muted flex-shrink-0">{tDetail('header.executionDate')}:</span>
+                      <span className="text-slate-900 whitespace-nowrap">{format(new Date(proposal.executionDate), 'PPP')}</span>
                     </div>
                   )}
                 </div>
@@ -483,13 +483,13 @@ export function ProposalDetailModal({ proposal, onClose }: ProposalDetailModalPr
               {/* Budget */}
               {proposal.budget && (
                 <div className="rounded-lg border border-yellow-500/30 bg-yellow-500/5 p-4">
-                  <div className="flex items-center justify-between mb-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3">
                     <div className="flex items-center gap-2">
-                      <Banknote className="h-5 w-5 text-yellow-400" />
+                      <Banknote className="h-5 w-5 text-yellow-400 flex-shrink-0" />
                       <h3 className="font-semibold text-slate-900">{tDetail('content.budget')}</h3>
                     </div>
                     {proposal.budget.total && (
-                      <span className="text-lg font-bold text-yellow-400">
+                      <span className="text-base sm:text-lg font-bold text-yellow-400 whitespace-nowrap">
                         {proposal.budget.total.toLocaleString()} {proposal.budget.currency || 'MOC'}
                       </span>
                     )}
@@ -497,9 +497,9 @@ export function ProposalDetailModal({ proposal, onClose }: ProposalDetailModalPr
                   {proposal.budget.items && proposal.budget.items.length > 0 && (
                     <div className="space-y-2 mb-3">
                       {proposal.budget.items.map((item, i) => (
-                        <div key={i} className="flex items-center justify-between text-sm">
-                          <span className="text-slate-900">{item.category}</span>
-                          <span className="text-agora-muted">{item.amount.toLocaleString()} {proposal.budget?.currency || 'MOC'}</span>
+                        <div key={i} className="flex items-center justify-between gap-2 text-sm">
+                          <span className="text-slate-900 truncate">{item.category}</span>
+                          <span className="text-agora-muted whitespace-nowrap">{item.amount.toLocaleString()} {proposal.budget?.currency || 'MOC'}</span>
                         </div>
                       ))}
                     </div>
