@@ -10,6 +10,7 @@ module.exports = {
       env: {
         NODE_ENV: 'production',
         PORT: 3201,
+        CORS_ORIGIN: 'https://algora.moss.land',
       },
       env_file: '.env',
       watch: false,
