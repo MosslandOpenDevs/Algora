@@ -633,6 +633,111 @@ export async function castProposalVote(
   });
 }
 
+// Decision Packet Types
+export interface DecisionPacketContent {
+  summary: string;
+  context: string;
+  options: Array<{
+    id: string;
+    title: string;
+    description: string;
+    pros: string[];
+    cons: string[];
+    recommendation?: boolean;
+  }>;
+  riskAssessment: {
+    level: 'low' | 'medium' | 'high' | 'critical';
+    factors: string[];
+    mitigations: string[];
+  };
+  stakeholderImpact: Array<{
+    group: string;
+    impact: string;
+    sentiment: 'positive' | 'neutral' | 'negative';
+  }>;
+  recommendation: {
+    choice: string;
+    rationale: string;
+    confidence: number;
+  };
+  agentContributions?: Array<{
+    agentId: string;
+    agentName: string;
+    perspective: string;
+    vote?: 'for' | 'against' | 'abstain';
+  }>;
+}
+
+export interface DecisionPacket {
+  id: string;
+  proposalId: string;
+  version: number;
+  content: DecisionPacketContent;
+  summary: string;
+  generatedAt: string;
+  generatedBy: string;
+  modelUsed?: string;
+}
+
+export interface ProposalVote {
+  id: string;
+  proposalId: string;
+  voter: string;
+  voterType: 'human' | 'agent';
+  choice: 'for' | 'against' | 'abstain';
+  weight: number;
+  reason?: string;
+  createdAt: string;
+}
+
+export async function fetchDecisionPacket(proposalId: string): Promise<DecisionPacket | null> {
+  try {
+    const response = await fetchAPI<{ packet: any }>(`/api/proposals/${proposalId}/decision-packet`);
+    if (!response.packet) return null;
+    return {
+      id: response.packet.id,
+      proposalId: response.packet.proposal_id,
+      version: response.packet.version,
+      content: typeof response.packet.content === 'string'
+        ? JSON.parse(response.packet.content)
+        : response.packet.content,
+      summary: response.packet.summary,
+      generatedAt: response.packet.generated_at,
+      generatedBy: response.packet.generated_by,
+      modelUsed: response.packet.model_used,
+    };
+  } catch {
+    return null;
+  }
+}
+
+export async function fetchProposalVoteHistory(proposalId: string): Promise<ProposalVote[]> {
+  try {
+    const response = await fetchAPI<{ votes: any[] }>(`/api/proposals/${proposalId}/votes`);
+    return (response.votes || []).map(v => ({
+      id: v.id,
+      proposalId: v.proposal_id,
+      voter: v.voter,
+      voterType: v.voter_type || 'human',
+      choice: v.choice,
+      weight: v.weight,
+      reason: v.reason,
+      createdAt: v.created_at,
+    }));
+  } catch {
+    return [];
+  }
+}
+
+export async function fetchIssue(id: string): Promise<Issue | null> {
+  try {
+    const response = await fetchAPI<{ issue: Issue }>(`/api/issues/${id}`);
+    return response.issue;
+  } catch {
+    return null;
+  }
+}
+
 // ============================================
 // Disclosure API Types & Functions
 // ============================================

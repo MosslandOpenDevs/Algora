@@ -268,7 +268,37 @@
       "proposalExecuted": "This proposal has been executed successfully.",
       "share": "Share",
       "castVote": "Cast Vote",
-      "tokenVoting": "Token Voting"
+      "tokenVoting": "Token Voting",
+      "tabs": {
+        "overview": "Overview",
+        "decision": "AI Analysis",
+        "votes": "Votes",
+        "issue": "Related Issue"
+      },
+      "aiSummary": "AI Summary",
+      "riskAssessment": "Risk Assessment",
+      "riskFactors": "Risk Factors",
+      "mitigations": "Mitigations",
+      "options": "Options",
+      "recommended": "Recommended",
+      "stakeholderImpact": "Stakeholder Impact",
+      "aiRecommendation": "AI Recommendation",
+      "confidence": "Confidence",
+      "agentPerspectives": "Agent Perspectives",
+      "noDecisionPacket": "No AI Analysis Available",
+      "noDecisionPacketDesc": "AI analysis has not been generated for this proposal yet.",
+      "totalVoters": "Total Voters",
+      "recentVotes": "Recent Votes",
+      "noVotes": "No Votes Yet",
+      "noVotesDesc": "No one has voted on this proposal yet.",
+      "relatedIssue": "Related Issue",
+      "issueId": "Issue ID",
+      "issueTitle": "Title",
+      "issueDescription": "Description",
+      "status": "Status",
+      "priority": "Priority",
+      "category": "Category",
+      "issueNotFound": "Issue Not Found"
     }
   },
   "Voting": {

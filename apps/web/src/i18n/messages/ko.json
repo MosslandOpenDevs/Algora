@@ -268,7 +268,37 @@
       "proposalExecuted": "이 제안은 성공적으로 실행되었습니다.",
       "share": "공유",
       "castVote": "투표하기",
-      "tokenVoting": "토큰 투표"
+      "tokenVoting": "토큰 투표",
+      "tabs": {
+        "overview": "개요",
+        "decision": "AI 분석",
+        "votes": "투표 내역",
+        "issue": "관련 이슈"
+      },
+      "aiSummary": "AI 요약",
+      "riskAssessment": "위험 평가",
+      "riskFactors": "위험 요소",
+      "mitigations": "완화 방안",
+      "options": "선택지",
+      "recommended": "권장",
+      "stakeholderImpact": "이해관계자 영향",
+      "aiRecommendation": "AI 권고",
+      "confidence": "신뢰도",
+      "agentPerspectives": "에이전트 관점",
+      "noDecisionPacket": "AI 분석 없음",
+      "noDecisionPacketDesc": "이 제안에 대한 AI 분석이 아직 생성되지 않았습니다.",
+      "totalVoters": "총 투표자",
+      "recentVotes": "최근 투표",
+      "noVotes": "투표 없음",
+      "noVotesDesc": "아직 이 제안에 투표한 사람이 없습니다.",
+      "relatedIssue": "관련 이슈",
+      "issueId": "이슈 ID",
+      "issueTitle": "제목",
+      "issueDescription": "설명",
+      "status": "상태",
+      "priority": "우선순위",
+      "category": "카테고리",
+      "issueNotFound": "이슈를 찾을 수 없음"
     }
   },
   "Voting": {
