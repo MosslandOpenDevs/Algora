@@ -56,41 +56,41 @@ export function BalanceDistributionChart({ balances }: BalanceDistributionChartP
       <h3 className="mb-4 text-lg font-semibold text-slate-900">{t('balanceDistribution')}</h3>
 
       {hasData ? (
-        <div className="flex items-center gap-6">
+        <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
           {/* Donut Chart */}
-          <div className="relative">
+          <div className="relative flex-shrink-0">
             <div
-              className="h-32 w-32 rounded-full"
+              className="h-28 w-28 sm:h-32 sm:w-32 rounded-full"
               style={{
                 background: `conic-gradient(${gradientStops})`,
               }}
             >
               {/* Inner circle for donut effect */}
-              <div className="absolute left-1/2 top-1/2 flex h-20 w-20 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-agora-card">
+              <div className="absolute left-1/2 top-1/2 flex h-16 w-16 sm:h-20 sm:w-20 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-agora-card">
                 <div className="text-center">
-                  <Coins className="mx-auto h-5 w-5 text-agora-accent" />
-                  <p className="mt-1 text-xs font-medium text-agora-muted">{t('stats.totalBalance')}</p>
+                  <Coins className="mx-auto h-4 w-4 sm:h-5 sm:w-5 text-agora-accent" />
+                  <p className="mt-0.5 sm:mt-1 text-[10px] sm:text-xs font-medium text-agora-muted leading-tight">{t('stats.totalBalance')}</p>
                 </div>
               </div>
             </div>
           </div>
 
           {/* Legend */}
-          <div className="flex-1 space-y-2">
+          <div className="flex-1 w-full space-y-2 min-w-0">
             {balanceData.map((b) => (
-              <div key={b.tokenSymbol} className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
+              <div key={b.tokenSymbol} className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2 flex-shrink-0">
                   <div
-                    className="h-3 w-3 rounded-full"
+                    className="h-3 w-3 rounded-full flex-shrink-0"
                     style={{ backgroundColor: b.color }}
                   />
                   <span className="text-sm font-medium text-slate-900">{b.tokenSymbol}</span>
                 </div>
-                <div className="text-right">
-                  <span className="text-sm font-semibold text-slate-900">
+                <div className="text-right flex-shrink-0">
+                  <span className="text-xs sm:text-sm font-semibold text-slate-900">
                     {b.balanceFormatted.toLocaleString()}
                   </span>
-                  <span className="ml-2 text-xs text-agora-muted">
+                  <span className="ml-1.5 sm:ml-2 text-xs text-agora-muted">
                     ({b.percentage.toFixed(1)}%)
                   </span>
                 </div>

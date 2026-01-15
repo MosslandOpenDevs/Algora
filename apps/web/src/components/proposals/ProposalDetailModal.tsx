@@ -800,7 +800,7 @@ export function ProposalDetailModal({ proposal, onClose }: ProposalDetailModalPr
                     <p className="text-sm text-agora-muted mb-4">{tDetail('timeline.processFlowDesc')}</p>
 
                     {/* Process Steps */}
-                    <div className="flex items-center justify-between gap-1 mb-4 overflow-x-auto pb-2">
+                    <div className="flex items-center justify-between gap-1 mb-4 overflow-x-auto pt-3 pb-2">
                       {['draft', 'discussion', 'voting', 'passed', 'executed'].map((step, idx) => {
                         const isCompleted = ['passed', 'rejected', 'executed'].includes(proposal.status)
                           ? idx <= ['draft', 'discussion', 'voting', 'passed', 'executed'].indexOf(
@@ -860,8 +860,8 @@ export function ProposalDetailModal({ proposal, onClose }: ProposalDetailModalPr
                           <p className="text-sm text-agora-muted">
                             {format(new Date(proposal.created_at), 'PPpp')}
                           </p>
-                          <p className="text-xs text-agora-muted mt-1">
-                            {tDetail('timeline.by')} {proposal.author}
+                          <p className="text-xs text-agora-muted mt-1 truncate">
+                            {tDetail('timeline.by')} {formatAddress(proposal.author)}
                           </p>
                           <p className="text-xs text-slate-900 mt-2 bg-agora-darker rounded p-2">
                             {tDetail('timeline.createdDesc')}
@@ -922,8 +922,8 @@ export function ProposalDetailModal({ proposal, onClose }: ProposalDetailModalPr
                                 </p>
                               )}
                               {event.changedBy && (
-                                <p className="text-xs text-agora-muted mt-1">
-                                  {tDetail('timeline.by')} {event.changedBy}
+                                <p className="text-xs text-agora-muted mt-1 truncate">
+                                  {tDetail('timeline.by')} {formatAddress(event.changedBy)}
                                 </p>
                               )}
                               {statusDescriptions[event.toStatus] && (
