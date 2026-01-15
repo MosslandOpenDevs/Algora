@@ -28,12 +28,12 @@ const NO_CACHE_PATHS = [
 ];
 
 /**
- * Caching middleware that adds Cache-Control headers to GET requests
+ * Caching middleware that adds Cache-Control headers to GET/HEAD requests
  * based on the endpoint configuration.
  */
 export function cacheMiddleware(req: Request, res: Response, next: NextFunction): void {
-  // Only apply caching to GET requests
-  if (req.method !== 'GET') {
+  // Only apply caching to GET and HEAD requests
+  if (req.method !== 'GET' && req.method !== 'HEAD') {
     return next();
   }
 
