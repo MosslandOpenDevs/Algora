@@ -24,10 +24,11 @@ export const BREAKPOINTS = {
  * ```
  */
 export function useMobile() {
-  const [windowSize, setWindowSize] = useState({
-    width: typeof window !== 'undefined' ? window.innerWidth : 1024,
-    height: typeof window !== 'undefined' ? window.innerHeight : 768,
-  });
+  // Use undefined initially to avoid hydration mismatch
+  // Server and client both start with undefined, then client updates after mount
+  const [windowSize, setWindowSize] = useState<{ width: number; height: number } | undefined>(
+    undefined
+  );
 
   useEffect(() => {
     function handleResize() {
@@ -37,23 +38,27 @@ export function useMobile() {
       });
     }
 
-    // Set initial size
+    // Set initial size on mount
     handleResize();
 
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  const isMobile = windowSize.width < BREAKPOINTS.md;
-  const isTablet = windowSize.width >= BREAKPOINTS.md && windowSize.width < BREAKPOINTS.lg;
-  const isDesktop = windowSize.width >= BREAKPOINTS.lg;
+  // Default to desktop view during SSR to match Tailwind's default (hidden on md:)
+  const width = windowSize?.width ?? BREAKPOINTS.lg;
+  const height = windowSize?.height ?? 768;
+
+  const isMobile = width < BREAKPOINTS.md;
+  const isTablet = width >= BREAKPOINTS.md && width < BREAKPOINTS.lg;
+  const isDesktop = width >= BREAKPOINTS.lg;
 
   return {
     isMobile,
     isTablet,
     isDesktop,
-    width: windowSize.width,
-    height: windowSize.height,
+    width,
+    height,
   };
 }
 
@@ -66,9 +71,12 @@ export function useMobile() {
  * ```
  */
 export function useMediaQuery(query: string): boolean {
+  // Start with false to avoid hydration mismatch
   const [matches, setMatches] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     const media = window.matchMedia(query);
     setMatches(media.matches);
 
@@ -80,7 +88,8 @@ export function useMediaQuery(query: string): boolean {
     return () => media.removeEventListener('change', listener);
   }, [query]);
 
-  return matches;
+  // Return false during SSR to avoid hydration mismatch
+  return mounted ? matches : false;
 }
 
 /**

@@ -123,12 +123,19 @@ interface WelcomeTourProps {
 export function WelcomeTour({ forceShow = false, onComplete }: WelcomeTourProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
+  const [mounted, setMounted] = useState(false);
   const t = useTranslations('Guide.tour');
   const pathname = usePathname();
   const router = useRouter();
   const locale = pathname.split('/')[1] || 'en';
 
   useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!mounted) return;
+
     if (forceShow) {
       setIsOpen(true);
       setCurrentStep(0);
@@ -140,7 +147,7 @@ export function WelcomeTour({ forceShow = false, onComplete }: WelcomeTourProps)
       const timer = setTimeout(() => setIsOpen(true), 500);
       return () => clearTimeout(timer);
     }
-  }, [forceShow]);
+  }, [forceShow, mounted]);
 
   const handleClose = () => {
     setIsOpen(false);
@@ -170,7 +177,7 @@ export function WelcomeTour({ forceShow = false, onComplete }: WelcomeTourProps)
     }
   };
 
-  if (!isOpen) return null;
+  if (!isOpen || !mounted) return null;
 
   const step = tourSteps[currentStep];
   const Icon = step.icon;
