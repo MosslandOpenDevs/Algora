@@ -1,41 +1,67 @@
 /**
  * Server-side API utilities for React Server Components
  * These functions run on the server and can be used in async Server Components
+ *
+ * IMPORTANT: Always use internal localhost URL for server-side requests.
+ * Using external URL (https://algora.moss.land) causes circular request blocking
+ * because the request goes through nginx back to the same server.
  */
 
 import { type Stats, type Agent, type Activity } from './api';
 
-// Use internal API URL for server-side requests (faster, no SSL overhead)
-const API_BASE = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3201';
+// CRITICAL: Use internal localhost URL to avoid circular requests through nginx
+// This prevents the "7-11 second TTFB" issue where static files queue behind SSR
+const API_BASE = process.env.API_INTERNAL_URL || 'http://localhost:3201';
+
+// Request timeout to prevent blocking (3 seconds max)
+const REQUEST_TIMEOUT_MS = 3000;
 
 /**
- * Server-side fetch with caching options
+ * Server-side fetch with timeout, caching, and error handling
  */
 async function serverFetch<T>(
   endpoint: string,
   options?: {
     revalidate?: number | false;
     tags?: string[];
+    timeout?: number;
   }
 ): Promise<T> {
   const url = `${API_BASE}${endpoint}`;
+  const timeout = options?.timeout ?? REQUEST_TIMEOUT_MS;
 
-  const response = await fetch(url, {
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    next: {
-      revalidate: options?.revalidate ?? 10, // Default 10 seconds cache
-      tags: options?.tags,
-    },
-  });
+  // Create abort controller for timeout
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeout);
 
-  if (!response.ok) {
-    console.error(`Server API Error: ${response.status} for ${endpoint}`);
-    throw new Error(`Server API Error: ${response.status}`);
+  try {
+    const response = await fetch(url, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      signal: controller.signal,
+      next: {
+        revalidate: options?.revalidate ?? 10,
+        tags: options?.tags,
+      },
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      console.error(`[server-api] Error ${response.status} for ${endpoint}`);
+      throw new Error(`Server API Error: ${response.status}`);
+    }
+
+    return response.json();
+  } catch (error) {
+    clearTimeout(timeoutId);
+    if (error instanceof Error && error.name === 'AbortError') {
+      console.error(`[server-api] Timeout after ${timeout}ms for ${endpoint}`);
+      throw new Error(`Request timeout: ${endpoint}`);
+    }
+    throw error;
   }
-
-  return response.json();
 }
 
 /**

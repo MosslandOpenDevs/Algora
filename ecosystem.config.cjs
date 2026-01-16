@@ -30,7 +30,10 @@ module.exports = {
       env: {
         NODE_ENV: 'production',
         PORT: 3200,
+        // Public URL for client-side requests (goes through nginx)
         NEXT_PUBLIC_API_URL: 'https://algora.moss.land',
+        // Internal URL for server-side RSC requests (bypasses nginx, avoids circular requests)
+        API_INTERNAL_URL: 'http://localhost:3201',
       },
       watch: false,
       max_memory_restart: '2G',
