@@ -46,12 +46,45 @@ export interface LLMResponse {
   latencyMs: number;
 }
 
+// Thermal throttling configuration
+interface ThermalThrottleConfig {
+  minCooldownMs: number;        // Minimum delay between Tier 1 calls
+  maxCallsPerMinute: number;    // Maximum Tier 1 calls per minute
+  dynamicCooldown: boolean;     // Increase cooldown under heavy load
+  maxCooldownMs: number;        // Maximum cooldown when under heavy load
+}
+
+interface QueuedRequest {
+  request: LLMRequest;
+  resolve: (response: LLMResponse) => void;
+  reject: (error: Error) => void;
+}
+
 export class LLMService extends EventEmitter {
   private config: LLMConfig;
   private tier1Available: boolean = false;
 
+  // Thermal throttling state
+  private thermalConfig: ThermalThrottleConfig;
+  private lastTier1CallTime: number = 0;
+  private tier1CallTimestamps: number[] = [];
+  private requestQueue: QueuedRequest[] = [];
+  private isProcessingQueue: boolean = false;
+  private consecutiveCalls: number = 0;
+
   constructor() {
     super();
+
+    // Thermal throttling configuration (configurable via env vars)
+    this.thermalConfig = {
+      minCooldownMs: parseInt(process.env.LLM_MIN_COOLDOWN_MS || '2000', 10),         // 2s min between calls
+      maxCallsPerMinute: parseInt(process.env.LLM_MAX_CALLS_PER_MINUTE || '15', 10),  // 15 calls/min max
+      dynamicCooldown: process.env.LLM_DYNAMIC_COOLDOWN !== 'false',                  // Enable by default
+      maxCooldownMs: parseInt(process.env.LLM_MAX_COOLDOWN_MS || '10000', 10),        // 10s max cooldown
+    };
+
+    console.log(`[LLM] Thermal throttling enabled: min cooldown ${this.thermalConfig.minCooldownMs}ms, max ${this.thermalConfig.maxCallsPerMinute} calls/min`);
+
     this.config = {
       tier1: {
         endpoint: process.env.LOCAL_LLM_ENDPOINT || 'http://localhost:11434',
@@ -110,13 +143,100 @@ export class LLMService extends EventEmitter {
     }
   }
 
+  /**
+   * Calculate current cooldown based on load
+   */
+  private calculateCooldown(): number {
+    if (!this.thermalConfig.dynamicCooldown) {
+      return this.thermalConfig.minCooldownMs;
+    }
+
+    // Increase cooldown based on consecutive calls
+    const loadFactor = Math.min(this.consecutiveCalls / 5, 3); // Max 3x multiplier
+    const cooldown = Math.min(
+      this.thermalConfig.minCooldownMs * (1 + loadFactor),
+      this.thermalConfig.maxCooldownMs
+    );
+
+    return Math.round(cooldown);
+  }
+
+  /**
+   * Check if we're within rate limits for Tier 1
+   */
+  private canCallTier1(): { allowed: boolean; waitMs: number } {
+    const now = Date.now();
+
+    // Clean old timestamps (older than 1 minute)
+    this.tier1CallTimestamps = this.tier1CallTimestamps.filter(
+      ts => now - ts < 60000
+    );
+
+    // Check rate limit
+    if (this.tier1CallTimestamps.length >= this.thermalConfig.maxCallsPerMinute) {
+      const oldestCall = this.tier1CallTimestamps[0];
+      const waitMs = 60000 - (now - oldestCall);
+      return { allowed: false, waitMs: Math.max(waitMs, 1000) };
+    }
+
+    // Check cooldown since last call
+    const timeSinceLastCall = now - this.lastTier1CallTime;
+    const requiredCooldown = this.calculateCooldown();
+
+    if (timeSinceLastCall < requiredCooldown) {
+      const waitMs = requiredCooldown - timeSinceLastCall;
+      return { allowed: false, waitMs };
+    }
+
+    return { allowed: true, waitMs: 0 };
+  }
+
+  /**
+   * Record a Tier 1 call for throttling tracking
+   */
+  private recordTier1Call(): void {
+    const now = Date.now();
+    this.lastTier1CallTime = now;
+    this.tier1CallTimestamps.push(now);
+    this.consecutiveCalls++;
+
+    // Decay consecutive calls counter over time
+    setTimeout(() => {
+      this.consecutiveCalls = Math.max(0, this.consecutiveCalls - 1);
+    }, 30000); // Decay after 30 seconds
+  }
+
+  /**
+   * Wait for thermal cooldown
+   */
+  private async waitForCooldown(waitMs: number): Promise<void> {
+    console.log(`[LLM] Thermal throttling: waiting ${waitMs}ms before next Tier 1 call`);
+    this.emit('thermal:throttled', { waitMs });
+    await new Promise(resolve => setTimeout(resolve, waitMs));
+  }
+
   async generate(request: LLMRequest): Promise<LLMResponse> {
     const startTime = Date.now();
     const preferredTier = request.tier ?? 1;
 
     // Try Tier 1 (Ollama) first if available and requested
     if (preferredTier === 1 && this.tier1Available) {
+      // Check thermal throttling
+      const { allowed, waitMs } = this.canCallTier1();
+
+      if (!allowed) {
+        // If wait time is too long, fall back to Tier 2 directly
+        if (waitMs > 5000 && this.hasTier2Available()) {
+          console.log(`[LLM] Thermal throttle: wait ${waitMs}ms too long, using Tier 2 instead`);
+          this.emit('thermal:fallback', { waitMs, reason: 'cooldown_too_long' });
+        } else {
+          // Wait for cooldown
+          await this.waitForCooldown(waitMs);
+        }
+      }
+
       try {
+        this.recordTier1Call();
         const response = await this.generateTier1(request);
         return response;
       } catch (error) {
@@ -379,8 +499,57 @@ export class LLMService extends EventEmitter {
     return this.tier1Available;
   }
 
+  hasTier2Available(): boolean {
+    return !!(
+      this.config.tier2.anthropic ||
+      this.config.tier2.openai ||
+      this.config.tier2.gemini
+    );
+  }
+
   getConfig(): LLMConfig {
     return this.config;
+  }
+
+  getThermalConfig(): ThermalThrottleConfig {
+    return { ...this.thermalConfig };
+  }
+
+  /**
+   * Get current thermal throttling status
+   */
+  getThermalStatus(): {
+    callsLastMinute: number;
+    maxCallsPerMinute: number;
+    consecutiveCalls: number;
+    currentCooldownMs: number;
+    lastCallMs: number;
+    isThrottled: boolean;
+  } {
+    const now = Date.now();
+    this.tier1CallTimestamps = this.tier1CallTimestamps.filter(
+      ts => now - ts < 60000
+    );
+
+    const { allowed, waitMs } = this.canCallTier1();
+
+    return {
+      callsLastMinute: this.tier1CallTimestamps.length,
+      maxCallsPerMinute: this.thermalConfig.maxCallsPerMinute,
+      consecutiveCalls: this.consecutiveCalls,
+      currentCooldownMs: this.calculateCooldown(),
+      lastCallMs: this.lastTier1CallTime ? now - this.lastTier1CallTime : -1,
+      isThrottled: !allowed,
+    };
+  }
+
+  /**
+   * Update thermal throttling configuration at runtime
+   */
+  updateThermalConfig(updates: Partial<ThermalThrottleConfig>): void {
+    this.thermalConfig = { ...this.thermalConfig, ...updates };
+    console.log(`[LLM] Thermal config updated:`, this.thermalConfig);
+    this.emit('thermal:config_updated', this.thermalConfig);
   }
 }
 

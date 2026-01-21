@@ -550,3 +550,73 @@ statsRouter.post('/cache/clear', (_req, res) => {
     res.status(500).json({ error: 'Failed to clear cache' });
   }
 });
+
+// ==========================================
+// LLM Thermal Throttling Endpoints
+// ==========================================
+
+// GET /api/stats/thermal - Get LLM thermal throttling status
+statsRouter.get('/thermal', (req, res) => {
+  const llmService = req.app.locals.llmService;
+
+  if (!llmService) {
+    return res.status(503).json({ error: 'LLM service not available' });
+  }
+
+  try {
+    const status = llmService.getThermalStatus();
+    const config = llmService.getThermalConfig();
+
+    res.json({
+      status,
+      config,
+      tier1Available: llmService.isTier1Available(),
+      tier2Available: llmService.hasTier2Available(),
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    console.error('Failed to fetch thermal status:', error);
+    res.status(500).json({ error: 'Failed to fetch thermal status' });
+  }
+});
+
+// PATCH /api/stats/thermal/config - Update thermal throttling configuration
+statsRouter.patch('/thermal/config', (req, res) => {
+  const llmService = req.app.locals.llmService;
+
+  if (!llmService) {
+    return res.status(503).json({ error: 'LLM service not available' });
+  }
+
+  try {
+    const { minCooldownMs, maxCallsPerMinute, dynamicCooldown, maxCooldownMs } = req.body;
+
+    const updates: Record<string, unknown> = {};
+    if (typeof minCooldownMs === 'number' && minCooldownMs >= 0) {
+      updates.minCooldownMs = minCooldownMs;
+    }
+    if (typeof maxCallsPerMinute === 'number' && maxCallsPerMinute >= 1) {
+      updates.maxCallsPerMinute = maxCallsPerMinute;
+    }
+    if (typeof dynamicCooldown === 'boolean') {
+      updates.dynamicCooldown = dynamicCooldown;
+    }
+    if (typeof maxCooldownMs === 'number' && maxCooldownMs >= 0) {
+      updates.maxCooldownMs = maxCooldownMs;
+    }
+
+    if (Object.keys(updates).length === 0) {
+      return res.status(400).json({ error: 'No valid configuration updates provided' });
+    }
+
+    llmService.updateThermalConfig(updates);
+
+    res.json({
+      success: true,
+      config: llmService.getThermalConfig(),
+    });
+  } catch (error) {
+    console.error('Failed to update thermal config:', error);
+    res.status(500).json({ error: 'Failed to update thermal config' });
+  }
+});

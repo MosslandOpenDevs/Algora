@@ -270,6 +270,7 @@ async function bootstrap() {
     // Make db available to routes
     app.locals.db = db;
     app.locals.io = io;
+    app.locals.llmService = llmService;
 
     // Setup LLM cost tracking - record all generation events to budget_usage
     setupLLMCostTracking(db);
