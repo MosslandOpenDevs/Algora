@@ -1,104 +1,113 @@
 import { Router } from 'express';
 import type Database from 'better-sqlite3';
 import type { KPIPersistenceService } from '../services/kpi-persistence';
+import { cache, CACHE_KEYS, CACHE_TTL } from '../lib/cache';
 
 export const statsRouter: Router = Router();
 
-// GET /api/stats - Get dashboard statistics (optimized: single consolidated query)
+// GET /api/stats - Get dashboard statistics (optimized: single consolidated query + caching)
 statsRouter.get('/', (req, res) => {
   const db: Database.Database = req.app.locals.db;
 
   try {
-    // Consolidated query - reduces 11 DB round trips to 1
-    const stats = db.prepare(`
-      SELECT
-        -- Current counts
-        (SELECT COUNT(*) FROM agent_states WHERE status != 'idle' AND status IS NOT NULL) as activeAgents,
-        (SELECT COUNT(*) FROM agora_sessions WHERE status = 'active') as activeSessions,
-        (SELECT COUNT(*) FROM signals WHERE date(created_at) = date('now')) as signalsToday,
-        (SELECT COUNT(*) FROM issues WHERE status IN ('open', 'in_progress')) as openIssues,
-        -- Yesterday counts for trends
-        (SELECT COUNT(*) FROM signals WHERE date(created_at) = date('now', '-1 day')) as signalsYesterday,
-        (SELECT COUNT(*) FROM agora_sessions WHERE date(created_at) = date('now')) as sessionsToday,
-        (SELECT COUNT(*) FROM agora_sessions WHERE date(created_at) = date('now', '-1 day')) as sessionsYesterday,
-        (SELECT COUNT(*) FROM agent_chatter WHERE date(created_at) = date('now')) as agentMessagesToday,
-        (SELECT COUNT(*) FROM agent_chatter WHERE date(created_at) = date('now', '-1 day')) as agentMessagesYesterday
-    `).get() as {
-      activeAgents: number;
-      activeSessions: number;
-      signalsToday: number;
-      openIssues: number;
-      signalsYesterday: number;
-      sessionsToday: number;
-      sessionsYesterday: number;
-      agentMessagesToday: number;
-      agentMessagesYesterday: number;
-    };
+    const result = cache.getOrSetSync(`${CACHE_KEYS.STATS}main`, () => {
+      // Consolidated query - reduces 11 DB round trips to 1
+      const stats = db.prepare(`
+        SELECT
+          -- Current counts
+          (SELECT COUNT(*) FROM agent_states WHERE status != 'idle' AND status IS NOT NULL) as activeAgents,
+          (SELECT COUNT(*) FROM agora_sessions WHERE status = 'active') as activeSessions,
+          (SELECT COUNT(*) FROM signals WHERE date(created_at) = date('now')) as signalsToday,
+          (SELECT COUNT(*) FROM issues WHERE status IN ('open', 'in_progress')) as openIssues,
+          -- Yesterday counts for trends
+          (SELECT COUNT(*) FROM signals WHERE date(created_at) = date('now', '-1 day')) as signalsYesterday,
+          (SELECT COUNT(*) FROM agora_sessions WHERE date(created_at) = date('now')) as sessionsToday,
+          (SELECT COUNT(*) FROM agora_sessions WHERE date(created_at) = date('now', '-1 day')) as sessionsYesterday,
+          (SELECT COUNT(*) FROM agent_chatter WHERE date(created_at) = date('now')) as agentMessagesToday,
+          (SELECT COUNT(*) FROM agent_chatter WHERE date(created_at) = date('now', '-1 day')) as agentMessagesYesterday
+      `).get() as {
+        activeAgents: number;
+        activeSessions: number;
+        signalsToday: number;
+        openIssues: number;
+        signalsYesterday: number;
+        sessionsToday: number;
+        sessionsYesterday: number;
+        agentMessagesToday: number;
+        agentMessagesYesterday: number;
+      };
 
-    // Calculate trends
-    const signalsTrend = stats.signalsYesterday > 0
-      ? Math.round(((stats.signalsToday - stats.signalsYesterday) / stats.signalsYesterday) * 100)
-      : stats.signalsToday > 0 ? 100 : 0;
+      // Calculate trends
+      const signalsTrend = stats.signalsYesterday > 0
+        ? Math.round(((stats.signalsToday - stats.signalsYesterday) / stats.signalsYesterday) * 100)
+        : stats.signalsToday > 0 ? 100 : 0;
 
-    const sessionsTrend = stats.sessionsYesterday > 0
-      ? Math.round(((stats.sessionsToday - stats.sessionsYesterday) / stats.sessionsYesterday) * 100)
-      : stats.sessionsToday > 0 ? 100 : 0;
+      const sessionsTrend = stats.sessionsYesterday > 0
+        ? Math.round(((stats.sessionsToday - stats.sessionsYesterday) / stats.sessionsYesterday) * 100)
+        : stats.sessionsToday > 0 ? 100 : 0;
 
-    const agentsTrend = stats.agentMessagesYesterday > 0
-      ? Math.round(((stats.agentMessagesToday - stats.agentMessagesYesterday) / stats.agentMessagesYesterday) * 100)
-      : stats.agentMessagesToday > 0 ? 100 : 0;
+      const agentsTrend = stats.agentMessagesYesterday > 0
+        ? Math.round(((stats.agentMessagesToday - stats.agentMessagesYesterday) / stats.agentMessagesYesterday) * 100)
+        : stats.agentMessagesToday > 0 ? 100 : 0;
 
-    res.json({
-      activeAgents: stats.activeAgents,
-      activeSessions: stats.activeSessions,
-      signalsToday: stats.signalsToday,
-      openIssues: stats.openIssues,
-      agentsTrend,
-      sessionsTrend,
-      signalsTrend,
-    });
+      return {
+        activeAgents: stats.activeAgents,
+        activeSessions: stats.activeSessions,
+        signalsToday: stats.signalsToday,
+        openIssues: stats.openIssues,
+        agentsTrend,
+        sessionsTrend,
+        signalsTrend,
+      };
+    }, CACHE_TTL.STATS);
+
+    res.json(result);
   } catch (error) {
     console.error('Failed to fetch stats:', error);
     res.status(500).json({ error: 'Failed to fetch stats' });
   }
 });
 
-// GET /api/stats/tier-usage - Get tier usage statistics (optimized: consolidated query)
+// GET /api/stats/tier-usage - Get tier usage statistics (optimized: consolidated query + caching)
 statsRouter.get('/tier-usage', (req, res) => {
   const db: Database.Database = req.app.locals.db;
   const today = new Date().toISOString().split('T')[0];
 
   try {
-    // Consolidated query - reduces 5 DB round trips to 1
-    const usage = db.prepare(`
-      SELECT
-        -- Tier 0: Signal collection (free)
-        (SELECT COUNT(*) FROM signals WHERE date(timestamp) = ?) as tier0,
-        -- Tier 1: Local LLM (chatter)
-        (SELECT COUNT(*) FROM agent_chatter
-         WHERE date(created_at) = ? AND (tier = 1 OR tier_used LIKE '%local%' OR tier_used LIKE '%ollama%')) as tier1Chatter,
-        -- Tier 1: Local LLM (agora)
-        (SELECT COUNT(*) FROM agora_messages
-         WHERE date(created_at) = ? AND (tier = 1 OR tier_used LIKE '%local%' OR tier_used LIKE '%ollama%')) as tier1Agora,
-        -- Tier 2: External LLM (budget usage)
-        (SELECT COALESCE(SUM(call_count), 0) FROM budget_usage WHERE date = ? AND tier = 2) as tier2Usage,
-        -- Tier 2: External LLM (agora messages)
-        (SELECT COUNT(*) FROM agora_messages
-         WHERE date(created_at) = ? AND (tier = 2 OR tier_used LIKE '%anthropic%' OR tier_used LIKE '%openai%' OR tier_used LIKE '%google%')) as tier2Agora
-    `).get(today, today, today, today, today) as {
-      tier0: number;
-      tier1Chatter: number;
-      tier1Agora: number;
-      tier2Usage: number;
-      tier2Agora: number;
-    };
+    const result = cache.getOrSetSync(`${CACHE_KEYS.STATS}tier-usage:${today}`, () => {
+      // Consolidated query - reduces 5 DB round trips to 1
+      const usage = db.prepare(`
+        SELECT
+          -- Tier 0: Signal collection (free)
+          (SELECT COUNT(*) FROM signals WHERE date(timestamp) = ?) as tier0,
+          -- Tier 1: Local LLM (chatter)
+          (SELECT COUNT(*) FROM agent_chatter
+           WHERE date(created_at) = ? AND (tier = 1 OR tier_used LIKE '%local%' OR tier_used LIKE '%ollama%')) as tier1Chatter,
+          -- Tier 1: Local LLM (agora)
+          (SELECT COUNT(*) FROM agora_messages
+           WHERE date(created_at) = ? AND (tier = 1 OR tier_used LIKE '%local%' OR tier_used LIKE '%ollama%')) as tier1Agora,
+          -- Tier 2: External LLM (budget usage)
+          (SELECT COALESCE(SUM(call_count), 0) FROM budget_usage WHERE date = ? AND tier = 2) as tier2Usage,
+          -- Tier 2: External LLM (agora messages)
+          (SELECT COUNT(*) FROM agora_messages
+           WHERE date(created_at) = ? AND (tier = 2 OR tier_used LIKE '%anthropic%' OR tier_used LIKE '%openai%' OR tier_used LIKE '%google%')) as tier2Agora
+      `).get(today, today, today, today, today) as {
+        tier0: number;
+        tier1Chatter: number;
+        tier1Agora: number;
+        tier2Usage: number;
+        tier2Agora: number;
+      };
 
-    res.json({
-      tier0: usage.tier0,
-      tier1: usage.tier1Chatter + usage.tier1Agora,
-      tier2: usage.tier2Usage + usage.tier2Agora,
-      date: today,
-    });
+      return {
+        tier0: usage.tier0,
+        tier1: usage.tier1Chatter + usage.tier1Agora,
+        tier2: usage.tier2Usage + usage.tier2Agora,
+        date: today,
+      };
+    }, CACHE_TTL.STATS);
+
+    res.json(result);
   } catch (error) {
     console.error('Failed to fetch tier usage:', error);
     res.status(500).json({ error: 'Failed to fetch tier usage' });
@@ -503,5 +512,41 @@ statsRouter.post('/kpi/snapshot', (req, res) => {
   } catch (error) {
     console.error('Failed to take KPI snapshot:', error);
     res.status(500).json({ error: 'Failed to take KPI snapshot' });
+  }
+});
+
+// ==========================================
+// Cache Statistics Endpoint
+// ==========================================
+
+// GET /api/stats/cache - Get cache statistics
+statsRouter.get('/cache', (_req, res) => {
+  try {
+    const stats = cache.getStats();
+    res.json({
+      ...stats,
+      keys: {
+        stats: CACHE_KEYS.STATS,
+        agents: CACHE_KEYS.AGENTS,
+        proposals: CACHE_KEYS.PROPOSALS,
+        signals: CACHE_KEYS.SIGNALS,
+        sessions: CACHE_KEYS.SESSIONS,
+      },
+      ttl: CACHE_TTL,
+    });
+  } catch (error) {
+    console.error('Failed to fetch cache stats:', error);
+    res.status(500).json({ error: 'Failed to fetch cache stats' });
+  }
+});
+
+// POST /api/stats/cache/clear - Clear all caches
+statsRouter.post('/cache/clear', (_req, res) => {
+  try {
+    cache.clear();
+    res.json({ success: true, message: 'Cache cleared' });
+  } catch (error) {
+    console.error('Failed to clear cache:', error);
+    res.status(500).json({ error: 'Failed to clear cache' });
   }
 });

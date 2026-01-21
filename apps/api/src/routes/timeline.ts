@@ -1,6 +1,9 @@
 import { Router } from 'express';
 import type { Request, Response } from 'express';
 import type Database from 'better-sqlite3';
+import { cache, CACHE_TTL } from '../lib/cache';
+
+const CACHE_KEY_TIMELINE = 'timeline:';
 
 export const timelineRouter: Router = Router();
 
@@ -538,90 +541,95 @@ timelineRouter.get('/proposal/:proposalId', (req: Request, res: Response) => {
   }
 });
 
-// GET /api/timeline/stats - Get timeline statistics
+// GET /api/timeline/stats - Get timeline statistics (with caching)
 timelineRouter.get('/stats', (req: Request, res: Response) => {
   const db = req.app.locals.db as Database.Database;
 
   try {
     const today = new Date().toISOString().split('T')[0];
-    const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
-    const stats = {
-      today: {
-        signals: 0,
-        issues: 0,
-        proposals: 0,
-        votes: 0,
-      },
-      week: {
-        signals: 0,
-        issues: 0,
-        proposals: 0,
-        votes: 0,
-      },
-      totals: {
-        signals: 0,
-        issues: 0,
-        proposals: 0,
-        votes: 0,
-      },
-      recentFlow: [] as Array<{
-        issueId: string;
-        issueTitle: string;
-        signalCount: number;
-        proposalCount: number;
-        voteCount: number;
+    const result = cache.getOrSetSync(`${CACHE_KEY_TIMELINE}stats:${today}`, () => {
+      const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+      const stats = {
+        today: {
+          signals: 0,
+          issues: 0,
+          proposals: 0,
+          votes: 0,
+        },
+        week: {
+          signals: 0,
+          issues: 0,
+          proposals: 0,
+          votes: 0,
+        },
+        totals: {
+          signals: 0,
+          issues: 0,
+          proposals: 0,
+          votes: 0,
+        },
+        recentFlow: [] as Array<{
+          issueId: string;
+          issueTitle: string;
+          signalCount: number;
+          proposalCount: number;
+          voteCount: number;
+          status: string;
+        }>,
+      };
+
+      // Today's counts
+      stats.today.signals = (db.prepare(`SELECT COUNT(*) as c FROM signals WHERE DATE(timestamp) = ?`).get(today) as { c: number }).c;
+      stats.today.issues = (db.prepare(`SELECT COUNT(*) as c FROM issues WHERE DATE(detected_at) = ?`).get(today) as { c: number }).c;
+      stats.today.proposals = (db.prepare(`SELECT COUNT(*) as c FROM proposals WHERE DATE(created_at) = ?`).get(today) as { c: number }).c;
+      stats.today.votes = (db.prepare(`SELECT COUNT(*) as c FROM votes WHERE DATE(created_at) = ?`).get(today) as { c: number }).c;
+
+      // Week counts
+      stats.week.signals = (db.prepare(`SELECT COUNT(*) as c FROM signals WHERE DATE(timestamp) >= ?`).get(weekAgo) as { c: number }).c;
+      stats.week.issues = (db.prepare(`SELECT COUNT(*) as c FROM issues WHERE DATE(detected_at) >= ?`).get(weekAgo) as { c: number }).c;
+      stats.week.proposals = (db.prepare(`SELECT COUNT(*) as c FROM proposals WHERE DATE(created_at) >= ?`).get(weekAgo) as { c: number }).c;
+      stats.week.votes = (db.prepare(`SELECT COUNT(*) as c FROM votes WHERE DATE(created_at) >= ?`).get(weekAgo) as { c: number }).c;
+
+      // Total counts
+      stats.totals.signals = (db.prepare(`SELECT COUNT(*) as c FROM signals`).get() as { c: number }).c;
+      stats.totals.issues = (db.prepare(`SELECT COUNT(*) as c FROM issues`).get() as { c: number }).c;
+      stats.totals.proposals = (db.prepare(`SELECT COUNT(*) as c FROM proposals`).get() as { c: number }).c;
+      stats.totals.votes = (db.prepare(`SELECT COUNT(*) as c FROM votes`).get() as { c: number }).c;
+
+      // Recent governance flows
+      const recentIssues = db.prepare(`
+        SELECT
+          i.id, i.title, i.status,
+          (SELECT COUNT(*) FROM issue_signals WHERE issue_id = i.id) as signal_count,
+          (SELECT COUNT(*) FROM proposals WHERE issue_id = i.id) as proposal_count,
+          (SELECT COUNT(*) FROM votes v JOIN proposals p ON v.proposal_id = p.id WHERE p.issue_id = i.id) as vote_count
+        FROM issues i
+        ORDER BY i.detected_at DESC
+        LIMIT 5
+      `).all() as Array<{
+        id: string;
+        title: string;
         status: string;
-      }>,
-    };
+        signal_count: number;
+        proposal_count: number;
+        vote_count: number;
+      }>;
 
-    // Today's counts
-    stats.today.signals = (db.prepare(`SELECT COUNT(*) as c FROM signals WHERE DATE(timestamp) = ?`).get(today) as { c: number }).c;
-    stats.today.issues = (db.prepare(`SELECT COUNT(*) as c FROM issues WHERE DATE(detected_at) = ?`).get(today) as { c: number }).c;
-    stats.today.proposals = (db.prepare(`SELECT COUNT(*) as c FROM proposals WHERE DATE(created_at) = ?`).get(today) as { c: number }).c;
-    stats.today.votes = (db.prepare(`SELECT COUNT(*) as c FROM votes WHERE DATE(created_at) = ?`).get(today) as { c: number }).c;
+      stats.recentFlow = recentIssues.map(i => ({
+        issueId: i.id,
+        issueTitle: i.title,
+        signalCount: i.signal_count,
+        proposalCount: i.proposal_count,
+        voteCount: i.vote_count,
+        status: i.status,
+      }));
 
-    // Week counts
-    stats.week.signals = (db.prepare(`SELECT COUNT(*) as c FROM signals WHERE DATE(timestamp) >= ?`).get(weekAgo) as { c: number }).c;
-    stats.week.issues = (db.prepare(`SELECT COUNT(*) as c FROM issues WHERE DATE(detected_at) >= ?`).get(weekAgo) as { c: number }).c;
-    stats.week.proposals = (db.prepare(`SELECT COUNT(*) as c FROM proposals WHERE DATE(created_at) >= ?`).get(weekAgo) as { c: number }).c;
-    stats.week.votes = (db.prepare(`SELECT COUNT(*) as c FROM votes WHERE DATE(created_at) >= ?`).get(weekAgo) as { c: number }).c;
+      return stats;
+    }, CACHE_TTL.STATS);
 
-    // Total counts
-    stats.totals.signals = (db.prepare(`SELECT COUNT(*) as c FROM signals`).get() as { c: number }).c;
-    stats.totals.issues = (db.prepare(`SELECT COUNT(*) as c FROM issues`).get() as { c: number }).c;
-    stats.totals.proposals = (db.prepare(`SELECT COUNT(*) as c FROM proposals`).get() as { c: number }).c;
-    stats.totals.votes = (db.prepare(`SELECT COUNT(*) as c FROM votes`).get() as { c: number }).c;
-
-    // Recent governance flows
-    const recentIssues = db.prepare(`
-      SELECT
-        i.id, i.title, i.status,
-        (SELECT COUNT(*) FROM issue_signals WHERE issue_id = i.id) as signal_count,
-        (SELECT COUNT(*) FROM proposals WHERE issue_id = i.id) as proposal_count,
-        (SELECT COUNT(*) FROM votes v JOIN proposals p ON v.proposal_id = p.id WHERE p.issue_id = i.id) as vote_count
-      FROM issues i
-      ORDER BY i.detected_at DESC
-      LIMIT 5
-    `).all() as Array<{
-      id: string;
-      title: string;
-      status: string;
-      signal_count: number;
-      proposal_count: number;
-      vote_count: number;
-    }>;
-
-    stats.recentFlow = recentIssues.map(i => ({
-      issueId: i.id,
-      issueTitle: i.title,
-      signalCount: i.signal_count,
-      proposalCount: i.proposal_count,
-      voteCount: i.vote_count,
-      status: i.status,
-    }));
-
-    res.json(stats);
+    res.json(result);
   } catch (error) {
     console.error('[Timeline] Failed to fetch stats:', error);
     res.status(500).json({ error: 'Failed to fetch timeline stats' });
