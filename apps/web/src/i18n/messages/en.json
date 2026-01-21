@@ -61,7 +61,10 @@
     "maintenance": "Maintenance",
     "budget": "Budget",
     "nextTier2": "Next Tier2",
-    "queue": "Queue"
+    "queue": "Queue",
+    "mainNavigation": "Main navigation",
+    "viewLiveDashboard": "View live dashboard",
+    "switchLanguage": "Switch language to {language}"
   },
   "Agents": {
     "title": "AI Agents",

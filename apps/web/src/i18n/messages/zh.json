@@ -61,7 +61,10 @@
     "maintenance": "维护中",
     "budget": "预算",
     "nextTier2": "下次Tier2",
-    "queue": "队列"
+    "queue": "队列",
+    "mainNavigation": "主导航",
+    "viewLiveDashboard": "查看实时仪表板",
+    "switchLanguage": "切换语言至{language}"
   },
   "Agents": {
     "title": "AI代理",

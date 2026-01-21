@@ -61,7 +61,10 @@
     "maintenance": "유지보수",
     "budget": "예산",
     "nextTier2": "다음 Tier2",
-    "queue": "대기열"
+    "queue": "대기열",
+    "mainNavigation": "메인 네비게이션",
+    "viewLiveDashboard": "라이브 대시보드 보기",
+    "switchLanguage": "{language}로 언어 변경"
   },
   "Agents": {
     "title": "AI 에이전트",

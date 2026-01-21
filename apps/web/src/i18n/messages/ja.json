@@ -61,7 +61,10 @@
     "maintenance": "メンテナンス",
     "budget": "予算",
     "nextTier2": "次のTier2",
-    "queue": "キュー"
+    "queue": "キュー",
+    "mainNavigation": "メインナビゲーション",
+    "viewLiveDashboard": "ライブダッシュボードを表示",
+    "switchLanguage": "{language}に言語を切り替え"
   },
   "Agents": {
     "title": "AIエージェント",
