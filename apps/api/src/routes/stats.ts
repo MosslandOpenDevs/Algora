@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import type Database from 'better-sqlite3';
+import type { KPIPersistenceService } from '../services/kpi-persistence';
 
 export const statsRouter: Router = Router();
 
@@ -343,5 +344,164 @@ statsRouter.get('/system-health', (req, res) => {
   } catch (error) {
     console.error('Failed to fetch system health:', error);
     res.status(500).json({ error: 'Failed to fetch system health' });
+  }
+});
+
+// ==========================================
+// KPI History Endpoints
+// ==========================================
+
+// GET /api/stats/kpi - Get current KPI dashboard
+statsRouter.get('/kpi', (req, res) => {
+  const kpiService: KPIPersistenceService | undefined = req.app.locals.kpiService;
+
+  if (!kpiService) {
+    return res.status(503).json({ error: 'KPI service not available' });
+  }
+
+  try {
+    const dashboard = kpiService.getCurrentDashboard();
+    const targets = kpiService.getTargets();
+
+    res.json({
+      dashboard: {
+        decisionQuality: dashboard.decisionQuality,
+        executionSpeed: dashboard.executionSpeed,
+        systemHealth: dashboard.systemHealth,
+        timestamp: dashboard.timestamp.toISOString(),
+      },
+      targets,
+    });
+  } catch (error) {
+    console.error('Failed to fetch KPI dashboard:', error);
+    res.status(500).json({ error: 'Failed to fetch KPI dashboard' });
+  }
+});
+
+// GET /api/stats/kpi/history - Get KPI snapshot history
+statsRouter.get('/kpi/history', (req, res) => {
+  const kpiService: KPIPersistenceService | undefined = req.app.locals.kpiService;
+
+  if (!kpiService) {
+    return res.status(503).json({ error: 'KPI service not available' });
+  }
+
+  try {
+    const hours = parseInt(req.query.hours as string) || 24;
+    const limit = parseInt(req.query.limit as string) || 100;
+
+    const snapshots = kpiService.getSnapshots({ hours, limit });
+    const stats = kpiService.getSnapshotStats(hours);
+
+    res.json({
+      snapshots,
+      stats,
+      period: `${hours} hours`,
+      count: snapshots.length,
+    });
+  } catch (error) {
+    console.error('Failed to fetch KPI history:', error);
+    res.status(500).json({ error: 'Failed to fetch KPI history' });
+  }
+});
+
+// GET /api/stats/kpi/trends - Get KPI trends
+statsRouter.get('/kpi/trends', (req, res) => {
+  const kpiService: KPIPersistenceService | undefined = req.app.locals.kpiService;
+
+  if (!kpiService) {
+    return res.status(503).json({ error: 'KPI service not available' });
+  }
+
+  try {
+    const hours = parseInt(req.query.hours as string) || 24;
+    const trends = kpiService.getTrends(hours);
+
+    res.json({
+      trends,
+      period: `${hours} hours`,
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    console.error('Failed to fetch KPI trends:', error);
+    res.status(500).json({ error: 'Failed to fetch KPI trends' });
+  }
+});
+
+// GET /api/stats/kpi/chart/:metric - Get chart data for a specific metric
+statsRouter.get('/kpi/chart/:metric', (req, res) => {
+  const kpiService: KPIPersistenceService | undefined = req.app.locals.kpiService;
+
+  if (!kpiService) {
+    return res.status(503).json({ error: 'KPI service not available' });
+  }
+
+  try {
+    const { metric } = req.params;
+    const type = (req.query.type as string) || 'hourly';
+    const period = parseInt(req.query.period as string) || (type === 'hourly' ? 24 : 7);
+
+    let data;
+    if (type === 'daily') {
+      data = kpiService.getDailyData(metric, period);
+    } else {
+      data = kpiService.getHourlyData(metric, period);
+    }
+
+    if (data.length === 0) {
+      return res.status(400).json({ error: 'Invalid metric name' });
+    }
+
+    res.json({
+      metric,
+      type,
+      period,
+      data,
+    });
+  } catch (error) {
+    console.error('Failed to fetch KPI chart data:', error);
+    res.status(500).json({ error: 'Failed to fetch KPI chart data' });
+  }
+});
+
+// GET /api/stats/kpi/status - Get KPI service status
+statsRouter.get('/kpi/status', (req, res) => {
+  const kpiService: KPIPersistenceService | undefined = req.app.locals.kpiService;
+
+  if (!kpiService) {
+    return res.status(503).json({ error: 'KPI service not available' });
+  }
+
+  try {
+    const status = kpiService.getStatus();
+
+    res.json({
+      ...status,
+      lastSnapshot: status.lastSnapshot?.toISOString() || null,
+    });
+  } catch (error) {
+    console.error('Failed to fetch KPI status:', error);
+    res.status(500).json({ error: 'Failed to fetch KPI status' });
+  }
+});
+
+// POST /api/stats/kpi/snapshot - Manually trigger a KPI snapshot
+statsRouter.post('/kpi/snapshot', (req, res) => {
+  const kpiService: KPIPersistenceService | undefined = req.app.locals.kpiService;
+
+  if (!kpiService) {
+    return res.status(503).json({ error: 'KPI service not available' });
+  }
+
+  try {
+    const snapshot = kpiService.takeSnapshot();
+
+    res.json({
+      success: true,
+      snapshot,
+    });
+  } catch (error) {
+    console.error('Failed to take KPI snapshot:', error);
+    res.status(500).json({ error: 'Failed to take KPI snapshot' });
   }
 });

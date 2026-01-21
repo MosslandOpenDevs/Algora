@@ -299,6 +299,9 @@ async function bootstrap() {
     schedulerService.setGovernanceOSBridge(governanceOSBridge);
     app.locals.schedulerService = schedulerService;
 
+    // Expose KPI service for route access
+    app.locals.kpiService = schedulerService.getKPIPersistenceService();
+
     // Start heartbeat
     activityService.startHeartbeat();
 

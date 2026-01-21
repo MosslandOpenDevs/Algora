@@ -5,6 +5,7 @@ import type { GovernanceOSBridge } from '../services/governance-os-bridge';
 import type { ReportGeneratorService } from '../services/report-generator';
 import { DataRetentionService } from '../services/data-retention';
 import { BudgetAlertService } from '../services/budget-alerts';
+import { KPIPersistenceService } from '../services/kpi-persistence';
 
 export type Tier = 0 | 1 | 2;
 
@@ -27,6 +28,7 @@ export class SchedulerService {
   private reportGenerator: ReportGeneratorService | null = null;
   private dataRetention: DataRetentionService;
   private budgetAlerts: BudgetAlertService;
+  private kpiPersistence: KPIPersistenceService;
   private config: SchedulerConfig;
   private intervals: Map<string, NodeJS.Timeout> = new Map();
   private isRunning: boolean = false;
@@ -62,6 +64,9 @@ export class SchedulerService {
 
     // Initialize budget alert service
     this.budgetAlerts = new BudgetAlertService(db, io, activityService);
+
+    // Initialize KPI persistence service
+    this.kpiPersistence = new KPIPersistenceService(db, io);
   }
 
   /**
@@ -106,6 +111,9 @@ export class SchedulerService {
 
     // Schedule budget alerts
     this.scheduleBudgetAlerts();
+
+    // Schedule KPI snapshots
+    this.scheduleKPISnapshots();
 
     this.activityService.log('SYSTEM_STATUS', 'info', 'Scheduler started', {
       details: { config: this.config },
@@ -336,6 +344,40 @@ export class SchedulerService {
    */
   getBudgetAlertService(): BudgetAlertService {
     return this.budgetAlerts;
+  }
+
+  private scheduleKPISnapshots(): void {
+    // Take KPI snapshots every 5 minutes
+    const interval = setInterval(() => {
+      if (!this.isRunning) return;
+
+      try {
+        this.kpiPersistence.takeSnapshot();
+      } catch (error) {
+        console.error('[Scheduler] KPI snapshot failed:', error);
+      }
+    }, 5 * 60 * 1000); // 5 minutes
+
+    this.intervals.set('kpiSnapshots', interval);
+    console.info('[Scheduler] KPI snapshots scheduled (every 5 minutes)');
+
+    // Take initial snapshot on startup
+    setTimeout(() => {
+      if (!this.isRunning) return;
+      try {
+        this.kpiPersistence.takeSnapshot();
+        console.info('[Scheduler] Initial KPI snapshot taken');
+      } catch (error) {
+        console.error('[Scheduler] Initial KPI snapshot failed:', error);
+      }
+    }, 5000); // 5 seconds after startup
+  }
+
+  /**
+   * Get the KPI persistence service for external access
+   */
+  getKPIPersistenceService(): KPIPersistenceService {
+    return this.kpiPersistence;
   }
 
   private async runTier0Tasks(): Promise<void> {

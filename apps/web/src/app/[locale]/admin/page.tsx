@@ -93,6 +93,30 @@ interface SystemHealthData {
   timestamp: string;
 }
 
+interface KPITrend {
+  metric: string;
+  current: number;
+  previous: number;
+  change: number;
+  changePercent: number;
+  trend: 'up' | 'down' | 'stable';
+  target?: number;
+  status: 'good' | 'warning' | 'critical';
+}
+
+interface KPITrendsData {
+  trends: KPITrend[];
+  period: string;
+  timestamp: string;
+}
+
+interface KPIStatusData {
+  lastSnapshot: string | null;
+  totalSnapshots: number;
+  oldestSnapshot: string | null;
+  newestSnapshot: string | null;
+}
+
 function StatCard({
   title,
   value,
@@ -183,11 +207,31 @@ export default function AdminPage() {
     refetchInterval: 30000,
   });
 
+  // Fetch KPI trends
+  const { data: kpiTrends, isLoading: loadingKPI } = useQuery<KPITrendsData>({
+    queryKey: ['admin-kpi-trends', refreshKey],
+    queryFn: async () => {
+      const res = await fetch(`${API_URL}/api/stats/kpi/trends?hours=24`);
+      return res.json();
+    },
+    refetchInterval: 60000,
+  });
+
+  // Fetch KPI status
+  const { data: kpiStatus } = useQuery<KPIStatusData>({
+    queryKey: ['admin-kpi-status', refreshKey],
+    queryFn: async () => {
+      const res = await fetch(`${API_URL}/api/stats/kpi/status`);
+      return res.json();
+    },
+    refetchInterval: 60000,
+  });
+
   const handleRefresh = () => {
     setRefreshKey(k => k + 1);
   };
 
-  const isLoading = loadingLLM || loadingData || loadingHealth;
+  const isLoading = loadingLLM || loadingData || loadingHealth || loadingKPI;
 
   return (
     <div className="space-y-6">
@@ -426,6 +470,84 @@ export default function AdminPage() {
           </div>
         )}
       </div>
+
+      {/* KPI Metrics */}
+      {kpiTrends && kpiTrends.trends && kpiTrends.trends.length > 0 && (
+        <div className="rounded-xl border border-agora-border dark:border-agora-dark-border bg-agora-card dark:bg-agora-dark-card p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-slate-900 dark:text-white flex items-center gap-2">
+              <BarChart3 className="h-5 w-5 text-agora-primary" />
+              KPI Metrics (24h)
+            </h2>
+            {kpiStatus && (
+              <span className="text-xs text-agora-muted">
+                {kpiStatus.totalSnapshots} snapshots
+              </span>
+            )}
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {kpiTrends.trends.map((trend) => (
+              <div
+                key={trend.metric}
+                className={`p-4 rounded-lg border ${
+                  trend.status === 'good' ? 'border-green-500/30 bg-green-500/5' :
+                  trend.status === 'warning' ? 'border-yellow-500/30 bg-yellow-500/5' :
+                  'border-red-500/30 bg-red-500/5'
+                }`}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-mono text-agora-muted">
+                    {trend.metric.replace(/_/g, ' ')}
+                  </span>
+                  <span className={`text-xs px-1.5 py-0.5 rounded ${
+                    trend.status === 'good' ? 'bg-green-500/20 text-green-500' :
+                    trend.status === 'warning' ? 'bg-yellow-500/20 text-yellow-500' :
+                    'bg-red-500/20 text-red-500'
+                  }`}>
+                    {trend.status}
+                  </span>
+                </div>
+                <p className="text-xl font-bold text-slate-900 dark:text-white">
+                  {trend.metric.includes('_ms')
+                    ? `${(trend.current / 1000 / 60).toFixed(1)}m`
+                    : trend.metric.includes('depth') || trend.metric.includes('diversity')
+                    ? trend.current.toFixed(1)
+                    : `${trend.current.toFixed(1)}%`
+                  }
+                </p>
+                <div className="flex items-center gap-2 mt-1">
+                  <TrendingUp
+                    className={`h-3 w-3 ${
+                      trend.trend === 'up' ? 'text-green-500' :
+                      trend.trend === 'down' ? 'text-red-500 rotate-180' :
+                      'text-agora-muted'
+                    }`}
+                  />
+                  <span className={`text-xs ${
+                    trend.changePercent > 0 ? 'text-green-500' :
+                    trend.changePercent < 0 ? 'text-red-500' :
+                    'text-agora-muted'
+                  }`}>
+                    {trend.changePercent > 0 ? '+' : ''}{trend.changePercent.toFixed(1)}%
+                  </span>
+                  {trend.target !== undefined && (
+                    <span className="text-xs text-agora-muted">
+                      (target: {trend.target})
+                    </span>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {kpiStatus?.lastSnapshot && (
+            <p className="mt-4 text-xs text-agora-muted">
+              Last snapshot: {new Date(kpiStatus.lastSnapshot).toLocaleString()}
+            </p>
+          )}
+        </div>
+      )}
 
       {/* Scheduler Status */}
       {health?.scheduler && (
