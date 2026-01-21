@@ -25,6 +25,7 @@ import { GovernanceOSBridge } from './services/governance-os-bridge';
 import { DisclosureService } from './services/disclosure';
 import { ReportGeneratorService } from './services/report-generator';
 import { PassiveConsensusService } from './services/passive-consensus';
+import { RAGService } from './services/rag-service';
 
 const PORT = process.env.PORT || 3201;
 const NODE_ENV = process.env.NODE_ENV || 'development';
@@ -352,6 +353,11 @@ async function bootstrap() {
     app.locals.passiveConsensusService = passiveConsensusService;
     schedulerService.setPassiveConsensusService(passiveConsensusService);
     console.info('[PassiveConsensus] Service initialized - opt-out approval model active');
+
+    // Initialize RAG service
+    const ragService = new RAGService(db, io);
+    app.locals.ragService = ragService;
+    console.info('[RAG] Service initialized - semantic search for governance documents');
 
     // Log LLM availability
     console.info(`[LLM] Tier 1 (Ollama): ${llmService.isTier1Available() ? 'Available' : 'Not Available'}`);
