@@ -57,10 +57,10 @@ export class LLMService extends EventEmitter {
         endpoint: process.env.LOCAL_LLM_ENDPOINT || 'http://localhost:11434',
         models: {
           fast: process.env.LOCAL_LLM_MODEL_FAST || 'llama3.2:3b',
-          balanced: process.env.LOCAL_LLM_MODEL_BALANCED || 'qwen2.5:32b',
-          quality: process.env.LOCAL_LLM_MODEL_QUALITY || 'llama3.3:70b',
+          balanced: process.env.LOCAL_LLM_MODEL_BALANCED || 'qwen2.5:14b',
+          quality: process.env.LOCAL_LLM_MODEL_QUALITY || 'qwen2.5:32b',
         },
-        timeout: 120000, // 2 minutes for large models like qwen2.5:32b
+        timeout: 120000, // 2 minutes for large models
       },
       tier2: {
         anthropic: process.env.ANTHROPIC_API_KEY
