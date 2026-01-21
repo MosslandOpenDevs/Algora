@@ -1159,5 +1159,25 @@
     "minutesAgo": "{count}m ago",
     "hoursAgo": "{count}h ago",
     "showingCount": "Showing {count} alerts"
+  },
+  "PassiveConsensus": {
+    "title": "Passive Consensus",
+    "status": {
+      "pending": "Under Review",
+      "autoApproved": "Auto-Approved",
+      "approved": "Approved",
+      "vetoed": "Vetoed",
+      "escalated": "Escalated",
+      "unknown": "Unknown"
+    },
+    "risk": {
+      "low": "Low",
+      "mid": "Medium",
+      "high": "High"
+    },
+    "riskLevel": "Risk Level",
+    "remaining": "remaining",
+    "unreviewedByHuman": "Not reviewed by human",
+    "autoApproveNote": "Will auto-approve after {hours} hours if no veto"
   }
 }

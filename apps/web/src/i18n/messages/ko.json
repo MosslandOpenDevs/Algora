@@ -1159,5 +1159,25 @@
     "minutesAgo": "{count}분 전",
     "hoursAgo": "{count}시간 전",
     "showingCount": "{count}개 알림 표시 중"
+  },
+  "PassiveConsensus": {
+    "title": "수동적 합의",
+    "status": {
+      "pending": "검토 중",
+      "autoApproved": "자동 승인됨",
+      "approved": "승인됨",
+      "vetoed": "거부됨",
+      "escalated": "상위 검토 중",
+      "unknown": "알 수 없음"
+    },
+    "risk": {
+      "low": "낮음",
+      "mid": "중간",
+      "high": "높음"
+    },
+    "riskLevel": "위험 수준",
+    "remaining": "남음",
+    "unreviewedByHuman": "사람이 검토하지 않음",
+    "autoApproveNote": "거부가 없으면 {hours}시간 후 자동 승인됨"
   }
 }

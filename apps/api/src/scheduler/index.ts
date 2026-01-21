@@ -6,6 +6,7 @@ import type { ReportGeneratorService } from '../services/report-generator';
 import { DataRetentionService } from '../services/data-retention';
 import { BudgetAlertService } from '../services/budget-alerts';
 import { KPIPersistenceService } from '../services/kpi-persistence';
+import type { PassiveConsensusService } from '../services/passive-consensus';
 
 export type Tier = 0 | 1 | 2;
 
@@ -26,6 +27,7 @@ export class SchedulerService {
   private activityService: ActivityService;
   private governanceOSBridge: GovernanceOSBridge | null = null;
   private reportGenerator: ReportGeneratorService | null = null;
+  private passiveConsensusService: PassiveConsensusService | null = null;
   private dataRetention: DataRetentionService;
   private budgetAlerts: BudgetAlertService;
   private kpiPersistence: KPIPersistenceService;
@@ -85,6 +87,14 @@ export class SchedulerService {
     console.info('[Scheduler] GovernanceOS Bridge connected');
   }
 
+  /**
+   * Set the Passive Consensus Service for opt-out approval processing
+   */
+  setPassiveConsensusService(service: PassiveConsensusService): void {
+    this.passiveConsensusService = service;
+    console.info('[Scheduler] Passive Consensus Service connected');
+  }
+
   start(): void {
     if (this.isRunning) {
       console.warn('Scheduler is already running');
@@ -114,6 +124,9 @@ export class SchedulerService {
 
     // Schedule KPI snapshots
     this.scheduleKPISnapshots();
+
+    // Schedule passive consensus processing
+    this.schedulePassiveConsensusProcessing();
 
     this.activityService.log('SYSTEM_STATUS', 'info', 'Scheduler started', {
       details: { config: this.config },
@@ -378,6 +391,45 @@ export class SchedulerService {
    */
   getKPIPersistenceService(): KPIPersistenceService {
     return this.kpiPersistence;
+  }
+
+  private schedulePassiveConsensusProcessing(): void {
+    // Process expired passive consensus items every 5 minutes
+    const interval = setInterval(async () => {
+      if (!this.isRunning || !this.passiveConsensusService) return;
+
+      try {
+        const processedCount = await this.passiveConsensusService.processExpiredItems();
+        if (processedCount > 0) {
+          console.info(`[Scheduler] Passive consensus: ${processedCount} items auto-approved`);
+        }
+      } catch (error) {
+        console.error('[Scheduler] Passive consensus processing failed:', error);
+      }
+    }, 5 * 60 * 1000); // 5 minutes
+
+    this.intervals.set('passiveConsensus', interval);
+    console.info('[Scheduler] Passive consensus processing scheduled (every 5 minutes)');
+
+    // Also run immediately after a short delay
+    setTimeout(async () => {
+      if (!this.isRunning || !this.passiveConsensusService) return;
+      try {
+        const processedCount = await this.passiveConsensusService.processExpiredItems();
+        if (processedCount > 0) {
+          console.info(`[Scheduler] Initial passive consensus: ${processedCount} items auto-approved`);
+        }
+      } catch (error) {
+        console.error('[Scheduler] Initial passive consensus processing failed:', error);
+      }
+    }, 10000); // 10 seconds after startup
+  }
+
+  /**
+   * Get the passive consensus service for external access
+   */
+  getPassiveConsensusService(): PassiveConsensusService | null {
+    return this.passiveConsensusService;
   }
 
   private async runTier0Tasks(): Promise<void> {

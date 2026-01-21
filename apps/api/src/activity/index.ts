@@ -22,7 +22,8 @@ export type ActivityType =
   | 'PIPELINE'
   | 'VOTING'
   | 'APPROVAL'
-  | 'DOCUMENT';
+  | 'DOCUMENT'
+  | 'PASSIVE_CONSENSUS';
 
 export type Severity = 'info' | 'warning' | 'error' | 'critical';
 

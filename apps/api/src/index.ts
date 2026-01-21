@@ -24,6 +24,7 @@ import { TokenIntegrationService } from './services/token';
 import { GovernanceOSBridge } from './services/governance-os-bridge';
 import { DisclosureService } from './services/disclosure';
 import { ReportGeneratorService } from './services/report-generator';
+import { PassiveConsensusService } from './services/passive-consensus';
 
 const PORT = process.env.PORT || 3201;
 const NODE_ENV = process.env.NODE_ENV || 'development';
@@ -345,6 +346,12 @@ async function bootstrap() {
     app.locals.reportGenerator = reportGenerator;
     schedulerService.setReportGenerator(reportGenerator);
     console.info('[ReportGenerator] Service initialized - automatic report generation enabled');
+
+    // Initialize passive consensus service
+    const passiveConsensusService = new PassiveConsensusService(db, io, activityService);
+    app.locals.passiveConsensusService = passiveConsensusService;
+    schedulerService.setPassiveConsensusService(passiveConsensusService);
+    console.info('[PassiveConsensus] Service initialized - opt-out approval model active');
 
     // Log LLM availability
     console.info(`[LLM] Tier 1 (Ollama): ${llmService.isTier1Available() ? 'Available' : 'Not Available'}`);

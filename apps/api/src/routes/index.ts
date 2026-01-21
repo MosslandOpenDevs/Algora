@@ -15,6 +15,7 @@ import { tokenRouter } from './token';
 import { disclosureRouter } from './disclosure';
 import { searchRouter } from './search';
 import { alertsRouter } from './alerts';
+import { passiveConsensusRouter } from './passive-consensus';
 import governanceOSRouter from './governance-os';
 
 export function setupRoutes(app: Express): void {
@@ -37,6 +38,7 @@ export function setupRoutes(app: Express): void {
   apiRouter.use('/disclosure', disclosureRouter);
   apiRouter.use('/search', searchRouter);
   apiRouter.use('/alerts', alertsRouter);
+  apiRouter.use('/passive-consensus', passiveConsensusRouter);
   apiRouter.use('/governance-os', governanceOSRouter);
 
   // Mount API router
