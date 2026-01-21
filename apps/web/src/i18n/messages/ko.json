@@ -1179,5 +1179,24 @@
     "remaining": "남음",
     "unreviewedByHuman": "사람이 검토하지 않음",
     "autoApproveNote": "거부가 없으면 {hours}시간 후 자동 승인됨"
+  },
+  "Timeline": {
+    "title": "거버넌스 타임라인",
+    "subtitle": "신호에서 실행까지 흐름 추적",
+    "signals": "신호",
+    "issues": "이슈",
+    "proposals": "제안",
+    "votes": "투표",
+    "issue": "이슈",
+    "error": "타임라인 로드 실패",
+    "noEvents": "표시할 이벤트 없음",
+    "viewDetails": "상세 보기",
+    "viewAll": "모든 이벤트 보기",
+    "filters": "필터",
+    "showCount": "표시 개수",
+    "recentFlows": "최근 거버넌스 흐름",
+    "weekSummary": "이번 주",
+    "todaySignals": "오늘 신호",
+    "todayIssues": "오늘 이슈"
   }
 }

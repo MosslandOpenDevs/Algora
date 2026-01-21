@@ -1179,5 +1179,24 @@
     "remaining": "remaining",
     "unreviewedByHuman": "Not reviewed by human",
     "autoApproveNote": "Will auto-approve after {hours} hours if no veto"
+  },
+  "Timeline": {
+    "title": "Governance Timeline",
+    "subtitle": "Track the flow from signals to execution",
+    "signals": "Signals",
+    "issues": "Issues",
+    "proposals": "Proposals",
+    "votes": "Votes",
+    "issue": "Issue",
+    "error": "Failed to load timeline",
+    "noEvents": "No events to display",
+    "viewDetails": "View Details",
+    "viewAll": "View All Events",
+    "filters": "Filters",
+    "showCount": "Show Count",
+    "recentFlows": "Recent Governance Flows",
+    "weekSummary": "This Week",
+    "todaySignals": "signals today",
+    "todayIssues": "issues today"
   }
 }
