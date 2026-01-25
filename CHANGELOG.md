@@ -33,6 +33,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added `totalRounds` parameter to `handleAgoraSessionCompleted()` call
   - Improved session completion flow with proposal generation
 
+- **Issue Detail Page** (`apps/web/src/app/[locale]/issues/[id]/page.tsx`):
+  - Added dynamic route for individual issue pages
+  - Enables direct linking to issues (e.g., `/issues/{id}`)
+  - Fixes 404 error when accessing issue links from external sites
+  - Includes full issue details, progress indicator, and evidence section
+
 ### Fixed
 - **Missing Proposal Generation**: Issue → Agora → Proposal pipeline was broken
   - Agora sessions completed but proposals were not auto-generated
