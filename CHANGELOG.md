@@ -15,6 +15,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.13.0] - 2026-02-01
+
+### Added
+- **Governance Pipeline Automation** - Complete Agora→Proposal→Voting→Resolution flow
+  - `autoProgressProposalForIssue()` in governance-os-bridge for auto-transitioning proposals
+  - `autoProgressProposals()` and `resolveCompletedVotings()` in proposal service
+  - Hourly proposal queue processing and 6-hourly voting resolution in scheduler
+  - `POST /api/governance-os/admin/process-backlog` for bulk pipeline processing
+- **Governance v2.0 Activation**
+  - DP document auto-creation on Agora session completion
+  - GP document auto-creation when proposals enter voting
+  - Dual-house voting auto-creation for HIGH risk proposals
+  - Passive consensus signaling for LOW risk proposals
+- **Red Team Auto-Summon** for CRITICAL priority issues in summoning service
+- **Trust Score Weighting** in Agora consensus analysis
+- **Database Indexes** - 3 compound indexes for activity_log, agora_messages, signals
+- **Activity Types** - `PROPOSAL_QUEUE` and `VOTING_RESOLUTION`
+
+### Changed
+- **Chatter Quality** - Rate limiting (2/hr per agent), dedup, context-aware prompts
+- **LLM Routing** - Increased Tier 1 preference (fallback threshold 5s→15s)
+- **Red Team in Escalation** - Auto-summon Red Team agents for extended discussions
+
+---
+
 ## [0.12.10] - 2026-01-25
 
 ### Changed

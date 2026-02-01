@@ -2,8 +2,8 @@
 
 This file tracks the current development progress for continuity between sessions.
 
-**Last Updated**: 2026-01-25
-**Current Version**: 0.12.10
+**Last Updated**: 2026-02-01
+**Current Version**: 0.13.0
 **Production URL**: https://algora.moss.land
 
 ---
@@ -246,6 +246,36 @@ See [docs/algora-v2-upgrade-plan.md](docs/algora-v2-upgrade-plan.md) for the com
         - OLLAMA_INSTALL_COMMANDS and OLLAMA_HARDWARE_REQUIREMENTS constants
   - [x] OllamaLLMProvider adapter for ModelRouter
   - [x] Factory functions: createOllamaModelRoutingSystem, createOllamaModelRoutingSystemWithDefaults
+
+### Phase 10.9: Governance Pipeline Automation (COMPLETED)
+- [x] **Proposal Auto-Progression** (`governance-os-bridge.ts`)
+  - [x] `autoProgressProposalForIssue()` - draft→pending_review→discussion→voting
+  - [x] Consensus ≥70% triggers immediate voting transition
+  - [x] DP document auto-creation on Agora session completion
+  - [x] GP document auto-creation when proposal enters voting
+- [x] **Voting Resolution** (`governance/proposal.ts`)
+  - [x] `autoProgressProposals()` - batch progress stale draft proposals
+  - [x] `resolveCompletedVotings()` - auto-resolve expired voting periods
+  - [x] Issue status linked to proposal outcome (passed→resolved, rejected→detected)
+- [x] **Scheduler Integration** (`scheduler/index.ts`)
+  - [x] Hourly `processProposalQueue` task
+  - [x] 6-hourly `resolveCompletedVotings` task
+  - [x] `PROPOSAL_QUEUE` and `VOTING_RESOLUTION` activity types
+- [x] **Governance v2.0 Activation** (`governance-os-bridge.ts`)
+  - [x] Dual-house voting for HIGH risk proposals
+  - [x] Passive consensus signaling for LOW risk proposals
+  - [x] Red Team auto-summon for escalated sessions
+- [x] **Backlog Processing** (`routes/governance-os.ts`)
+  - [x] `POST /api/governance-os/admin/process-backlog` endpoint
+  - [x] Processes backfill + auto-progress + voting resolution in one call
+- [x] **Data Quality & Performance**
+  - [x] 3 compound DB indexes (activity_log, agora_messages, signals)
+  - [x] Chatter rate limiting (2/hr per agent) and dedup
+  - [x] Context-aware chatter prompts (references recent signals/issues)
+  - [x] LLM Tier 1 preference increased (5s→15s fallback threshold)
+- [x] **Agent System Enhancement**
+  - [x] Red Team auto-summon for CRITICAL priority issues (`summoning.ts`)
+  - [x] Trust score weighting in Agora consensus analysis (`agora.ts`)
 
 ### Phase 9: Production Deployment (COMPLETED)
 - [x] **pm2 Process Management**
@@ -871,6 +901,8 @@ pm2 startup
 ## Git Commit History (Recent)
 
 ```
+156bec7 feat: Complete governance pipeline automation (Signal→Issue→Agora→Proposal→Voting→Resolution)
+50904bc docs: Update commit hash in DEVELOPMENT_STATUS.md
 8683cef chore: Fix ESLint warnings across 23 files
 109a766 feat: Add pipeline health monitoring with auto-recovery and dashboard
 4b40edd feat: Add LLM thermal throttling to prevent server overheating
