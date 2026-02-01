@@ -226,8 +226,9 @@ export class LLMService extends EventEmitter {
       const { allowed, waitMs } = this.canCallTier1();
 
       if (!allowed) {
-        // If wait time is too long, fall back to Tier 2 directly
-        if (waitMs > 5000 && this.hasTier2Available()) {
+        // If wait time is very long, fall back to Tier 2 directly
+        // Increased threshold from 5s to 15s to prefer Tier 1 more aggressively (cost optimization)
+        if (waitMs > 15000 && this.hasTier2Available()) {
           console.log(`[LLM] Thermal throttle: wait ${waitMs}ms too long, using Tier 2 instead`);
           this.emit('thermal:fallback', { waitMs, reason: 'cooldown_too_long' });
         } else {

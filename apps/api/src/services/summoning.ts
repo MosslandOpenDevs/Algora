@@ -47,17 +47,45 @@ export class SummoningService {
       return [];
     }
 
+    let summoned: SummonedAgent[];
+
     // If we have LLM available, use it to rank agents
     if (llmService.isTier1Available() || this.hasExternalLLM()) {
       try {
-        return await this.llmRankedSummon(candidates, context, maxAgents);
+        summoned = await this.llmRankedSummon(candidates, context, maxAgents);
       } catch (error) {
         console.warn('[Summoning] LLM ranking failed, using heuristic:', error);
+        summoned = this.heuristicSummon(candidates, context, maxAgents);
+      }
+    } else {
+      summoned = this.heuristicSummon(candidates, context, maxAgents);
+    }
+
+    // Auto-summon Red Team for critical issues to ensure adversarial review
+    if (context.issueId) {
+      const issue = this.db.prepare('SELECT priority FROM issues WHERE id = ?')
+        .get(context.issueId) as { priority: string } | undefined;
+
+      if (issue?.priority === 'critical') {
+        const redTeamAgents = this.getAgentsByGroup('red_team');
+        const summonedIds = new Set(summoned.map(s => s.agent.id));
+
+        for (const agent of redTeamAgents) {
+          if (!summonedIds.has(agent.id)) {
+            summoned.push({
+              agent,
+              reason: 'Red Team auto-summoned for critical issue review',
+              relevanceScore: 0.95,
+            });
+          }
+        }
+        if (redTeamAgents.length > 0) {
+          console.log(`[Summoning] Auto-summoned ${redTeamAgents.length} Red Team agents for critical issue`);
+        }
       }
     }
 
-    // Fallback to heuristic ranking
-    return this.heuristicSummon(candidates, context, maxAgents);
+    return summoned;
   }
 
   // Summon a specific agent by ID

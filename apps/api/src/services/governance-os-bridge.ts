@@ -354,7 +354,32 @@ export class GovernanceOSBridge extends EventEmitter {
 
       console.log(`[GovernanceOSBridge] Updated issue ${sessionData.issueId.slice(0, 8)} status to ${newStatus}`);
 
-      // If strong consensus, create a proposal document
+      // Create Decision Packet (DP) document for all completed sessions with issue
+      if (sessionData.decisionPacketId || hasMinimumRounds) {
+        try {
+          const docRegistry = this.governanceOS.getDocumentRegistry();
+          await docRegistry.documents.create({
+            type: 'DP', // Decision Packet
+            title: `Decision Packet: ${sessionData.title}`,
+            summary: `Agora session completed with ${(sessionData.consensusScore * 100).toFixed(0)}% consensus after ${sessionData.totalRounds || 0} rounds.`,
+            content: JSON.stringify({
+              sourceType: 'agora_session',
+              sourceId: sessionData.sessionId,
+              issueId: sessionData.issueId,
+              decisionPacketId: sessionData.decisionPacketId,
+              consensusScore: sessionData.consensusScore,
+              totalRounds: sessionData.totalRounds,
+              recommendation: sessionData.recommendation,
+            }),
+            createdBy: 'governance-os-bridge',
+          });
+          console.log(`[GovernanceOSBridge] Created DP document for session ${sessionData.sessionId.slice(0, 8)}`);
+        } catch (error) {
+          console.error('[GovernanceOSBridge] Failed to create DP document:', error);
+        }
+      }
+
+      // If strong consensus, create a proposal document (PP)
       if (hasStrongConsensus && sessionData.decisionPacketId) {
         try {
           const docRegistry = this.governanceOS.getDocumentRegistry();
@@ -390,6 +415,9 @@ export class GovernanceOSBridge extends EventEmitter {
       // AUTO-CREATE PROPOSAL for high-priority issues with strong consensus and minimum rounds
       if (hasStrongConsensus && hasMinimumRounds) {
         await this.createProposalFromSession(sessionData);
+
+        // Auto-progress the newly created proposal to voting if consensus is strong
+        await this.autoProgressProposalForIssue(sessionData.issueId, sessionData.consensusScore);
       }
 
       // ESCALATE low-consensus sessions that have completed minimum rounds
@@ -535,11 +563,33 @@ export class GovernanceOSBridge extends EventEmitter {
           newSessionId,
           sessionData.issueId || null,
           `[Extended] ${sessionData.title}`,
-          `Extended discussion session. Previous session achieved insufficient consensus. This session has ${newMaxRounds} rounds for deeper deliberation.`,
+          `Extended discussion session with Red Team participation. Previous session achieved insufficient consensus. This session has ${newMaxRounds} rounds for deeper deliberation.`,
           'pending',
           1,
           newMaxRounds
         );
+
+        // Auto-summon Red Team agents for extended discussion
+        try {
+          const redTeamAgents = this.db.prepare(`
+            SELECT id FROM agents
+            WHERE group_name = 'red_team' AND is_active = 1
+          `).all() as Array<{ id: string }>;
+
+          for (const agent of redTeamAgents) {
+            this.db.prepare(`
+              UPDATE agent_states
+              SET status = 'active', current_session_id = ?, last_active = CURRENT_TIMESTAMP
+              WHERE agent_id = ?
+            `).run(newSessionId, agent.id);
+          }
+
+          if (redTeamAgents.length > 0) {
+            console.log(`[GovernanceOSBridge] Summoned ${redTeamAgents.length} Red Team agents for session ${newSessionId.slice(0, 8)}`);
+          }
+        } catch (error) {
+          console.error('[GovernanceOSBridge] Failed to summon Red Team:', error);
+        }
 
         // Update escalation with assignment
         this.db.prepare(`
@@ -815,6 +865,153 @@ ${issue.evidence ? JSON.parse(issue.evidence).slice(0, 3).map((e: { source: stri
 
     } catch (error) {
       console.error(`[GovernanceOSBridge] Failed to create proposal from session:`, error);
+    }
+  }
+
+  /**
+   * Auto-progress a proposal from draft → pending_review → voting
+   * when the Agora session has strong consensus (≥70%).
+   */
+  private async autoProgressProposalForIssue(issueId: string, consensusScore: number): Promise<void> {
+    const { v4: uuidv4 } = await import('uuid');
+
+    // Find proposal for this issue
+    const proposal = this.db.prepare(
+      "SELECT id, status, title FROM proposals WHERE issue_id = ? ORDER BY created_at DESC LIMIT 1"
+    ).get(issueId) as { id: string; status: string; title: string } | null;
+
+    if (!proposal) return;
+
+    // Only progress draft proposals
+    if (proposal.status !== 'draft') return;
+
+    const now = new Date().toISOString();
+
+    try {
+      // draft → pending_review
+      this.db.prepare(`
+        UPDATE proposals SET status = 'pending_review', updated_at = ? WHERE id = ?
+      `).run(now, proposal.id);
+
+      this.db.prepare(`
+        INSERT INTO proposal_history (id, proposal_id, from_status, to_status, changed_by, reason)
+        VALUES (?, ?, 'draft', 'pending_review', 'governance-os-bridge', ?)
+      `).run(uuidv4(), proposal.id, `Auto-progressed: Agora consensus ${(consensusScore * 100).toFixed(0)}%`);
+
+      // If consensus ≥ 70%, skip discussion and go directly to voting
+      if (consensusScore >= 0.7) {
+        // pending_review → discussion
+        this.db.prepare(`
+          UPDATE proposals SET status = 'discussion', updated_at = ? WHERE id = ?
+        `).run(now, proposal.id);
+
+        this.db.prepare(`
+          INSERT INTO proposal_history (id, proposal_id, from_status, to_status, changed_by, reason)
+          VALUES (?, ?, 'pending_review', 'discussion', 'governance-os-bridge', 'Auto-approved for discussion')
+        `).run(uuidv4(), proposal.id);
+
+        // discussion → voting
+        const votingEnds = new Date(Date.now() + 72 * 60 * 60 * 1000).toISOString();
+        this.db.prepare(`
+          UPDATE proposals SET status = 'voting', voting_starts = ?, voting_ends = ?, updated_at = ? WHERE id = ?
+        `).run(now, votingEnds, now, proposal.id);
+
+        this.db.prepare(`
+          INSERT INTO proposal_history (id, proposal_id, from_status, to_status, changed_by, reason)
+          VALUES (?, ?, 'discussion', 'voting', 'governance-os-bridge', ?)
+        `).run(uuidv4(), proposal.id, `Auto-progressed to voting: consensus ${(consensusScore * 100).toFixed(0)}%`);
+
+        console.log(`[GovernanceOSBridge] Auto-progressed proposal ${proposal.id.slice(0, 8)} to voting`);
+
+        // Activate v2.0 governance features for this proposal
+        await this.activateGovernanceForProposal(proposal.id);
+
+        this.io.emit('proposal:voting_started', {
+          proposal: { id: proposal.id, title: proposal.title, status: 'voting' },
+          autoProgressed: true,
+          consensusScore,
+        });
+
+        this.io.emit('activity:event', {
+          type: 'PROPOSAL_AUTO_VOTING',
+          severity: 'info',
+          message: `Proposal auto-progressed to voting: ${proposal.title}`,
+          timestamp: now,
+        });
+      }
+    } catch (error) {
+      console.error(`[GovernanceOSBridge] Failed to auto-progress proposal ${proposal.id}:`, error);
+    }
+  }
+
+  /**
+   * Activate v2.0 governance features for a proposal based on its risk level.
+   * - HIGH/CRITICAL: Create dual-house voting session
+   * - LOW: Create passive consensus (auto-approve after 48h if no objection)
+   * - Also creates GP (Governance Proposal) document
+   */
+  async activateGovernanceForProposal(proposalId: string): Promise<void> {
+    const proposal = this.db.prepare(
+      'SELECT * FROM proposals WHERE id = ?'
+    ).get(proposalId) as { id: string; title: string; description: string; issue_id: string | null; proposal_type: string; status: string } | null;
+
+    if (!proposal) return;
+
+    // Get issue to determine risk level
+    let riskLevel: 'LOW' | 'MID' | 'HIGH' = 'LOW';
+    if (proposal.issue_id) {
+      const issue = this.db.prepare('SELECT priority, category FROM issues WHERE id = ?')
+        .get(proposal.issue_id) as { priority: string; category: string } | null;
+      if (issue) {
+        riskLevel = this.determineRiskLevel(issue as any) as 'LOW' | 'MID' | 'HIGH';
+      }
+    }
+
+    try {
+      // Create GP (Governance Proposal) document
+      const docRegistry = this.governanceOS.getDocumentRegistry();
+      await docRegistry.documents.create({
+        type: 'GP', // Governance Proposal
+        title: `Governance Proposal: ${proposal.title}`,
+        summary: proposal.description?.substring(0, 500) || proposal.title,
+        content: JSON.stringify({
+          proposalId: proposal.id,
+          proposalType: proposal.proposal_type,
+          issueId: proposal.issue_id,
+          riskLevel,
+          status: proposal.status,
+        }),
+        createdBy: 'governance-os-bridge',
+      });
+      console.log(`[GovernanceOSBridge] Created GP document for proposal ${proposalId.slice(0, 8)}`);
+    } catch (error) {
+      console.error('[GovernanceOSBridge] Failed to create GP document:', error);
+    }
+
+    // Activate dual-house voting for HIGH/CRITICAL risk
+    if (riskLevel === 'HIGH' && this.config.enableDualHouse) {
+      try {
+        const voting = await this.createDualHouseVoting({
+          proposalId: proposal.id,
+          title: proposal.title,
+          summary: proposal.description?.substring(0, 500) || proposal.title,
+          riskLevel,
+          category: proposal.proposal_type || 'general',
+          createdBy: 'governance-os-bridge',
+        });
+        console.log(`[GovernanceOSBridge] Created dual-house voting ${voting.id} for proposal ${proposalId.slice(0, 8)}`);
+      } catch (error) {
+        console.error('[GovernanceOSBridge] Failed to create dual-house voting:', error);
+      }
+    }
+
+    // Activate passive consensus for LOW risk
+    if (riskLevel === 'LOW') {
+      this.io.emit('governance:passive-consensus:eligible', {
+        proposalId: proposal.id,
+        riskLevel,
+        timestamp: new Date().toISOString(),
+      });
     }
   }
 
@@ -1401,10 +1598,10 @@ ${issue.evidence ? JSON.parse(issue.evidence).slice(0, 3).map((e: { source: stri
         return 0;
       case 'simple':
       case 'moderate':
-        return 1;
       case 'complex':
+        return 1; // Route complex tasks to Tier 1 (quality model) to reduce Tier 2 costs
       case 'critical':
-        return 2;
+        return 2; // Only critical tasks (Decision Packets, deep analysis) use Tier 2
       default:
         return 1;
     }

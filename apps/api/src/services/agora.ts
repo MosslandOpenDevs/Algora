@@ -936,9 +936,30 @@ Respond with ONLY "ADVANCE" or "CONTINUE" (no other text).`;
       };
     }
 
-    // Use LLM to analyze consensus
+    // Use LLM to analyze consensus with trust score weighting
     if (llmService.isTier1Available() || this.hasExternalLLM()) {
       try {
+        // Get trust scores for participating agents to weight their opinions
+        const agentIds = [...new Set(agentMessages.map(m => m.agent_id).filter(Boolean))];
+        let trustInfo = '';
+        if (agentIds.length > 0) {
+          try {
+            const trustScores = this.db.prepare(`
+              SELECT ats.agent_id, a.display_name, ats.score
+              FROM agent_trust_scores ats
+              JOIN agents a ON ats.agent_id = a.id
+              WHERE ats.agent_id IN (${agentIds.map(() => '?').join(',')})
+              ORDER BY ats.updated_at DESC
+            `).all(...agentIds) as Array<{ agent_id: string; display_name: string; score: number }>;
+
+            if (trustScores.length > 0) {
+              trustInfo = `\n\nAgent trust scores (higher = more reliable, weight their opinions accordingly):\n${trustScores.map(t => `- ${t.display_name}: ${t.score.toFixed(2)}`).join('\n')}`;
+            }
+          } catch {
+            // Trust scores not available, continue without
+          }
+        }
+
         const conversation = agentMessages
           .slice(-8)
           .map(m => `${m.agent_name}: ${m.content}`)
@@ -948,10 +969,10 @@ Respond with ONLY "ADVANCE" or "CONTINUE" (no other text).`;
           systemPrompt: 'You are an expert at analyzing group discussions. Respond in JSON format only.',
           prompt: `Analyze the following discussion for consensus:
 
-${conversation}
+${conversation}${trustInfo}
 
 Return a JSON object with:
-- score: number between 0-1 (0=total disagreement, 1=full consensus)
+- score: number between 0-1 (0=total disagreement, 1=full consensus). Weight agent opinions by their trust scores if provided.
 - dominantPosition: the main viewpoint most agents agree on (brief)
 - dissenting: array of agent names who disagree
 - agreements: array of points most agree on

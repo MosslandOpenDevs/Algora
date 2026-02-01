@@ -479,6 +479,116 @@ export class ProposalService {
     };
   }
 
+  // === Auto-Progress & Resolution ===
+
+  /**
+   * Auto-progress draft proposals that have been idle for >24h and have linked Agora sessions.
+   * draft → pending_review → discussion (if session completed with consensus)
+   */
+  autoProgressProposals(): { progressed: number; errors: string[] } {
+    const result = { progressed: 0, errors: [] as string[] };
+
+    // Find draft proposals older than 24h with completed Agora sessions
+    const draftProposals = this.db.prepare(`
+      SELECT p.id, p.title, p.issue_id, p.created_at,
+        (SELECT MAX(s.current_round) FROM agora_sessions s WHERE s.issue_id = p.issue_id AND s.status = 'completed') as max_round
+      FROM proposals p
+      WHERE p.status = 'draft'
+        AND p.created_at < datetime('now', '-24 hours')
+        AND p.issue_id IS NOT NULL
+        AND EXISTS (
+          SELECT 1 FROM agora_sessions s
+          WHERE s.issue_id = p.issue_id AND s.status = 'completed' AND s.current_round >= 3
+        )
+      LIMIT 20
+    `).all() as Array<{ id: string; title: string; issue_id: string; created_at: string; max_round: number }>;
+
+    for (const proposal of draftProposals) {
+      try {
+        this.updateStatus(proposal.id, 'pending_review', 'auto-progress', 'Auto-progressed: linked Agora session completed');
+        this.updateStatus(proposal.id, 'discussion', 'auto-progress', 'Auto-approved for discussion');
+        result.progressed++;
+        console.log(`[ProposalService] Auto-progressed proposal ${proposal.id.slice(0, 8)}: ${proposal.title}`);
+      } catch (error) {
+        result.errors.push(`${proposal.id.slice(0, 8)}: ${String(error)}`);
+      }
+    }
+
+    return result;
+  }
+
+  /**
+   * Resolve completed votings: transition voting → passed/rejected based on voting period end.
+   * Also handles linked issue status updates.
+   */
+  resolveCompletedVotings(): { resolved: number; passed: number; rejected: number; errors: string[] } {
+    const result = { resolved: 0, passed: 0, rejected: 0, errors: [] as string[] };
+
+    // Find proposals whose voting period has ended
+    const expiredVotings = this.db.prepare(`
+      SELECT p.id, p.title, p.issue_id, p.voting_ends, p.tally
+      FROM proposals p
+      WHERE p.status = 'voting'
+        AND p.voting_ends IS NOT NULL
+        AND p.voting_ends < datetime('now')
+      LIMIT 50
+    `).all() as Array<{ id: string; title: string; issue_id: string | null; voting_ends: string; tally: string | null }>;
+
+    for (const proposal of expiredVotings) {
+      try {
+        // Parse tally if available, otherwise default to passed (auto-approved via passive consensus)
+        let passed = true;
+        if (proposal.tally) {
+          try {
+            const tally = JSON.parse(proposal.tally);
+            const forVotes = tally.for || 0;
+            const againstVotes = tally.against || 0;
+            const totalVotes = forVotes + againstVotes;
+            // Pass if >50% for votes (or no votes = passive approval)
+            passed = totalVotes === 0 || forVotes > againstVotes;
+          } catch {
+            // If tally is unparseable, default to passed
+          }
+        }
+
+        const newStatus = passed ? 'passed' : 'rejected';
+        this.updateStatus(proposal.id, newStatus, 'voting-resolver', `Voting period ended: ${newStatus}`);
+
+        result.resolved++;
+        if (passed) result.passed++;
+        else result.rejected++;
+
+        // Update linked issue status
+        if (proposal.issue_id) {
+          if (passed) {
+            this.db.prepare(`
+              UPDATE issues SET status = 'resolved', resolved_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
+              WHERE id = ?
+            `).run(proposal.issue_id);
+          } else {
+            // Rejected: revert issue to detected for re-discussion
+            this.db.prepare(`
+              UPDATE issues SET status = 'detected', updated_at = CURRENT_TIMESTAMP
+              WHERE id = ? AND status IN ('in_progress', 'pending_vote', 'approved_for_action')
+            `).run(proposal.issue_id);
+          }
+
+          this.io.emit('issue:updated', {
+            issueId: proposal.issue_id,
+            status: passed ? 'resolved' : 'detected',
+            reason: `Proposal ${newStatus}`,
+          });
+        }
+
+        console.log(`[ProposalService] Voting resolved: ${proposal.id.slice(0, 8)} → ${newStatus}`);
+      } catch (error) {
+        result.errors.push(`${proposal.id.slice(0, 8)}: ${String(error)}`);
+      }
+    }
+
+    return result;
+  }
+
   // === From Issue ===
 
   createFromIssue(issueId: string, proposer: string): Proposal {

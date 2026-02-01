@@ -8,6 +8,7 @@ import { DataRetentionService } from '../services/data-retention';
 import { BudgetAlertService } from '../services/budget-alerts';
 import { KPIPersistenceService } from '../services/kpi-persistence';
 import type { PassiveConsensusService } from '../services/passive-consensus';
+import type { ProposalService } from '../services/governance/proposal';
 import { InMemoryQueue, JobStatus } from '../lib/job-queue';
 
 export type Tier = 0 | 1 | 2;
@@ -38,6 +39,7 @@ export class SchedulerService {
   private governanceOSBridge: GovernanceOSBridge | null = null;
   private reportGenerator: ReportGeneratorService | null = null;
   private passiveConsensusService: PassiveConsensusService | null = null;
+  private proposalService: ProposalService | null = null;
   private dataRetention: DataRetentionService;
   private budgetAlerts: BudgetAlertService;
   private kpiPersistence: KPIPersistenceService;
@@ -274,6 +276,14 @@ export class SchedulerService {
   }
 
   /**
+   * Set the Proposal Service for auto-progress and voting resolution
+   */
+  setProposalService(service: ProposalService): void {
+    this.proposalService = service;
+    console.info('[Scheduler] Proposal Service connected');
+  }
+
+  /**
    * Set the Passive Consensus Service for opt-out approval processing
    */
   setPassiveConsensusService(service: PassiveConsensusService): void {
@@ -316,6 +326,12 @@ export class SchedulerService {
 
     // Schedule proposal backfill (Gap 4)
     this.scheduleProposalBackfill();
+
+    // Schedule proposal queue processing (every hour)
+    this.scheduleProposalQueueProcessing();
+
+    // Schedule voting resolution (every 6 hours)
+    this.scheduleVotingResolution();
 
     this.activityService.log('SYSTEM_STATUS', 'info', 'Scheduler started', {
       details: { config: this.config },
@@ -693,6 +709,78 @@ export class SchedulerService {
       });
 
     return result;
+  }
+
+  /**
+   * Schedule automatic proposal queue processing (hourly)
+   * Auto-progresses stale draft proposals with completed Agora sessions
+   */
+  private scheduleProposalQueueProcessing(): void {
+    const interval = setInterval(async () => {
+      if (!this.isRunning || !this.proposalService) return;
+
+      try {
+        const result = this.proposalService.autoProgressProposals();
+        if (result.progressed > 0) {
+          console.info(`[Scheduler] Proposal queue: ${result.progressed} proposals progressed`);
+          this.activityService.log('PROPOSAL_QUEUE', 'info',
+            `Proposal queue processed: ${result.progressed} progressed`, {
+              details: result,
+            });
+        }
+      } catch (error) {
+        console.error('[Scheduler] Proposal queue processing failed:', error);
+      }
+    }, 60 * 60 * 1000); // Every hour
+
+    this.intervals.set('proposalQueue', interval);
+    console.info('[Scheduler] Proposal queue processing scheduled (every hour)');
+  }
+
+  /**
+   * Schedule voting resolution (every 6 hours)
+   * Resolves expired votings and updates linked issue statuses
+   */
+  private scheduleVotingResolution(): void {
+    const interval = setInterval(async () => {
+      if (!this.isRunning || !this.proposalService) return;
+
+      try {
+        const result = this.proposalService.resolveCompletedVotings();
+        if (result.resolved > 0) {
+          console.info(`[Scheduler] Voting resolution: ${result.resolved} resolved (${result.passed} passed, ${result.rejected} rejected)`);
+          this.activityService.log('VOTING_RESOLUTION', 'info',
+            `Voting resolution: ${result.passed} passed, ${result.rejected} rejected`, {
+              details: result,
+            });
+
+          this.io.emit('governance:votings:resolved', {
+            resolved: result.resolved,
+            passed: result.passed,
+            rejected: result.rejected,
+            timestamp: new Date().toISOString(),
+          });
+        }
+      } catch (error) {
+        console.error('[Scheduler] Voting resolution failed:', error);
+      }
+    }, 6 * 60 * 60 * 1000); // Every 6 hours
+
+    this.intervals.set('votingResolution', interval);
+    console.info('[Scheduler] Voting resolution scheduled (every 6 hours)');
+
+    // Also run on startup after 30 seconds
+    setTimeout(async () => {
+      if (!this.isRunning || !this.proposalService) return;
+      try {
+        const result = this.proposalService.resolveCompletedVotings();
+        if (result.resolved > 0) {
+          console.info(`[Scheduler] Initial voting resolution: ${result.resolved} resolved`);
+        }
+      } catch (error) {
+        console.error('[Scheduler] Initial voting resolution failed:', error);
+      }
+    }, 30000);
   }
 
   private async runTier0Tasks(): Promise<void> {

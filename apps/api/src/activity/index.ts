@@ -28,7 +28,9 @@ export type ActivityType =
   | 'VOTING'
   | 'APPROVAL'
   | 'DOCUMENT'
-  | 'PASSIVE_CONSENSUS';
+  | 'PASSIVE_CONSENSUS'
+  | 'PROPOSAL_QUEUE'
+  | 'VOTING_RESOLUTION';
 
 export type Severity = 'info' | 'warning' | 'error' | 'critical';
 

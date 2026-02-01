@@ -331,6 +331,10 @@ async function bootstrap() {
     const governance = new GovernanceService(db, io);
     governance.setGovernanceOSBridge(governanceOSBridge);
     app.locals.governance = governance;
+    app.locals.proposalService = governance.proposals;
+
+    // Connect proposal service to scheduler for auto-progress and voting resolution
+    schedulerService.setProposalService(governance.proposals);
 
     // Initialize proof of outcome service
     const proofOfOutcome = new ProofOfOutcomeService(db, io);

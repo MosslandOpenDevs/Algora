@@ -94,6 +94,7 @@ function createSchema(db: Database.Database): void {
     CREATE INDEX IF NOT EXISTS idx_activity_log_type ON activity_log(type);
     CREATE INDEX IF NOT EXISTS idx_activity_log_type_time ON activity_log(type, timestamp DESC);
     CREATE INDEX IF NOT EXISTS idx_activity_log_agent ON activity_log(agent_id);
+    CREATE INDEX IF NOT EXISTS idx_activity_log_created_type ON activity_log(timestamp, type);
 
     CREATE TABLE IF NOT EXISTS disclosure_logs (
       id TEXT PRIMARY KEY,
@@ -147,6 +148,7 @@ function createSchema(db: Database.Database): void {
     CREATE INDEX IF NOT EXISTS idx_signals_created_at ON signals(created_at DESC);
     CREATE INDEX IF NOT EXISTS idx_signals_source ON signals(source);
     CREATE INDEX IF NOT EXISTS idx_signals_category_time ON signals(category, timestamp DESC);
+    CREATE INDEX IF NOT EXISTS idx_signals_source_collected ON signals(source, created_at DESC);
 
     CREATE TABLE IF NOT EXISTS issues (
       id TEXT PRIMARY KEY,
@@ -289,6 +291,7 @@ function createSchema(db: Database.Database): void {
     );
 
     CREATE INDEX IF NOT EXISTS idx_agora_messages_session ON agora_messages(session_id);
+    CREATE INDEX IF NOT EXISTS idx_agora_messages_session_time ON agora_messages(session_id, created_at);
 
     CREATE TABLE IF NOT EXISTS agora_decision_packets (
       id TEXT PRIMARY KEY,

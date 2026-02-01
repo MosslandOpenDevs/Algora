@@ -31,6 +31,8 @@ export class ChatterService {
   private intervalId: NodeJS.Timeout | null = null;
   private chatterInterval: number;
   private lastChatterAgent: string | null = null;
+  private recentChatterHashes: Set<string> = new Set();
+  private agentHourlyCount: Map<string, { count: number; resetAt: number }> = new Map();
 
   constructor(db: Database.Database, io: SocketServer) {
     this.db = db;
@@ -66,9 +68,36 @@ export class ChatterService {
       const agent = this.getRandomAgent();
       if (!agent) return;
 
+      // Check per-agent rate limit (max 2 per hour)
+      const now = Date.now();
+      const hourlyData = this.agentHourlyCount.get(agent.id);
+      if (hourlyData) {
+        if (now < hourlyData.resetAt) {
+          if (hourlyData.count >= 2) return; // Skip - rate limited
+        } else {
+          this.agentHourlyCount.set(agent.id, { count: 0, resetAt: now + 3600000 });
+        }
+      } else {
+        this.agentHourlyCount.set(agent.id, { count: 0, resetAt: now + 3600000 });
+      }
+
       // Generate chatter content
       const content = await this.generateContent(agent);
       if (!content) return;
+
+      // Duplicate filtering: check if similar content was recently generated
+      const contentHash = content.substring(0, 50).toLowerCase().replace(/[^a-z0-9]/g, '');
+      if (this.recentChatterHashes.has(contentHash)) return;
+      this.recentChatterHashes.add(contentHash);
+      // Keep only last 100 hashes
+      if (this.recentChatterHashes.size > 100) {
+        const first = this.recentChatterHashes.values().next().value;
+        if (first) this.recentChatterHashes.delete(first);
+      }
+
+      // Update rate counter
+      const currentData = this.agentHourlyCount.get(agent.id);
+      if (currentData) currentData.count++;
 
       // Save to database
       const message = this.saveChatter(agent, content);
@@ -183,6 +212,29 @@ CRITICAL LANGUAGE REQUIREMENT:
   }
 
   private buildChatterPrompt(_agent: Agent): string {
+    // Try to get recent context from signals or issues
+    let contextHint = '';
+    try {
+      const recentSignal = this.db.prepare(`
+        SELECT description, source, category FROM signals
+        ORDER BY timestamp DESC LIMIT 1
+      `).get() as { description: string; source: string; category: string } | undefined;
+
+      const recentIssue = this.db.prepare(`
+        SELECT title, category FROM issues
+        WHERE status IN ('detected', 'in_progress')
+        ORDER BY detected_at DESC LIMIT 1
+      `).get() as { title: string; category: string } | undefined;
+
+      if (recentSignal && Math.random() > 0.5) {
+        contextHint = `\n\nRecent signal (use as context if relevant to your expertise): "${recentSignal.description.substring(0, 100)}" from ${recentSignal.source}`;
+      } else if (recentIssue) {
+        contextHint = `\n\nRecent issue under discussion: "${recentIssue.title}" (category: ${recentIssue.category})`;
+      }
+    } catch {
+      // Ignore context errors
+    }
+
     const topics = [
       'recent market movements',
       'governance proposals',
@@ -196,7 +248,7 @@ CRITICAL LANGUAGE REQUIREMENT:
 
     const topic = topics[Math.floor(Math.random() * topics.length)];
 
-    return `Generate a single brief casual comment about ${topic}. Stay in character.`;
+    return `Generate a single brief casual comment about ${topic}. Stay in character.${contextHint}`;
   }
 
   private getGenericMessage(groupName: string): string {

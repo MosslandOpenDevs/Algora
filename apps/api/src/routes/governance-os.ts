@@ -1044,4 +1044,48 @@ router.post('/admin/backfill-proposals', async (req: Request, res: Response) => 
   }
 });
 
+/**
+ * POST /governance-os/admin/process-backlog
+ * Process the full backlog: backfill proposals, auto-progress stale drafts, resolve expired votings.
+ * This is a comprehensive endpoint to unstick the governance pipeline.
+ */
+router.post('/admin/process-backlog', async (req: Request, res: Response) => {
+  try {
+    const bridge = getBridge(req);
+    const proposalService = req.app.locals.proposalService;
+
+    const results: Record<string, unknown> = {};
+
+    // Step 1: Backfill missing proposals from completed Agora sessions
+    console.log('[GovernanceOS] Backlog: Step 1 - Backfilling missing proposals...');
+    const backfillResult = await bridge.backfillMissingProposals();
+    results.backfill = backfillResult;
+
+    // Step 2: Auto-progress stale draft proposals
+    if (proposalService) {
+      console.log('[GovernanceOS] Backlog: Step 2 - Auto-progressing stale proposals...');
+      const progressResult = proposalService.autoProgressProposals();
+      results.autoProgress = progressResult;
+
+      // Step 3: Resolve expired votings
+      console.log('[GovernanceOS] Backlog: Step 3 - Resolving expired votings...');
+      const votingResult = proposalService.resolveCompletedVotings();
+      results.votingResolution = votingResult;
+    }
+
+    return res.json({
+      success: true,
+      message: 'Backlog processing completed',
+      results,
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    console.error('[GovernanceOS] Process backlog error:', error);
+    return res.status(500).json({
+      error: 'Failed to process backlog',
+      message: error instanceof Error ? error.message : 'Unknown error',
+    });
+  }
+});
+
 export default router;
