@@ -115,7 +115,7 @@ export class RAGService {
     this.io = io;
     this.config = {
       embeddingModel: config?.embeddingModel || process.env.RAG_EMBEDDING_MODEL || 'nomic-embed-text',
-      embeddingEndpoint: config?.embeddingEndpoint || process.env.LOCAL_LLM_ENDPOINT || 'http://localhost:11434',
+      embeddingEndpoint: config?.embeddingEndpoint || process.env.LOCAL_LLM_ENDPOINT || 'http://100.81.60.60:11434',
       embeddingDimensions: config?.embeddingDimensions || 768, // nomic-embed-text default
       maxDocumentLength: config?.maxDocumentLength || 8192,
       defaultTopK: config?.defaultTopK || 5,

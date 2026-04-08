@@ -36,7 +36,7 @@ export interface RealLLMProviderConfig {
  * Default configuration.
  */
 export const DEFAULT_REAL_LLM_PROVIDER_CONFIG: RealLLMProviderConfig = {
-  ollamaDefaultModel: process.env.LOCAL_LLM_MODEL_CHATTER || 'llama3.2:8b',
+  ollamaDefaultModel: process.env.LOCAL_LLM_MODEL_CHATTER || 'qwen3.5:4b',
   anthropicDefaultModel: 'claude-sonnet-4-20250514',
   enableFallback: true,
   anthropicMinTokens: 0,
@@ -124,7 +124,7 @@ export class RealLLMProvider implements LLMProvider {
     tokenCount: number;
     costUsd: number;
   }> {
-    const model = this.config.ollamaDefaultModel || 'llama3.2:8b';
+    const model = this.config.ollamaDefaultModel || 'qwen3.5:4b';
     const result = await this.ollamaProvider.generate(model, options.prompt, {
       systemPrompt: options.systemPrompt,
       maxTokens: options.maxTokens,
@@ -295,7 +295,7 @@ export function createTier1LLMProvider(
   config?: Partial<RealLLMProviderConfig>
 ): RealLLMProvider {
   return new RealLLMProvider({
-    ollamaDefaultModel: process.env.LOCAL_LLM_MODEL_CHATTER || 'llama3.2:8b',
+    ollamaDefaultModel: process.env.LOCAL_LLM_MODEL_CHATTER || 'qwen3.5:4b',
     enableFallback: true,
     preferAnthropicForCritical: false,
     ...config,
@@ -310,7 +310,7 @@ export function createTier2LLMProvider(
   config?: Partial<RealLLMProviderConfig>
 ): RealLLMProvider {
   return new RealLLMProvider({
-    ollamaDefaultModel: process.env.LOCAL_LLM_MODEL_ENHANCED || 'qwen2.5:32b',
+    ollamaDefaultModel: process.env.LOCAL_LLM_MODEL_ENHANCED || 'gemma4:e4b',
     anthropicDefaultModel: 'claude-sonnet-4-20250514',
     enableFallback: true,
     preferAnthropicForCritical: true,

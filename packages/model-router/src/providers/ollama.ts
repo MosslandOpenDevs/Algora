@@ -83,7 +83,7 @@ interface OllamaModelsResponse {
  * Ollama provider configuration.
  */
 export interface OllamaProviderConfig {
-  /** Base URL for Ollama API (default: http://localhost:11434) */
+  /** Base URL for Ollama API (default: http://100.81.60.60:11434) */
   baseUrl: string;
   /** Request timeout in milliseconds (default: 120000) */
   timeout: number;
@@ -97,7 +97,7 @@ export interface OllamaProviderConfig {
  * Default Ollama configuration.
  */
 export const DEFAULT_OLLAMA_CONFIG: OllamaProviderConfig = {
-  baseUrl: process.env.LOCAL_LLM_ENDPOINT || 'http://localhost:11434',
+  baseUrl: process.env.LOCAL_LLM_ENDPOINT || 'http://100.81.60.60:11434',
   timeout: 120000,
   maxRetries: 3,
   keepAlive: '5m',
@@ -107,11 +107,10 @@ export const DEFAULT_OLLAMA_CONFIG: OllamaProviderConfig = {
  * Ollama LLM Provider implementation.
  *
  * Provides integration with local Ollama models for:
- * - Text generation (llama3.2, qwen2.5, phi4, mistral, etc.)
- * - Code generation (qwen2.5-coder, deepseek-coder)
- * - Vision (llama3.2-vision)
+ * - Text generation (qwen3.5, gemma4, etc.)
+ * - Code generation (qwen3.5, gemma4)
  * - Embeddings (nomic-embed-text, bge-m3, mxbai-embed-large)
- * - Korean (qwen2.5, exaone3.5)
+ * - Korean (qwen3.5)
  */
 export class OllamaProvider {
   private config: OllamaProviderConfig;
@@ -496,14 +495,13 @@ export class OllamaError extends Error {
  * These are documentation/helper commands for setting up local models.
  */
 export const OLLAMA_INSTALL_COMMANDS = {
-  // Core text models
-  chatter: ['ollama pull llama3.2:8b', 'ollama pull phi4:14b'],
-  debate: ['ollama pull qwen2.5:14b', 'ollama pull mistral-small-3:24b'],
-  coreDecision: ['ollama pull qwen2.5:32b', 'ollama pull qwen3:32b'],
-  coding: ['ollama pull qwen2.5-coder:32b', 'ollama pull deepseek-coder:33b'],
-  vision: ['ollama pull llama3.2-vision:11b'],
-  korean: ['ollama pull qwen2.5:32b', 'ollama pull exaone3.5:32b'],
-  fallback: ['ollama pull qwen2.5:72b-q4'],
+  // Core text models (installed on 100.81.60.60)
+  chatter: ['ollama pull qwen3.5:4b'],
+  debate: ['ollama pull qwen3.5:9b'],
+  coreDecision: ['ollama pull gemma4:e4b'],
+  coding: ['ollama pull gemma4:e4b'],
+  korean: ['ollama pull qwen3.5:9b'],
+  fallback: ['ollama pull gemma4:e4b'],
 
   // Embedding models
   embeddings: [
@@ -520,15 +518,9 @@ export const OLLAMA_INSTALL_COMMANDS = {
  * Hardware requirements from SPEC P.3.
  */
 export const OLLAMA_HARDWARE_REQUIREMENTS = {
-  'llama3.2:8b': { vram: '6GB', ram: '16GB' },
-  'phi4:14b': { vram: '10GB', ram: '24GB' },
-  'qwen2.5:14b': { vram: '10GB', ram: '24GB' },
-  'qwen2.5:32b': { vram: '22GB', ram: '48GB' },
-  'qwen2.5:72b-q4': { vram: '45GB', ram: '64GB' },
-  'qwen2.5-coder:32b': { vram: '22GB', ram: '48GB' },
-  'mistral-small-3:24b': { vram: '16GB', ram: '32GB' },
-  'llama3.2-vision:11b': { vram: '8GB', ram: '20GB' },
-  'exaone3.5:32b': { vram: '22GB', ram: '48GB' },
+  'qwen3.5:4b': { vram: '4GB', ram: '8GB' },
+  'qwen3.5:9b': { vram: '7GB', ram: '16GB' },
+  'gemma4:e4b': { vram: '8GB', ram: '16GB' },
 };
 
 /**

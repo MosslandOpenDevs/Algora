@@ -72,7 +72,7 @@ export interface ProviderConfig {
  */
 export const DEFAULT_PROVIDER_CONFIGS: Record<ModelProvider, Partial<ProviderConfig>> = {
   ollama: {
-    baseUrl: 'http://localhost:11434',
+    baseUrl: 'http://100.81.60.60:11434',
     timeout: 120000,
     maxRetries: 3,
   },
@@ -186,17 +186,17 @@ export interface TaskTypeMapping {
  * Default task type mappings based on the plan.
  */
 export const DEFAULT_TASK_TYPE_MAPPINGS: TaskTypeMapping[] = [
-  { taskType: 'scouting', primaryModel: 'llama3.2:8b', backupModel: 'phi4:14b', tier: 1, maxTokens: 1000 },
-  { taskType: 'debate', primaryModel: 'qwen2.5:14b', backupModel: 'mistral-small-3:24b', tier: 1, maxTokens: 2000 },
-  { taskType: 'core_decision', primaryModel: 'qwen2.5:32b', backupModel: 'qwen3:32b', tier: 1, maxTokens: 4000 },
-  { taskType: 'coding', primaryModel: 'qwen2.5-coder:32b', backupModel: 'deepseek-coder:33b', tier: 1, maxTokens: 4000 },
-  { taskType: 'vision', primaryModel: 'llama3.2-vision:11b', backupModel: 'qwen2-vl:7b', tier: 1, maxTokens: 2000 },
-  { taskType: 'korean', primaryModel: 'qwen2.5:32b', backupModel: 'exaone3.5:32b', tier: 1, maxTokens: 2000 },
+  { taskType: 'scouting', primaryModel: 'qwen3.5:4b', backupModel: 'qwen3.5:9b', tier: 1, maxTokens: 1000 },
+  { taskType: 'debate', primaryModel: 'qwen3.5:9b', backupModel: 'gemma4:e4b', tier: 1, maxTokens: 2000 },
+  { taskType: 'core_decision', primaryModel: 'gemma4:e4b', backupModel: 'qwen3.5:9b', tier: 1, maxTokens: 4000 },
+  { taskType: 'coding', primaryModel: 'gemma4:e4b', backupModel: 'qwen3.5:9b', tier: 1, maxTokens: 4000 },
+  { taskType: 'vision', primaryModel: 'gemma4:e4b', backupModel: 'qwen3.5:9b', tier: 1, maxTokens: 2000 },
+  { taskType: 'korean', primaryModel: 'qwen3.5:9b', backupModel: 'gemma4:e4b', tier: 1, maxTokens: 2000 },
   { taskType: 'complex_analysis', primaryModel: 'claude-sonnet-4-20250514', backupModel: 'gpt-4o', tier: 2, maxTokens: 8000 },
-  { taskType: 'chatter', primaryModel: 'llama3.2:8b', backupModel: 'phi4:14b', tier: 1, maxTokens: 500 },
-  { taskType: 'summarization', primaryModel: 'qwen2.5:14b', backupModel: 'llama3.2:8b', tier: 1, maxTokens: 1000 },
-  { taskType: 'translation', primaryModel: 'qwen2.5:32b', backupModel: 'exaone3.5:32b', tier: 1, maxTokens: 2000 },
-  { taskType: 'research', primaryModel: 'qwen2.5:32b', backupModel: 'mistral-small-3:24b', tier: 1, maxTokens: 3000 },
+  { taskType: 'chatter', primaryModel: 'qwen3.5:4b', backupModel: 'qwen3.5:9b', tier: 1, maxTokens: 500 },
+  { taskType: 'summarization', primaryModel: 'qwen3.5:9b', backupModel: 'qwen3.5:4b', tier: 1, maxTokens: 1000 },
+  { taskType: 'translation', primaryModel: 'qwen3.5:9b', backupModel: 'gemma4:e4b', tier: 1, maxTokens: 2000 },
+  { taskType: 'research', primaryModel: 'gemma4:e4b', backupModel: 'qwen3.5:9b', tier: 1, maxTokens: 3000 },
   { taskType: 'embedding', primaryModel: 'nomic-embed-text', backupModel: 'mxbai-embed-large', tier: 1, maxTokens: 8192 },
   { taskType: 'reranking', primaryModel: 'bge-reranker-v2-m3', backupModel: 'qwen3-reranker', tier: 1, maxTokens: 512 },
 ];
@@ -339,28 +339,28 @@ export interface ModelSelection {
  */
 export const DEFAULT_MODEL_SELECTIONS: Record<DifficultyLevel, Omit<ModelSelection, 'reasoning'>> = {
   trivial: {
-    primaryModel: 'llama3.2:8b',
-    fallbackModels: ['phi4:14b'],
+    primaryModel: 'qwen3.5:4b',
+    fallbackModels: ['qwen3.5:9b'],
     tier: 1,
     maxRetries: 2,
     qualityGate: { enabled: false, minConfidence: 0, requiresReview: false, escalateOnFailure: false },
   },
   simple: {
-    primaryModel: 'qwen2.5:14b',
-    fallbackModels: ['mistral-small-3:24b', 'llama3.2:8b'],
+    primaryModel: 'qwen3.5:9b',
+    fallbackModels: ['gemma4:e4b', 'qwen3.5:4b'],
     tier: 1,
     maxRetries: 2,
     qualityGate: { enabled: false, minConfidence: 0, requiresReview: false, escalateOnFailure: false },
   },
   moderate: {
-    primaryModel: 'qwen2.5:32b',
-    fallbackModels: ['mistral-small-3:24b'],
+    primaryModel: 'gemma4:e4b',
+    fallbackModels: ['qwen3.5:9b'],
     tier: 1,
     maxRetries: 3,
     qualityGate: { enabled: true, minConfidence: 70, requiresReview: false, escalateOnFailure: false },
   },
   complex: {
-    primaryModel: 'qwen2.5:32b',
+    primaryModel: 'gemma4:e4b',
     fallbackModels: ['claude-sonnet-4-20250514'],
     tier: 1,
     maxRetries: 3,
@@ -368,7 +368,7 @@ export const DEFAULT_MODEL_SELECTIONS: Record<DifficultyLevel, Omit<ModelSelecti
   },
   critical: {
     primaryModel: 'claude-sonnet-4-20250514',
-    fallbackModels: ['gpt-4o', 'qwen2.5:72b'],
+    fallbackModels: ['gpt-4o', 'gemma4:e4b'],
     tier: 2,
     maxRetries: 5,
     qualityGate: { enabled: true, minConfidence: 90, requiresReview: true, escalateOnFailure: true },
@@ -616,7 +616,7 @@ export interface ModelRouterConfig {
  */
 export const DEFAULT_MODEL_ROUTER_CONFIG: ModelRouterConfig = {
   providers: {
-    ollama: { provider: 'ollama', baseUrl: 'http://localhost:11434' },
+    ollama: { provider: 'ollama', baseUrl: 'http://100.81.60.60:11434' },
     anthropic: { provider: 'anthropic' },
     openai: { provider: 'openai' },
     google: { provider: 'google' },

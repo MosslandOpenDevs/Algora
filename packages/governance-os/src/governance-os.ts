@@ -112,7 +112,7 @@ export class GovernanceOS {
     const llmProvider = useMockLLM
       ? createMockLLMProvider()
       : createRealLLMProvider({
-          ollamaDefaultModel: process.env.LOCAL_LLM_MODEL_ENHANCED || 'qwen2.5:32b',
+          ollamaDefaultModel: process.env.LOCAL_LLM_MODEL_ENHANCED || 'gemma4:e4b',
           anthropicDefaultModel: 'claude-sonnet-4-20250514',
           enableFallback: true,
           preferAnthropicForCritical: true,
