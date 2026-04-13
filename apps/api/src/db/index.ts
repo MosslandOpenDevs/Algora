@@ -26,7 +26,7 @@ export function initDatabase(): Database.Database {
   return db;
 }
 
-function createSchema(db: Database.Database): void {
+export function createSchema(db: Database.Database): void {
   db.exec(`
     -- ========================================
     -- Budget & Scheduler

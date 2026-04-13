@@ -10,6 +10,7 @@ import type { WorkflowType } from '@algora/orchestrator';
 import type { DocumentType } from '@algora/document-registry';
 import { requireAuth, requireAdmin } from '../middleware/auth';
 import { writeLimiter, llmLimiter } from '../middleware/rate-limit';
+import type { SignatureService } from '../services/signature';
 
 const router: Router = Router();
 
@@ -292,8 +293,9 @@ router.get('/voting/:votingId', async (req: Request, res: Response) => {
 router.post('/voting/:votingId/vote', writeLimiter, requireAuth, async (req: Request, res: Response) => {
   try {
     const bridge = getBridge(req);
+    const signatureService: SignatureService | undefined = req.app.locals.signatureService;
     const { votingId } = req.params;
-    const { house, voterId, vote, weight } = req.body;
+    const { house, voterId, vote, weight, signature, nonce, issuedAt } = req.body;
 
     if (!house || !voterId || !vote) {
       return res.status(400).json({
@@ -313,6 +315,27 @@ router.post('/voting/:votingId/vote', writeLimiter, requireAuth, async (req: Req
       });
     }
 
+    // Signature verification parallels /api/proposals/:id/vote.
+    // - If a signature is provided, it must verify (always enforced).
+    // - If enforcement is on and no signature, reject.
+    // - If enforcement is off and no signature, allow (dev / pre-wallet).
+    if (signatureService) {
+      if (signature) {
+        if (!nonce || typeof issuedAt !== 'number') {
+          return res.status(400).json({ error: 'nonce and issuedAt required when signature is provided' });
+        }
+        const result = signatureService.verifyDualHouse(
+          { votingId, house, choice: vote, voter: voterId, nonce, issuedAt },
+          signature,
+        );
+        if (!result.ok) {
+          return res.status(401).json({ error: `Signature verification failed: ${result.reason}` });
+        }
+      } else if (signatureService.isEnforced()) {
+        return res.status(401).json({ error: 'Vote signature required. Include signature, nonce, issuedAt.' });
+      }
+    }
+
     await bridge.castVote({
       votingId,
       house,
@@ -329,6 +352,42 @@ router.post('/voting/:votingId/vote', writeLimiter, requireAuth, async (req: Req
       message: error instanceof Error ? error.message : 'Unknown error',
     });
   }
+});
+
+/**
+ * GET /governance-os/voting/:votingId/typed-data
+ * Returns EIP-712 typed-data for the frontend wallet to sign before POSTing
+ * the vote. Query params: voter, house, choice, nonce.
+ */
+router.get('/voting/:votingId/typed-data', (req: Request, res: Response) => {
+  const signatureService: SignatureService | undefined = req.app.locals.signatureService;
+  if (!signatureService) {
+    return res.status(503).json({ error: 'Signature service unavailable' });
+  }
+  const { votingId } = req.params;
+  const { voter, house, choice, nonce } = req.query;
+  if (
+    typeof voter !== 'string' ||
+    typeof house !== 'string' ||
+    typeof choice !== 'string' ||
+    typeof nonce !== 'string'
+  ) {
+    return res.status(400).json({ error: 'voter, house, choice, nonce query params required' });
+  }
+  if (!['mosscoin', 'opensource'].includes(house)) {
+    return res.status(400).json({ error: 'house must be "mosscoin" or "opensource"' });
+  }
+  if (!['for', 'against', 'abstain'].includes(choice)) {
+    return res.status(400).json({ error: 'choice must be "for", "against", or "abstain"' });
+  }
+  return res.json(signatureService.buildDualHouseTypedData({
+    votingId,
+    house: house as 'mosscoin' | 'opensource',
+    choice: choice as 'for' | 'against' | 'abstain',
+    voter,
+    nonce,
+    issuedAt: Math.floor(Date.now() / 1000),
+  }));
 });
 
 // ==========================================

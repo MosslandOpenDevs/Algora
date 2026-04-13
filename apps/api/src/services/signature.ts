@@ -35,6 +35,28 @@ const TYPES: Record<string, TypedDataField[]> = {
   ],
 };
 
+// Dual-house vote struct — distinct from the simple Vote so a signature
+// valid for one flow can't be replayed into the other.
+const DUAL_HOUSE_TYPES: Record<string, TypedDataField[]> = {
+  DualHouseVote: [
+    { name: 'votingId', type: 'string' },
+    { name: 'house', type: 'string' },
+    { name: 'choice', type: 'string' },
+    { name: 'voter', type: 'address' },
+    { name: 'nonce', type: 'string' },
+    { name: 'issuedAt', type: 'uint256' },
+  ],
+};
+
+export interface DualHouseSignaturePayload {
+  votingId: string;
+  house: 'mosscoin' | 'opensource';
+  choice: 'for' | 'against' | 'abstain';
+  voter: string;
+  nonce: string;
+  issuedAt: number;
+}
+
 const MAX_SKEW_MS = 5 * 60 * 1000; // 5 minutes either direction
 
 export class SignatureService {
@@ -77,10 +99,47 @@ export class SignatureService {
     return { domain: DOMAIN, types: TYPES, primaryType: 'Vote', message: payload };
   }
 
+  buildDualHouseTypedData(payload: DualHouseSignaturePayload): {
+    domain: TypedDataDomain;
+    types: Record<string, TypedDataField[]>;
+    primaryType: string;
+    message: DualHouseSignaturePayload;
+  } {
+    return {
+      domain: DOMAIN,
+      types: DUAL_HOUSE_TYPES,
+      primaryType: 'DualHouseVote',
+      message: payload,
+    };
+  }
+
   verify(payload: VoteSignaturePayload, signature: string): VerifyResult {
+    return this.verifyGeneric(TYPES, payload as unknown as Record<string, unknown>, signature, {
+      voter: payload.voter,
+      nonce: payload.nonce,
+      issuedAt: payload.issuedAt,
+      subject: payload.proposalId,
+    });
+  }
+
+  verifyDualHouse(payload: DualHouseSignaturePayload, signature: string): VerifyResult {
+    return this.verifyGeneric(DUAL_HOUSE_TYPES, payload as unknown as Record<string, unknown>, signature, {
+      voter: payload.voter,
+      nonce: payload.nonce,
+      issuedAt: payload.issuedAt,
+      subject: payload.votingId,
+    });
+  }
+
+  private verifyGeneric(
+    types: Record<string, TypedDataField[]>,
+    payload: Record<string, unknown>,
+    signature: string,
+    meta: { voter: string; nonce: string; issuedAt: number; subject: string },
+  ): VerifyResult {
     try {
-      const recovered = ethers.verifyTypedData(DOMAIN, TYPES, payload, signature);
-      if (recovered.toLowerCase() !== payload.voter.toLowerCase()) {
+      const recovered = ethers.verifyTypedData(DOMAIN, types, payload, signature);
+      if (recovered.toLowerCase() !== meta.voter.toLowerCase()) {
         return { ok: false, reason: 'signer does not match voter' };
       }
     } catch (err) {
@@ -88,22 +147,20 @@ export class SignatureService {
     }
 
     const now = Date.now();
-    const issuedMs = payload.issuedAt * 1000;
-    if (Math.abs(now - issuedMs) > MAX_SKEW_MS) {
+    if (Math.abs(now - meta.issuedAt * 1000) > MAX_SKEW_MS) {
       return { ok: false, reason: 'signature expired or clock skewed' };
     }
 
-    // Replay protection — nonce must be unique per voter.
     const existing = this.db.prepare(
       'SELECT nonce FROM vote_nonces WHERE nonce = ?'
-    ).get(payload.nonce);
+    ).get(meta.nonce);
     if (existing) {
       return { ok: false, reason: 'nonce already used' };
     }
 
     this.db.prepare(
       'INSERT INTO vote_nonces (nonce, voter, proposal_id, used_at) VALUES (?, ?, ?, ?)'
-    ).run(payload.nonce, payload.voter.toLowerCase(), payload.proposalId, new Date().toISOString());
+    ).run(meta.nonce, meta.voter.toLowerCase(), meta.subject, new Date().toISOString());
 
     return { ok: true };
   }
