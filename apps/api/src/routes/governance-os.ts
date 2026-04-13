@@ -8,6 +8,8 @@ import type { GovernanceOSBridge } from '../services/governance-os-bridge';
 import type { RiskLevel } from '@algora/safe-autonomy';
 import type { WorkflowType } from '@algora/orchestrator';
 import type { DocumentType } from '@algora/document-registry';
+import { requireAuth, requireAdmin } from '../middleware/auth';
+import { writeLimiter, llmLimiter } from '../middleware/rate-limit';
 
 const router: Router = Router();
 
@@ -24,7 +26,7 @@ function getBridge(req: Request): GovernanceOSBridge {
  * POST /governance-os/pipeline/run
  * Run a governance pipeline for an issue
  */
-router.post('/pipeline/run', async (req: Request, res: Response) => {
+router.post('/pipeline/run', writeLimiter, requireAdmin, async (req: Request, res: Response) => {
   try {
     const bridge = getBridge(req);
     const { issueId, workflowType, riskLevel } = req.body;
@@ -116,7 +118,7 @@ router.get('/documents', async (req: Request, res: Response) => {
  * POST /governance-os/documents
  * Create a document from a proposal
  */
-router.post('/documents', async (req: Request, res: Response) => {
+router.post('/documents', requireAuth, async (req: Request, res: Response) => {
   try {
     const bridge = getBridge(req);
     const { proposalId, documentType } = req.body;
@@ -230,7 +232,7 @@ router.get('/voting', async (req: Request, res: Response) => {
  * POST /governance-os/voting
  * Create a dual-house voting session
  */
-router.post('/voting', async (req: Request, res: Response) => {
+router.post('/voting', requireAuth, async (req: Request, res: Response) => {
   try {
     const bridge = getBridge(req);
     const { proposalId, title, summary, riskLevel, category, createdBy } = req.body;
@@ -287,7 +289,7 @@ router.get('/voting/:votingId', async (req: Request, res: Response) => {
  * POST /governance-os/voting/:votingId/vote
  * Cast a vote in dual-house voting
  */
-router.post('/voting/:votingId/vote', async (req: Request, res: Response) => {
+router.post('/voting/:votingId/vote', writeLimiter, requireAuth, async (req: Request, res: Response) => {
   try {
     const bridge = getBridge(req);
     const { votingId } = req.params;
@@ -390,7 +392,7 @@ router.get('/approvals/:approvalId', async (req: Request, res: Response) => {
  * POST /governance-os/approvals
  * Create a high-risk approval request
  */
-router.post('/approvals', async (req: Request, res: Response) => {
+router.post('/approvals', requireAuth, async (req: Request, res: Response) => {
   try {
     const bridge = getBridge(req);
     const { proposalId, votingId, actionDescription, actionType } = req.body;
@@ -422,7 +424,7 @@ router.post('/approvals', async (req: Request, res: Response) => {
  * POST /governance-os/approvals/:approvalId/approve
  * Approve a high-risk action (Director 3)
  */
-router.post('/approvals/:approvalId/approve', async (req: Request, res: Response) => {
+router.post('/approvals/:approvalId/approve', requireAdmin, async (req: Request, res: Response) => {
   try {
     const bridge = getBridge(req);
     const { approvalId } = req.params;
@@ -502,7 +504,7 @@ router.get('/locks/:actionId', async (req: Request, res: Response) => {
  * POST /governance-os/model-router/execute
  * Execute a task using the model router
  */
-router.post('/model-router/execute', async (req: Request, res: Response) => {
+router.post('/model-router/execute', llmLimiter, requireAdmin, async (req: Request, res: Response) => {
   try {
     const bridge = getBridge(req);
     const { content, taskType, maxTokens } = req.body;
@@ -888,7 +890,7 @@ router.get('/kpi/export', (req: Request, res: Response) => {
  * POST /governance-os/translate
  * Translate text to Korean
  */
-router.post('/translate', async (req: Request, res: Response) => {
+router.post('/translate', llmLimiter, requireAuth, async (req: Request, res: Response) => {
   try {
     const { text, targetLanguage = 'ko' } = req.body;
 
@@ -938,7 +940,7 @@ router.post('/translate', async (req: Request, res: Response) => {
  * POST /governance-os/translate/batch
  * Translate multiple texts to Korean (for batch translation)
  */
-router.post('/translate/batch', async (req: Request, res: Response) => {
+router.post('/translate/batch', llmLimiter, requireAuth, async (req: Request, res: Response) => {
   try {
     const { texts, targetLanguage = 'ko' } = req.body;
 
@@ -1022,7 +1024,7 @@ router.post('/translate/batch', async (req: Request, res: Response) => {
  * - Issue priority is 'high' or 'critical'
  * - No existing proposal for this issue
  */
-router.post('/admin/backfill-proposals', async (req: Request, res: Response) => {
+router.post('/admin/backfill-proposals', requireAdmin, async (req: Request, res: Response) => {
   try {
     const bridge = getBridge(req);
 
@@ -1049,7 +1051,7 @@ router.post('/admin/backfill-proposals', async (req: Request, res: Response) => 
  * Process the full backlog: backfill proposals, auto-progress stale drafts, resolve expired votings.
  * This is a comprehensive endpoint to unstick the governance pipeline.
  */
-router.post('/admin/process-backlog', async (req: Request, res: Response) => {
+router.post('/admin/process-backlog', requireAdmin, async (req: Request, res: Response) => {
   try {
     const bridge = getBridge(req);
     const proposalService = req.app.locals.proposalService;

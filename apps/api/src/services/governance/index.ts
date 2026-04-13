@@ -4,21 +4,25 @@ import { ProposalService } from './proposal';
 import { VotingService } from './voting';
 import { DecisionPacketService } from './decision-packet';
 import type { GovernanceOSBridge } from '../governance-os-bridge';
+import { AuditService } from '../audit';
 
 export class GovernanceService {
   public readonly proposals: ProposalService;
   public readonly voting: VotingService;
   public readonly decisionPackets: DecisionPacketService;
+  public readonly audit: AuditService;
   private io: SocketServer;
   private governanceOSBridge: GovernanceOSBridge | null = null;
 
   constructor(db: Database.Database, io: SocketServer) {
     this.io = io;
+    this.audit = new AuditService(db);
     this.proposals = new ProposalService(db, io);
     this.voting = new VotingService(db, io);
+    this.voting.setAuditService(this.audit);
     this.decisionPackets = new DecisionPacketService(db, io);
 
-    console.log('[Governance] Service initialized');
+    console.log('[Governance] Service initialized (audit chain enabled)');
   }
 
   /**

@@ -1,5 +1,8 @@
 import { Router } from 'express';
 import type { GovernanceService } from '../services/governance';
+import type { SignatureService } from '../services/signature';
+import { requireAuth, requireAdmin } from '../middleware/auth';
+import { writeLimiter, llmLimiter } from '../middleware/rate-limit';
 
 export const proposalsRouter: Router = Router();
 
@@ -74,7 +77,7 @@ proposalsRouter.get('/:id', async (req, res) => {
 });
 
 // POST /api/proposals - Create proposal
-proposalsRouter.post('/', (req, res) => {
+proposalsRouter.post('/', writeLimiter, requireAuth, (req, res) => {
   const governance: GovernanceService = req.app.locals.governance;
   const {
     title,
@@ -124,7 +127,7 @@ proposalsRouter.post('/', (req, res) => {
 });
 
 // POST /api/proposals/from-issue/:issueId - Create proposal from issue
-proposalsRouter.post('/from-issue/:issueId', (req, res) => {
+proposalsRouter.post('/from-issue/:issueId', writeLimiter, requireAuth, (req, res) => {
   const governance: GovernanceService = req.app.locals.governance;
   const { issueId } = req.params;
   const { proposer } = req.body;
@@ -148,7 +151,7 @@ proposalsRouter.post('/from-issue/:issueId', (req, res) => {
 // ========================================
 
 // POST /api/proposals/:id/submit - Submit for review
-proposalsRouter.post('/:id/submit', (req, res) => {
+proposalsRouter.post('/:id/submit', requireAuth, (req, res) => {
   const governance: GovernanceService = req.app.locals.governance;
   const { id } = req.params;
   const { submittedBy } = req.body;
@@ -163,7 +166,7 @@ proposalsRouter.post('/:id/submit', (req, res) => {
 });
 
 // POST /api/proposals/:id/start-discussion - Start discussion phase
-proposalsRouter.post('/:id/start-discussion', (req, res) => {
+proposalsRouter.post('/:id/start-discussion', requireAdmin, (req, res) => {
   const governance: GovernanceService = req.app.locals.governance;
   const { id } = req.params;
   const { approvedBy } = req.body;
@@ -178,7 +181,7 @@ proposalsRouter.post('/:id/start-discussion', (req, res) => {
 });
 
 // POST /api/proposals/:id/start-voting - Start voting period
-proposalsRouter.post('/:id/start-voting', (req, res) => {
+proposalsRouter.post('/:id/start-voting', requireAdmin, (req, res) => {
   const governance: GovernanceService = req.app.locals.governance;
   const { id } = req.params;
 
@@ -192,7 +195,7 @@ proposalsRouter.post('/:id/start-voting', (req, res) => {
 });
 
 // POST /api/proposals/:id/cancel - Cancel proposal
-proposalsRouter.post('/:id/cancel', (req, res) => {
+proposalsRouter.post('/:id/cancel', requireAuth, (req, res) => {
   const governance: GovernanceService = req.app.locals.governance;
   const { id } = req.params;
   const { cancelledBy, reason } = req.body;
@@ -211,10 +214,11 @@ proposalsRouter.post('/:id/cancel', (req, res) => {
 // ========================================
 
 // POST /api/proposals/:id/vote - Cast vote
-proposalsRouter.post('/:id/vote', (req, res) => {
+proposalsRouter.post('/:id/vote', writeLimiter, requireAuth, (req, res) => {
   const governance: GovernanceService = req.app.locals.governance;
+  const signatureService: SignatureService | undefined = req.app.locals.signatureService;
   const { id } = req.params;
-  const { voter, voterType = 'human', choice, reason } = req.body;
+  const { voter, voterType = 'human', choice, reason, signature, nonce, issuedAt } = req.body;
 
   if (!voter || !choice) {
     res.status(400).json({ error: 'voter and choice are required' });
@@ -226,6 +230,30 @@ proposalsRouter.post('/:id/vote', (req, res) => {
     return;
   }
 
+  // EIP-712 verification layer.
+  // - If a signature is provided, it must verify (always enforced once present).
+  // - If enforcement is on and no signature, reject.
+  // - If enforcement is off and no signature, allow (dev / agent votes).
+  if (signatureService) {
+    if (signature) {
+      if (!nonce || typeof issuedAt !== 'number') {
+        res.status(400).json({ error: 'nonce and issuedAt required when signature is provided' });
+        return;
+      }
+      const result = signatureService.verify(
+        { proposalId: id, choice, voter, nonce, issuedAt },
+        signature
+      );
+      if (!result.ok) {
+        res.status(401).json({ error: `Signature verification failed: ${result.reason}` });
+        return;
+      }
+    } else if (signatureService.isEnforced() && voterType === 'human') {
+      res.status(401).json({ error: 'Vote signature required. Include signature, nonce, issuedAt.' });
+      return;
+    }
+  }
+
   try {
     const vote = governance.voting.castVote(id, voter, voterType, choice, reason);
     const tally = governance.voting.calculateTally(id);
@@ -234,6 +262,34 @@ proposalsRouter.post('/:id/vote', (req, res) => {
     console.error('Failed to cast vote:', error);
     res.status(400).json({ error: error.message || 'Failed to cast vote' });
   }
+});
+
+// GET /api/proposals/:id/vote/typed-data - Return EIP-712 typed data to sign.
+// Frontend calls this, signs the result with the wallet, then POSTs /vote.
+proposalsRouter.get('/:id/vote/typed-data', (req, res) => {
+  const signatureService: SignatureService | undefined = req.app.locals.signatureService;
+  if (!signatureService) {
+    res.status(503).json({ error: 'Signature service unavailable' });
+    return;
+  }
+  const { id } = req.params;
+  const { voter, choice, nonce } = req.query;
+  if (typeof voter !== 'string' || typeof choice !== 'string' || typeof nonce !== 'string') {
+    res.status(400).json({ error: 'voter, choice, nonce query params required' });
+    return;
+  }
+  if (!['for', 'against', 'abstain'].includes(choice)) {
+    res.status(400).json({ error: 'choice must be "for", "against", or "abstain"' });
+    return;
+  }
+  const issuedAt = Math.floor(Date.now() / 1000);
+  res.json(signatureService.buildTypedData({
+    proposalId: id,
+    choice: choice as 'for' | 'against' | 'abstain',
+    voter,
+    nonce,
+    issuedAt,
+  }));
 });
 
 // GET /api/proposals/:id/votes - Get votes for proposal
@@ -252,7 +308,7 @@ proposalsRouter.get('/:id/votes', (req, res) => {
 });
 
 // POST /api/proposals/:id/finalize - Finalize voting
-proposalsRouter.post('/:id/finalize', (req, res) => {
+proposalsRouter.post('/:id/finalize', requireAdmin, (req, res) => {
   const governance: GovernanceService = req.app.locals.governance;
   const { id } = req.params;
 
@@ -271,7 +327,7 @@ proposalsRouter.post('/:id/finalize', (req, res) => {
 // ========================================
 
 // POST /api/proposals/:id/comments - Add comment
-proposalsRouter.post('/:id/comments', (req, res) => {
+proposalsRouter.post('/:id/comments', writeLimiter, requireAuth, (req, res) => {
   const governance: GovernanceService = req.app.locals.governance;
   const { id } = req.params;
   const { authorId, authorType = 'human', content, parentId } = req.body;
@@ -305,7 +361,7 @@ proposalsRouter.get('/:id/comments', (req, res) => {
 });
 
 // POST /api/proposals/:id/endorse - Add agent endorsement
-proposalsRouter.post('/:id/endorse', (req, res) => {
+proposalsRouter.post('/:id/endorse', requireAuth, (req, res) => {
   const governance: GovernanceService = req.app.locals.governance;
   const { id } = req.params;
   const { agentId, stance, confidence = 0.5, reasoning } = req.body;
@@ -381,7 +437,7 @@ proposalsRouter.get('/:id/decision-packet', (req, res) => {
 });
 
 // POST /api/proposals/:id/decision-packet/generate - Generate decision packet
-proposalsRouter.post('/:id/decision-packet/generate', async (req, res) => {
+proposalsRouter.post('/:id/decision-packet/generate', llmLimiter, requireAdmin, async (req, res) => {
   const governance: GovernanceService = req.app.locals.governance;
   const { id } = req.params;
   const { requestedBy = 'anonymous' } = req.body;
@@ -414,7 +470,7 @@ proposalsRouter.get('/:id/decision-packet/versions', (req, res) => {
 // ========================================
 
 // POST /api/proposals/delegation - Create delegation
-proposalsRouter.post('/delegation', (req, res) => {
+proposalsRouter.post('/delegation', requireAuth, (req, res) => {
   const governance: GovernanceService = req.app.locals.governance;
   const { delegator, delegate, categories, expiresAt } = req.body;
 
@@ -433,7 +489,7 @@ proposalsRouter.post('/delegation', (req, res) => {
 });
 
 // DELETE /api/proposals/delegation/:id - Revoke delegation
-proposalsRouter.delete('/delegation/:id', (req, res) => {
+proposalsRouter.delete('/delegation/:id', requireAuth, (req, res) => {
   const governance: GovernanceService = req.app.locals.governance;
   const { id } = req.params;
 

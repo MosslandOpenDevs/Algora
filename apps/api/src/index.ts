@@ -6,7 +6,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
 
-import { cacheMiddleware } from './middleware';
+import { cacheMiddleware, globalLimiter } from './middleware';
 
 import { initDatabase } from './db';
 import { setupRoutes } from './routes';
@@ -27,6 +27,7 @@ import { ReportGeneratorService } from './services/report-generator';
 import { PassiveConsensusService } from './services/passive-consensus';
 import { RAGService } from './services/rag-service';
 import { QualityGateService } from './services/quality-gate-service';
+import { SignatureService } from './services/signature';
 
 const PORT = process.env.PORT || 3201;
 const NODE_ENV = process.env.NODE_ENV || 'development';
@@ -46,7 +47,17 @@ const io = new SocketServer(httpServer, {
 });
 
 // Middleware
-app.use(helmet({ contentSecurityPolicy: false }));
+// Helmet security headers. CSP stays off for the JSON API (no inline HTML
+// served here; the Next.js app owns its own CSP), but we enable HSTS in
+// production and standard defaults everywhere.
+app.use(helmet({
+  contentSecurityPolicy: false,
+  crossOriginResourcePolicy: { policy: 'cross-origin' }, // allow Next.js dev server to fetch
+  hsts: NODE_ENV === 'production'
+    ? { maxAge: 31536000, includeSubDomains: true, preload: true }
+    : false,
+  referrerPolicy: { policy: 'no-referrer' },
+}));
 app.use(cors({
   origin: NODE_ENV === 'development'
     ? ['http://localhost:3200', 'http://127.0.0.1:3200']
@@ -96,11 +107,61 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '1mb' }));
+app.use(express.urlencoded({ extended: true, limit: '1mb' }));
+
+// Trust proxy (nginx/pm2) so rate limiter uses real client IP
+app.set('trust proxy', 1);
+
+// Global rate limit (applies to all routes registered below).
+// 300 req/min is generous for the dashboard; writes layer stricter limits.
+app.use(globalLimiter);
 
 // Server start time for uptime calculation
 const serverStartTime = Date.now();
+
+// Budget guard — hard stop for Tier 2 LLM calls when daily spend exceeds
+// the per-provider limit. Cached for 10s to avoid a DB round-trip per request.
+function setupBudgetGuard(db: ReturnType<typeof initDatabase>): void {
+  type CacheEntry = { allowed: boolean; expiresAt: number };
+  const cache = new Map<string, CacheEntry>();
+  const TTL_MS = 10_000;
+
+  llmService.setBudgetChecker((provider) => {
+    const now = Date.now();
+    const cached = cache.get(provider);
+    if (cached && cached.expiresAt > now) return cached.allowed;
+
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const config = db.prepare(
+        'SELECT daily_budget_usd, enabled FROM budget_config WHERE provider = ?'
+      ).get(provider) as { daily_budget_usd: number; enabled: number } | undefined;
+
+      // No config, or disabled → deny (fail-safe)
+      if (!config || !config.enabled) {
+        cache.set(provider, { allowed: false, expiresAt: now + TTL_MS });
+        return false;
+      }
+
+      const usage = db.prepare(
+        'SELECT SUM(estimated_cost_usd) as spent FROM budget_usage WHERE provider = ? AND date = ?'
+      ).get(provider, today) as { spent: number | null } | undefined;
+
+      const spent = usage?.spent ?? 0;
+      const allowed = spent < config.daily_budget_usd;
+      if (!allowed) {
+        console.warn(`[Budget] Hard stop: ${provider} spent $${spent.toFixed(4)} >= $${config.daily_budget_usd}`);
+      }
+      cache.set(provider, { allowed, expiresAt: now + TTL_MS });
+      return allowed;
+    } catch (err) {
+      console.error('[Budget] Guard query failed, denying:', err);
+      return false;
+    }
+  });
+  console.info('[Budget] Hard-stop guard installed for Tier 2 providers');
+}
 
 // LLM Cost Tracking - records all LLM generation events to budget_usage table
 function setupLLMCostTracking(db: ReturnType<typeof initDatabase>): void {
@@ -275,6 +336,10 @@ async function bootstrap() {
     // Setup LLM cost tracking - record all generation events to budget_usage
     setupLLMCostTracking(db);
 
+    // Install budget hard-stop guard — must run after DB init, before routes
+    // so the first Tier 2 call can't bypass it.
+    setupBudgetGuard(db);
+
     // Setup routes
     setupRoutes(app);
 
@@ -369,6 +434,14 @@ async function bootstrap() {
     const qualityGateService = new QualityGateService(db, io);
     app.locals.qualityGateService = qualityGateService;
     console.info('[QualityGate] Service initialized - LLM output validation active');
+
+    // Initialize Signature service — EIP-712 verification for votes.
+    // Enforcement is opt-in via env var; default off so the pre-wallet
+    // frontend keeps working, but signed votes are always verified.
+    const sigEnforced = process.env.REQUIRE_VOTE_SIGNATURE === 'true';
+    const signatureService = new SignatureService(db, sigEnforced);
+    app.locals.signatureService = signatureService;
+    console.info(`[Signature] Service initialized (enforced=${sigEnforced})`);
 
     // Log LLM availability
     console.info(`[LLM] Tier 1 (Ollama): ${llmService.isTier1Available() ? 'Available' : 'Not Available'}`);

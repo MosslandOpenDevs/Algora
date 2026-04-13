@@ -268,11 +268,18 @@ export class DataRetentionService {
       'votes',
       'budget_usage',
       'scheduler_tasks',
-    ];
+    ] as const;
 
     const sizes: Record<string, number> = {};
+    const IDENTIFIER_RE = /^[a-z_][a-z0-9_]*$/;
 
     for (const table of tables) {
+      // Defense-in-depth: table names cannot be parameterized in SQLite,
+      // so validate against a strict identifier pattern before interpolation.
+      if (!IDENTIFIER_RE.test(table)) {
+        sizes[table] = -1;
+        continue;
+      }
       try {
         const result = this.db.prepare(`SELECT COUNT(*) as count FROM ${table}`).get() as { count: number };
         sizes[table] = result.count;

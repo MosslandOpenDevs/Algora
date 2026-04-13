@@ -60,9 +60,19 @@ interface QueuedRequest {
   reject: (error: Error) => void;
 }
 
+export class BudgetExceededError extends Error {
+  constructor(public readonly provider: string) {
+    super(`Daily budget exceeded for ${provider}`);
+    this.name = 'BudgetExceededError';
+  }
+}
+
+export type BudgetChecker = (provider: 'anthropic' | 'openai' | 'google') => boolean;
+
 export class LLMService extends EventEmitter {
   private config: LLMConfig;
   private tier1Available: boolean = false;
+  private budgetChecker: BudgetChecker | null = null;
 
   // Thermal throttling state
   private thermalConfig: ThermalThrottleConfig;
@@ -316,34 +326,53 @@ export class LLMService extends EventEmitter {
 
   private async generateTier2(request: LLMRequest): Promise<LLMResponse> {
     const startTime = Date.now();
+    const budgetExceeded: string[] = [];
 
     // Try Anthropic first
     if (this.config.tier2.anthropic) {
-      try {
-        return await this.generateAnthropic(request, startTime);
-      } catch (error) {
-        console.warn('[LLM] Anthropic failed, trying next provider');
+      if (!this.checkBudget('anthropic')) {
+        budgetExceeded.push('anthropic');
+        this.emit('budget:exceeded', { provider: 'anthropic' });
+      } else {
+        try {
+          return await this.generateAnthropic(request, startTime);
+        } catch (error) {
+          console.warn('[LLM] Anthropic failed, trying next provider');
+        }
       }
     }
 
     // Try OpenAI
     if (this.config.tier2.openai) {
-      try {
-        return await this.generateOpenAI(request, startTime);
-      } catch (error) {
-        console.warn('[LLM] OpenAI failed, trying next provider');
+      if (!this.checkBudget('openai')) {
+        budgetExceeded.push('openai');
+        this.emit('budget:exceeded', { provider: 'openai' });
+      } else {
+        try {
+          return await this.generateOpenAI(request, startTime);
+        } catch (error) {
+          console.warn('[LLM] OpenAI failed, trying next provider');
+        }
       }
     }
 
     // Try Gemini
     if (this.config.tier2.gemini) {
-      try {
-        return await this.generateGemini(request, startTime);
-      } catch (error) {
-        console.warn('[LLM] Gemini failed');
+      if (!this.checkBudget('google')) {
+        budgetExceeded.push('google');
+        this.emit('budget:exceeded', { provider: 'google' });
+      } else {
+        try {
+          return await this.generateGemini(request, startTime);
+        } catch (error) {
+          console.warn('[LLM] Gemini failed');
+        }
       }
     }
 
+    if (budgetExceeded.length > 0) {
+      throw new BudgetExceededError(budgetExceeded.join(','));
+    }
     throw new Error('All Tier 2 providers failed or not configured');
   }
 
@@ -495,6 +524,25 @@ export class LLMService extends EventEmitter {
       tokensUsed: data.usageMetadata?.candidatesTokenCount,
       latencyMs: Date.now() - startTime,
     };
+  }
+
+  /**
+   * Register a budget gate. Called before each Tier 2 provider call;
+   * if the checker returns false the provider is skipped. This is the
+   * hard stop for ANTHROPIC_DAILY_BUDGET_USD enforcement.
+   */
+  setBudgetChecker(checker: BudgetChecker): void {
+    this.budgetChecker = checker;
+  }
+
+  private checkBudget(provider: 'anthropic' | 'openai' | 'google'): boolean {
+    if (!this.budgetChecker) return true;
+    try {
+      return this.budgetChecker(provider);
+    } catch (err) {
+      console.error('[LLM] Budget checker threw, denying call:', err);
+      return false;
+    }
   }
 
   isTier1Available(): boolean {

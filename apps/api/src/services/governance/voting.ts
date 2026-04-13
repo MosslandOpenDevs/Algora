@@ -1,6 +1,7 @@
 import type Database from 'better-sqlite3';
 import { Server as SocketServer } from 'socket.io';
 import { v4 as uuidv4 } from 'uuid';
+import type { AuditService } from '../audit';
 
 export type VoteChoice = 'for' | 'against' | 'abstain';
 
@@ -40,6 +41,7 @@ export interface Delegation {
 export class VotingService {
   private db: Database.Database;
   private io: SocketServer;
+  private audit: AuditService | null = null;
 
   // Default governance parameters
   private readonly DEFAULT_QUORUM = 0.1; // 10% of total weight
@@ -49,6 +51,10 @@ export class VotingService {
     this.db = db;
     this.io = io;
     this.initializeTables();
+  }
+
+  setAuditService(audit: AuditService): void {
+    this.audit = audit;
   }
 
   private initializeTables(): void {
@@ -133,6 +139,12 @@ export class VotingService {
 
     this.io.emit('vote:cast', { proposalId, vote, tally });
     this.logActivity('VOTE_CAST', 'info', `Vote cast on proposal`, { proposalId, voter, choice });
+    this.audit?.append({
+      type: 'VOTE_CAST',
+      actor: voter,
+      subjectId: proposalId,
+      payload: { voteId, choice, weight, reason: reason ?? null },
+    });
 
     // Check if voting should be finalized
     this.checkAutoFinalize(proposalId, proposal);
@@ -282,6 +294,12 @@ export class VotingService {
       outcome: tally.outcome,
       tally,
     });
+    this.audit?.append({
+      type: 'PROPOSAL_FINALIZED',
+      actor: 'system',
+      subjectId: proposalId,
+      payload: { status: newStatus, tally },
+    });
 
     return tally;
   }
@@ -312,13 +330,28 @@ export class VotingService {
       delegate,
       weight,
     });
+    this.audit?.append({
+      type: 'DELEGATION_CREATED',
+      actor: delegator,
+      subjectId: id,
+      payload: { delegate, categories: categories ?? null, weight, expiresAt: expiresAt ?? null },
+    });
 
     return delegation;
   }
 
   revokeDelegation(delegationId: string): void {
+    const existing = this.db.prepare(
+      'SELECT delegator, delegate FROM delegations WHERE id = ?'
+    ).get(delegationId) as { delegator?: string; delegate?: string } | undefined;
     this.db.prepare('UPDATE delegations SET is_active = 0 WHERE id = ?').run(delegationId);
     this.io.emit('delegation:revoked', { delegationId });
+    this.audit?.append({
+      type: 'DELEGATION_REVOKED',
+      actor: existing?.delegator ?? 'unknown',
+      subjectId: delegationId,
+      payload: { delegate: existing?.delegate ?? null },
+    });
   }
 
   getDelegations(address: string): { delegatedTo: Delegation[]; delegatedFrom: Delegation[] } {
