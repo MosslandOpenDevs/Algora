@@ -7,6 +7,8 @@ import helmet from 'helmet';
 import compression from 'compression';
 
 import { cacheMiddleware, globalLimiter } from './middleware';
+import { pinoHttp } from 'pino-http';
+import { logger } from './logger';
 
 import { initDatabase } from './db';
 import { setupRoutes } from './routes';
@@ -88,26 +90,32 @@ app.use(compression({
 // HTTP Caching Headers - reduces redundant requests by 40%
 app.use(cacheMiddleware);
 
-// Server-Timing header for performance diagnostics
-// View in Chrome DevTools Network tab -> Timing section
+// Structured request logging via pino-http. Adds a correlation id, logs
+// method/status/latency, and warns on slow requests (>500ms). Also still
+// emits the Server-Timing header for DevTools.
+app.use(pinoHttp({
+  logger,
+  customLogLevel: (_req, res, err) => {
+    if (err || res.statusCode >= 500) return 'error';
+    if (res.statusCode >= 400) return 'warn';
+    return 'info';
+  },
+  customSuccessMessage: (req, res) => `${req.method} ${res.statusCode}`,
+  customErrorMessage: (req, res) => `${req.method} ${res.statusCode}`,
+  serializers: {
+    req: (req) => ({ method: req.method, url: req.url, id: req.id }),
+    res: (res) => ({ statusCode: res.statusCode }),
+  },
+}));
 app.use((req, res, next) => {
   const start = process.hrtime.bigint();
-  res.on('finish', () => {
-    const end = process.hrtime.bigint();
-    const durationMs = Number(end - start) / 1_000_000;
-    // Log slow requests (> 500ms)
-    if (durationMs > 500) {
-      console.warn(`[SLOW] ${req.method} ${req.originalUrl} took ${durationMs.toFixed(0)}ms`);
-    }
-  });
-  // Add Server-Timing header
-  const timing: string[] = [];
   const originalEnd = res.end.bind(res);
   res.end = function(...args: Parameters<typeof originalEnd>) {
-    const end = process.hrtime.bigint();
-    const durationMs = Number(end - start) / 1_000_000;
-    timing.push(`total;dur=${durationMs.toFixed(1)};desc="Total"`);
-    res.setHeader('Server-Timing', timing.join(', '));
+    const durationMs = Number(process.hrtime.bigint() - start) / 1_000_000;
+    res.setHeader('Server-Timing', `total;dur=${durationMs.toFixed(1)};desc="Total"`);
+    if (durationMs > 500) {
+      (req as any).log?.warn({ durationMs, url: req.originalUrl }, 'slow-request');
+    }
     return originalEnd(...args);
   } as typeof res.end;
   next();
@@ -125,6 +133,17 @@ app.use(globalLimiter);
 
 // Server start time for uptime calculation
 const serverStartTime = Date.now();
+
+// Security event logging — forward LLM budget breaches to the structured
+// log so they show up next to request/error lines in the log stream.
+function setupSecurityEventLogging(): void {
+  llmService.on('budget:exceeded', (event: { provider: string }) => {
+    logger.warn({ event: 'budget:exceeded', provider: event.provider }, 'Tier 2 budget exceeded');
+  });
+  llmService.on('thermal:fallback', (event) => {
+    logger.info({ event: 'thermal:fallback', ...event }, 'LLM thermal fallback to Tier 2');
+  });
+}
 
 // Budget guard — hard stop for Tier 2 LLM calls when daily spend exceeds
 // the per-provider limit. Cached for 10s to avoid a DB round-trip per request.
@@ -345,6 +364,7 @@ async function bootstrap() {
     // Install budget hard-stop guard — must run after DB init, before routes
     // so the first Tier 2 call can't bypass it.
     setupBudgetGuard(db);
+    setupSecurityEventLogging();
 
     // Setup routes
     setupRoutes(app);

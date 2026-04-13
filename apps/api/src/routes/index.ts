@@ -65,8 +65,15 @@ export function setupRoutes(app: Express): void {
   });
 
   // Error handler
-  app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
-    console.error('Unhandled error:', err);
+  app.use((err: Error, req: Request, res: Response, _next: NextFunction) => {
+    // Prefer the per-request logger (has request id + route context) and
+    // fall back to stderr so misconfigured setups still surface errors.
+    const reqLogger = (req as unknown as { log?: { error: (obj: object, msg?: string) => void } }).log;
+    if (reqLogger) {
+      reqLogger.error({ err, url: req.originalUrl }, 'unhandled-error');
+    } else {
+      console.error('Unhandled error:', err);
+    }
     res.status(500).json({
       error: 'Internal Server Error',
       message: process.env.NODE_ENV === 'development' ? err.message : 'An unexpected error occurred',
