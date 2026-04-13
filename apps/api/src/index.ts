@@ -44,6 +44,12 @@ const io = new SocketServer(httpServer, {
     methods: ['GET', 'POST'],
     credentials: true,
   },
+  // Cap inbound payloads at 256KB — agora messages and vote envelopes are
+  // well under that; the default 1MB invites DoS via giant emits.
+  maxHttpBufferSize: 256 * 1024,
+  // Disconnect clients that stop responding to pings within 60s.
+  pingTimeout: 60_000,
+  pingInterval: 25_000,
 });
 
 // Middleware

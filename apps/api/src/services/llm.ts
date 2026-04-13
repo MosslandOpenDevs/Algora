@@ -1,4 +1,5 @@
 import { EventEmitter } from 'events';
+import { UNTRUSTED_CONTEXT_NOTICE } from './prompt-safety';
 
 // LLM Service Configuration
 export interface LLMConfig {
@@ -229,6 +230,22 @@ export class LLMService extends EventEmitter {
   async generate(request: LLMRequest): Promise<LLMResponse> {
     const startTime = Date.now();
     const preferredTier = request.tier ?? 1;
+
+    // If the caller wrapped any untrusted content in <untrusted_context> tags,
+    // automatically prepend the security notice to the system prompt so the
+    // model knows not to treat that content as instructions. Call sites only
+    // need to sanitize/wrap the data; they don't have to remember the notice.
+    const hasUntrusted =
+      (request.prompt && request.prompt.includes('<untrusted_context')) ||
+      (request.systemPrompt && request.systemPrompt.includes('<untrusted_context'));
+    if (hasUntrusted && !(request.systemPrompt ?? '').includes(UNTRUSTED_CONTEXT_NOTICE)) {
+      request = {
+        ...request,
+        systemPrompt: request.systemPrompt
+          ? `${UNTRUSTED_CONTEXT_NOTICE}\n\n${request.systemPrompt}`
+          : UNTRUSTED_CONTEXT_NOTICE,
+      };
+    }
 
     // Try Tier 1 (Ollama) first if available and requested
     if (preferredTier === 1 && this.tier1Available) {

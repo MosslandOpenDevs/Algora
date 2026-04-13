@@ -16,7 +16,9 @@
     "test:watch": "vitest",
     "clean": "rm -rf dist",
     "db:init": "tsx src/db/init.ts",
-    "db:migrate": "tsx src/db/migrate.ts"
+    "db:migrate": "tsx src/db/migrate.ts",
+    "db:backup": "tsx scripts/backup-db.ts",
+    "db:backup:verify": "tsx scripts/backup-db.ts --verify"
   },
   "dependencies": {
     "@algora/core": "workspace:*",

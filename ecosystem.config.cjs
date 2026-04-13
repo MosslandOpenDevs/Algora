@@ -20,6 +20,28 @@ module.exports = {
       log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
     },
     {
+      // Hourly SQLite online backup. pm2 runs the script on cron_restart
+      // and autorestart:false keeps it as a one-shot. Add --verify in
+      // production to catch silent corruption.
+      name: 'algora-db-backup',
+      cwd: './apps/api',
+      script: 'node_modules/.bin/tsx',
+      args: 'scripts/backup-db.ts --verify',
+      interpreter: 'none',
+      instances: 1,
+      exec_mode: 'fork',
+      autorestart: false,
+      cron_restart: '0 * * * *', // top of every hour
+      env_file: '.env',
+      env: {
+        NODE_ENV: 'production',
+        BACKUP_RETENTION_DAYS: '14',
+      },
+      error_file: './logs/backup-error.log',
+      out_file: './logs/backup-out.log',
+      log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
+    },
+    {
       name: 'algora-web',
       cwd: './apps/web',
       script: 'node_modules/.bin/next',

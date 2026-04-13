@@ -8,6 +8,33 @@ import type { GovernanceOSBridge } from './governance-os-bridge';
 let agoraService: AgoraService | null = null;
 let summoningService: SummoningService | null = null;
 
+// Per-socket token bucket rate limiter. 30 messages per 10s window covers
+// normal chat + participant actions with plenty of headroom; bursts beyond
+// that are almost certainly automated.
+const RL_WINDOW_MS = 10_000;
+const RL_MAX_MSGS = 30;
+const MAX_MESSAGE_CHARS = 4_000;
+
+interface RateState { count: number; windowStart: number; }
+const rateBuckets = new WeakMap<Socket, RateState>();
+
+function allowMessage(socket: Socket): boolean {
+  const now = Date.now();
+  const state = rateBuckets.get(socket);
+  if (!state || now - state.windowStart > RL_WINDOW_MS) {
+    rateBuckets.set(socket, { count: 1, windowStart: now });
+    return true;
+  }
+  state.count++;
+  if (state.count > RL_MAX_MSGS) {
+    socket.emit('error:rate_limited', {
+      retryAfterMs: RL_WINDOW_MS - (now - state.windowStart),
+    });
+    return false;
+  }
+  return true;
+}
+
 export function initializeSocketServices(
   db: Database.Database,
   io: SocketServer,
@@ -38,6 +65,8 @@ export function setupSocketHandlers(
 
     // Join agora session room
     socket.on('agora:join', (sessionId: string) => {
+      if (!allowMessage(socket)) return;
+      if (typeof sessionId !== 'string' || sessionId.length > 128) return;
       socket.join(`agora:${sessionId}`);
       console.info(`Client ${socket.id} joined agora session: ${sessionId}`);
 
@@ -50,28 +79,35 @@ export function setupSocketHandlers(
 
     // Leave agora session room
     socket.on('agora:leave', (sessionId: string) => {
+      if (!allowMessage(socket)) return;
+      if (typeof sessionId !== 'string' || sessionId.length > 128) return;
       socket.leave(`agora:${sessionId}`);
       console.info(`Client ${socket.id} left agora session: ${sessionId}`);
     });
 
     // Handle human message in agora
     socket.on('agora:sendMessage', async (data: { sessionId: string; content: string }) => {
-      if (agoraService && data.sessionId && data.content) {
-        try {
-          const message = await agoraService.addMessage(data.sessionId, {
-            content: data.content,
-            messageType: 'human',
-          });
-          socket.emit('agora:messageSent', { success: true, message });
-        } catch (error) {
-          socket.emit('agora:messageSent', { success: false, error: 'Failed to send message' });
-        }
+      if (!allowMessage(socket)) return;
+      if (!agoraService || !data?.sessionId || !data?.content) return;
+      if (typeof data.content !== 'string' || data.content.length > MAX_MESSAGE_CHARS) {
+        socket.emit('agora:messageSent', { success: false, error: 'Message too long' });
+        return;
+      }
+      try {
+        const message = await agoraService.addMessage(data.sessionId, {
+          content: data.content,
+          messageType: 'human',
+        });
+        socket.emit('agora:messageSent', { success: true, message });
+      } catch (error) {
+        socket.emit('agora:messageSent', { success: false, error: 'Failed to send message' });
       }
     });
 
     // Request agent response in agora
     socket.on('agora:requestResponse', async (data: { sessionId: string; agentId: string }) => {
-      if (agoraService && data.sessionId && data.agentId) {
+      if (!allowMessage(socket)) return;
+      if (agoraService && data?.sessionId && data?.agentId) {
         try {
           const message = await agoraService.generateAgentResponse(data.sessionId, data.agentId);
           socket.emit('agora:responseGenerated', { success: true, message });
@@ -83,7 +119,8 @@ export function setupSocketHandlers(
 
     // Start automated discussion
     socket.on('agora:startAutomated', (data: { sessionId: string; intervalMs?: number }) => {
-      if (agoraService && data.sessionId) {
+      if (!allowMessage(socket)) return;
+      if (agoraService && data?.sessionId) {
         agoraService.startAutomatedDiscussion(data.sessionId, data.intervalMs || 15000);
         socket.emit('agora:automatedStarted', { sessionId: data.sessionId });
       }
@@ -91,7 +128,8 @@ export function setupSocketHandlers(
 
     // Stop automated discussion
     socket.on('agora:stopAutomated', (data: { sessionId: string }) => {
-      if (agoraService && data.sessionId) {
+      if (!allowMessage(socket)) return;
+      if (agoraService && data?.sessionId) {
         agoraService.stopAutomatedDiscussion(data.sessionId);
         socket.emit('agora:automatedStopped', { sessionId: data.sessionId });
       }
@@ -99,7 +137,8 @@ export function setupSocketHandlers(
 
     // Handle agent summon request
     socket.on('agent:summon', async (data: { sessionId?: string; agentId: string; reason?: string }) => {
-      if (summoningService && data.agentId) {
+      if (!allowMessage(socket)) return;
+      if (summoningService && data?.agentId) {
         try {
           const agent = await summoningService.summonAgent(data.agentId, data.sessionId);
           if (agent) {
@@ -120,7 +159,8 @@ export function setupSocketHandlers(
 
     // Handle agent dismiss request
     socket.on('agent:dismiss', (data: { sessionId?: string; agentId: string }) => {
-      if (summoningService && data.agentId) {
+      if (!allowMessage(socket)) return;
+      if (summoningService && data?.agentId) {
         const success = summoningService.dismissAgent(data.agentId);
 
         // Remove from agora session if specified
@@ -134,6 +174,7 @@ export function setupSocketHandlers(
 
     // Get session participants
     socket.on('agora:getParticipants', (sessionId: string) => {
+      if (!allowMessage(socket)) return;
       if (agoraService) {
         const participants = agoraService.getParticipants(sessionId);
         socket.emit('agora:participants', { sessionId, participants });
