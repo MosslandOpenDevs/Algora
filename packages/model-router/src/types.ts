@@ -72,7 +72,7 @@ export interface ProviderConfig {
  */
 export const DEFAULT_PROVIDER_CONFIGS: Record<ModelProvider, Partial<ProviderConfig>> = {
   ollama: {
-    baseUrl: 'http://100.81.60.60:11434',
+    baseUrl: 'http://localhost:11434',
     timeout: 120000,
     maxRetries: 3,
   },
@@ -616,7 +616,7 @@ export interface ModelRouterConfig {
  */
 export const DEFAULT_MODEL_ROUTER_CONFIG: ModelRouterConfig = {
   providers: {
-    ollama: { provider: 'ollama', baseUrl: 'http://100.81.60.60:11434' },
+    ollama: { provider: 'ollama', baseUrl: 'http://localhost:11434' },
     anthropic: { provider: 'anthropic' },
     openai: { provider: 'openai' },
     google: { provider: 'google' },

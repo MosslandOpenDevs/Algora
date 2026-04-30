@@ -99,7 +99,7 @@ export class LLMService extends EventEmitter {
 
     this.config = {
       tier1: {
-        endpoint: process.env.LOCAL_LLM_ENDPOINT || 'http://100.81.60.60:11434',
+        endpoint: process.env.LOCAL_LLM_ENDPOINT || 'http://localhost:11434',
         models: {
           fast: process.env.LOCAL_LLM_MODEL_FAST || 'qwen3.5:4b',
           balanced: process.env.LOCAL_LLM_MODEL_BALANCED || 'qwen3.5:9b',

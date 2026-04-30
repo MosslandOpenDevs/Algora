@@ -83,7 +83,7 @@ interface OllamaModelsResponse {
  * Ollama provider configuration.
  */
 export interface OllamaProviderConfig {
-  /** Base URL for Ollama API (default: http://100.81.60.60:11434) */
+  /** Base URL for Ollama API (default: http://localhost:11434) */
   baseUrl: string;
   /** Request timeout in milliseconds (default: 120000) */
   timeout: number;
@@ -97,7 +97,7 @@ export interface OllamaProviderConfig {
  * Default Ollama configuration.
  */
 export const DEFAULT_OLLAMA_CONFIG: OllamaProviderConfig = {
-  baseUrl: process.env.LOCAL_LLM_ENDPOINT || 'http://100.81.60.60:11434',
+  baseUrl: process.env.LOCAL_LLM_ENDPOINT || 'http://localhost:11434',
   timeout: 120000,
   maxRetries: 3,
   keepAlive: '5m',
@@ -495,7 +495,7 @@ export class OllamaError extends Error {
  * These are documentation/helper commands for setting up local models.
  */
 export const OLLAMA_INSTALL_COMMANDS = {
-  // Core text models (installed on 100.81.60.60)
+  // Core text models (installed on local Ollama host)
   chatter: ['ollama pull qwen3.5:4b'],
   debate: ['ollama pull qwen3.5:9b'],
   coreDecision: ['ollama pull gemma4:e4b'],

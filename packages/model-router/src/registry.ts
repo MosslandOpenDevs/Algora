@@ -421,7 +421,7 @@ export class ModelRegistry {
    */
   async seedDefaultModels(): Promise<void> {
     const defaultModels: ModelEntry[] = [
-      // Tier 1 - Local models (Ollama on 100.81.60.60)
+      // Tier 1 - Local models (Ollama on local host)
       {
         id: 'qwen3.5:4b',
         name: 'Qwen 3.5 4B',
