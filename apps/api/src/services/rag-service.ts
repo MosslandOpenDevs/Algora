@@ -104,6 +104,11 @@ export class RAGService {
   private embeddingCache: Map<string, number[]> = new Map();
   private stats = {
     documentsIndexed: 0,
+    // Documents that were indexed WITHOUT an embedding because the Ollama
+    // embedding call failed at index time. Semantic search can never find
+    // these rows — surface the count so operators notice the regression.
+    documentsIndexedWithoutEmbedding: 0,
+    embeddingFailures: 0,
     searchesPerformed: 0,
     cacheHits: 0,
     cacheMisses: 0,
@@ -194,13 +199,28 @@ export class RAGService {
       ? doc.content.substring(0, this.config.maxDocumentLength)
       : doc.content;
 
-    // Generate embedding
+    // Generate embedding. On failure we still persist the document, but we
+    // count and emit the failure so the regression doesn't go unnoticed —
+    // a document indexed without an embedding is invisible to semantic search.
     let embedding: number[] | undefined;
     if (this.isAvailable) {
       try {
         embedding = await this.getEmbedding(content);
       } catch (error) {
-        console.error('[RAG] Failed to generate embedding:', error);
+        this.stats.embeddingFailures++;
+        this.stats.documentsIndexedWithoutEmbedding++;
+        console.error(
+          `[RAG] Embedding failed for type=${doc.metadata.type} sourceId=${doc.metadata.sourceId} ` +
+          `— document stored WITHOUT embedding (failures=${this.stats.embeddingFailures}):`,
+          error,
+        );
+        this.io.emit('rag:embedding:failed', {
+          type: doc.metadata.type,
+          sourceId: doc.metadata.sourceId,
+          totalFailures: this.stats.embeddingFailures,
+          error: error instanceof Error ? error.message : String(error),
+          timestamp: new Date().toISOString(),
+        });
       }
     }
 
@@ -556,6 +576,8 @@ export class RAGService {
     config: RAGConfig;
     stats: {
       documentsIndexed: number;
+      documentsIndexedWithoutEmbedding: number;
+      embeddingFailures: number;
       searchesPerformed: number;
       cacheHits: number;
       cacheMisses: number;
