@@ -74,6 +74,15 @@ export class LLMService extends EventEmitter {
   private config: LLMConfig;
   private tier1Available: boolean = false;
   private budgetChecker: BudgetChecker | null = null;
+  // When true, Tier 2 (paid APIs) are completely disabled — every request must
+  // go through the local Ollama endpoint. Toggle via LLM_DISABLE_TIER2=true.
+  private readonly disableTier2: boolean;
+  // Number of attempts against Tier 1 before failing. Each retry doubles the
+  // backoff, so default 3 = ~3+6+12s tail latency under bad ollama conditions.
+  private readonly tier1MaxAttempts: number;
+  private readonly tier1RetryBackoffMs: number;
+  // Periodic re-check so a transiently-down Ollama recovers without a restart.
+  private tier1RecheckTimer: NodeJS.Timeout | null = null;
 
   // Thermal throttling state
   private thermalConfig: ThermalThrottleConfig;
@@ -86,6 +95,12 @@ export class LLMService extends EventEmitter {
   constructor() {
     super();
 
+    this.disableTier2 = process.env.LLM_DISABLE_TIER2 === 'true';
+    // 5 attempts × 2s/4s/8s/16s backoff = ~30s of total retry window before
+    // giving up. Earlier 3 attempts could miss a 60s cold-load scenario.
+    this.tier1MaxAttempts = Math.max(1, parseInt(process.env.LLM_TIER1_MAX_ATTEMPTS || '5', 10));
+    this.tier1RetryBackoffMs = parseInt(process.env.LLM_TIER1_RETRY_BACKOFF_MS || '2000', 10);
+
     // Thermal throttling configuration (configurable via env vars)
     // Settings optimized for server cooling - longer cooldowns to reduce heat
     this.thermalConfig = {
@@ -96,7 +111,11 @@ export class LLMService extends EventEmitter {
     };
 
     console.log(`[LLM] Thermal throttling enabled: min cooldown ${this.thermalConfig.minCooldownMs}ms, max ${this.thermalConfig.maxCallsPerMinute} calls/min`);
+    if (this.disableTier2) {
+      console.log('[LLM] Tier 2 (paid APIs) DISABLED — all requests routed to Ollama');
+    }
 
+    const tier2Enabled = !this.disableTier2;
     this.config = {
       tier1: {
         endpoint: process.env.LOCAL_LLM_ENDPOINT || 'http://localhost:11434',
@@ -105,22 +124,22 @@ export class LLMService extends EventEmitter {
           balanced: process.env.LOCAL_LLM_MODEL_BALANCED || 'qwen3.5:9b',
           quality: process.env.LOCAL_LLM_MODEL_QUALITY || 'gemma4:e4b',
         },
-        timeout: 120000, // 2 minutes for large models
+        timeout: parseInt(process.env.LLM_TIER1_TIMEOUT_MS || '180000', 10), // 3 min default
       },
       tier2: {
-        anthropic: process.env.ANTHROPIC_API_KEY
+        anthropic: tier2Enabled && process.env.ANTHROPIC_API_KEY
           ? {
               apiKey: process.env.ANTHROPIC_API_KEY,
               model: 'claude-3-haiku-20240307',
             }
           : undefined,
-        openai: process.env.OPENAI_API_KEY
+        openai: tier2Enabled && process.env.OPENAI_API_KEY
           ? {
               apiKey: process.env.OPENAI_API_KEY,
               model: 'gpt-4o-mini',
             }
           : undefined,
-        gemini: process.env.GOOGLE_AI_API_KEY
+        gemini: tier2Enabled && process.env.GOOGLE_AI_API_KEY
           ? {
               apiKey: process.env.GOOGLE_AI_API_KEY,
               model: 'gemini-1.5-flash',
@@ -130,6 +149,12 @@ export class LLMService extends EventEmitter {
     };
 
     this.checkTier1Availability();
+    // Re-probe ollama every minute so a transient outage (model loading, restart)
+    // doesn't permanently flip tier1Available to false.
+    this.tier1RecheckTimer = setInterval(() => {
+      this.checkTier1Availability().catch(() => { /* logged inside */ });
+    }, 60000);
+    if (typeof this.tier1RecheckTimer.unref === 'function') this.tier1RecheckTimer.unref();
   }
 
   private async checkTier1Availability(): Promise<void> {
@@ -248,33 +273,46 @@ export class LLMService extends EventEmitter {
     }
 
     // Try Tier 1 (Ollama) first if available and requested
-    if (preferredTier === 1 && this.tier1Available) {
-      // Check thermal throttling
-      const { allowed, waitMs } = this.canCallTier1();
-
-      if (!allowed) {
-        // If wait time is very long, fall back to Tier 2 directly
-        // Increased threshold from 5s to 15s to prefer Tier 1 more aggressively (cost optimization)
-        if (waitMs > 15000 && this.hasTier2Available()) {
-          console.log(`[LLM] Thermal throttle: wait ${waitMs}ms too long, using Tier 2 instead`);
-          this.emit('thermal:fallback', { waitMs, reason: 'cooldown_too_long' });
-        } else {
-          // Wait for cooldown
-          await this.waitForCooldown(waitMs);
-        }
+    if (preferredTier === 1) {
+      // If Ollama isn't currently flagged available, give it one fresh probe
+      // before falling through. Operators expect "ollama-only" mode to wait
+      // a moment rather than instantly fail.
+      if (!this.tier1Available) {
+        await this.checkTier1Availability();
       }
 
-      try {
-        this.recordTier1Call();
-        const response = await this.generateTier1(request);
-        return response;
-      } catch (error) {
-        console.warn('[LLM] Tier 1 failed, falling back to Tier 2:', error);
+      if (this.tier1Available) {
+        // Check thermal throttling
+        const { allowed, waitMs } = this.canCallTier1();
+
+        if (!allowed) {
+          // Long cooldowns no longer punt to Tier 2 in disable mode; we just
+          // wait. Operators picked Ollama-only knowing latency would be higher.
+          if (waitMs > 15000 && !this.disableTier2 && this.hasTier2Available()) {
+            console.log(`[LLM] Thermal throttle: wait ${waitMs}ms too long, using Tier 2 instead`);
+            this.emit('thermal:fallback', { waitMs, reason: 'cooldown_too_long' });
+          } else {
+            await this.waitForCooldown(waitMs);
+          }
+        }
+
+        try {
+          const response = await this.generateTier1WithRetry(request);
+          return response;
+        } catch (error) {
+          if (this.disableTier2) {
+            console.error('[LLM] Tier 1 failed and Tier 2 is disabled, giving up:', error);
+            throw error instanceof Error ? error : new Error(String(error));
+          }
+          console.warn('[LLM] Tier 1 failed after retries, falling back to Tier 2:', error);
+        }
+      } else if (this.disableTier2) {
+        throw new Error('Tier 1 (Ollama) unavailable and Tier 2 is disabled');
       }
     }
 
-    // Try Tier 2 (External APIs)
-    if (preferredTier >= 1) {
+    // Try Tier 2 (External APIs) — skipped entirely when disableTier2 is set
+    if (preferredTier >= 1 && !this.disableTier2) {
       try {
         const response = await this.generateTier2(request);
         return response;
@@ -293,6 +331,40 @@ export class LLMService extends EventEmitter {
     };
   }
 
+  /**
+   * Tier 1 call with bounded exponential backoff. Each retry waits backoff *
+   * 2^(attempt-1) ms; transient ollama failures (TimeoutError, ECONNREFUSED,
+   * "fetch failed") all retry. We do NOT retry HTTP-level model errors since
+   * those usually mean the requested model isn't loaded.
+   */
+  private async generateTier1WithRetry(request: LLMRequest): Promise<LLMResponse> {
+    let lastErr: unknown;
+    for (let attempt = 1; attempt <= this.tier1MaxAttempts; attempt++) {
+      try {
+        this.recordTier1Call();
+        return await this.generateTier1(request);
+      } catch (err) {
+        lastErr = err;
+        const msg = err instanceof Error ? err.message : String(err);
+        const transient = /timeout|fetch failed|ECONNREFUSED|ECONNRESET|other side closed|abort|EAI_AGAIN/i.test(msg);
+        if (!transient || attempt === this.tier1MaxAttempts) break;
+        // After half the attempts have failed, re-probe ollama health. If the
+        // endpoint is genuinely down (process restart) we get the new
+        // availability state quickly; if it's flaky, the probe is cheap.
+        if (attempt === Math.floor(this.tier1MaxAttempts / 2)) {
+          await this.checkTier1Availability();
+          if (!this.tier1Available) {
+            console.warn(`[LLM] Tier 1 health probe failed mid-retry; will continue but expect failure`);
+          }
+        }
+        const wait = this.tier1RetryBackoffMs * Math.pow(2, attempt - 1);
+        console.warn(`[LLM] Tier 1 attempt ${attempt}/${this.tier1MaxAttempts} failed (${msg}); retrying in ${wait}ms`);
+        await new Promise((r) => setTimeout(r, wait));
+      }
+    }
+    throw lastErr instanceof Error ? lastErr : new Error(String(lastErr));
+  }
+
   private selectModel(complexity: ModelComplexity = 'fast'): string {
     return this.config.tier1.models[complexity];
   }
@@ -303,6 +375,13 @@ export class LLMService extends EventEmitter {
 
     console.log(`[LLM] Using model: ${model} (complexity: ${request.complexity || 'fast'})`);
 
+    // Reasoning models (qwen3, deepseek-r1, etc.) silently consume tokens for
+    // chain-of-thought before producing visible output, so a 256-token budget
+    // returns an empty string. We set think:false (Ollama 0.6+) and floor the
+    // token budget so the response actually fits.
+    const isThinking = /qwen3|deepseek-r1|reasoning/i.test(model);
+    const maxTokens = request.maxTokens ?? (isThinking ? 1024 : 256);
+
     const response = await fetch(`${this.config.tier1.endpoint}/api/generate`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -312,9 +391,11 @@ export class LLMService extends EventEmitter {
           ? `${request.systemPrompt}\n\nUser: ${request.prompt}\n\nAssistant:`
           : request.prompt,
         stream: false,
+        think: isThinking ? false : undefined,
+        keep_alive: '15m', // keep model resident — cold loads cost ~60s
         options: {
           temperature: request.temperature ?? 0.7,
-          num_predict: request.maxTokens ?? 256,
+          num_predict: maxTokens,
         },
       }),
       signal: AbortSignal.timeout(this.config.tier1.timeout),
@@ -324,7 +405,20 @@ export class LLMService extends EventEmitter {
       throw new Error(`Ollama error: ${response.status}`);
     }
 
-    const data = await response.json() as { response: string; eval_count?: number };
+    const data = await response.json() as {
+      response: string;
+      thinking?: string;
+      done_reason?: string;
+      eval_count?: number;
+    };
+
+    // Some reasoning models return only `thinking` if num_predict cuts them off
+    // before the visible response. Fall back to the trimmed thinking output so
+    // the caller doesn't see an empty string when the model did produce text.
+    const content = (data.response || '').trim() || (data.thinking || '').trim();
+    if (!content && data.done_reason === 'length') {
+      throw new Error('Ollama response truncated (raise maxTokens / disable thinking)');
+    }
 
     this.emit('generation', {
       tier: 1,
@@ -333,7 +427,7 @@ export class LLMService extends EventEmitter {
     });
 
     return {
-      content: data.response.trim(),
+      content,
       tier: 1,
       model,
       tokensUsed: data.eval_count,

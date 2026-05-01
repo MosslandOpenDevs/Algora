@@ -12,7 +12,7 @@ import { logger } from './logger';
 
 import { initDatabase } from './db';
 import { setupRoutes } from './routes';
-import { setupSocketHandlers } from './services/socket';
+import { setupSocketHandlers, getAgoraService } from './services/socket';
 import { ActivityService } from './activity';
 import { SchedulerService } from './scheduler';
 import { ChatterService } from './services/chatter';
@@ -426,6 +426,12 @@ async function bootstrap() {
 
     // Connect proposal service to scheduler for auto-progress and voting resolution
     schedulerService.setProposalService(governance.proposals);
+
+    // Connect Agora service for periodic stale-session cleanup
+    const agoraSvc = getAgoraService();
+    if (agoraSvc) {
+      schedulerService.setAgoraService(agoraSvc);
+    }
 
     // Initialize proof of outcome service
     const proofOfOutcome = new ProofOfOutcomeService(db, io);

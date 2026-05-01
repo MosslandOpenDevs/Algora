@@ -30,7 +30,8 @@ export type ActivityType =
   | 'DOCUMENT'
   | 'PASSIVE_CONSENSUS'
   | 'PROPOSAL_QUEUE'
-  | 'VOTING_RESOLUTION';
+  | 'VOTING_RESOLUTION'
+  | 'AGORA_STALE_CLEANUP';
 
 export type Severity = 'info' | 'warning' | 'error' | 'critical';
 

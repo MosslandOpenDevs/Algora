@@ -107,22 +107,27 @@ export class GovernanceOS {
     // Initialize subsystems with actual factory functions
     this.safeAutonomy = createSafeAutonomySystem();
 
-    // Use real LLM provider (Ollama primary, Anthropic fallback) unless explicitly using mock
+    // Use real LLM provider (Ollama primary) unless explicitly using mock.
+    // Tier 2 / Anthropic fallback is gated on LLM_DISABLE_TIER2 — keep this
+    // aligned with the apps/api LLM service so the whole stack is Ollama-only.
     const useMockLLM = process.env.USE_MOCK_LLM === 'true';
+    const tier2Disabled = process.env.LLM_DISABLE_TIER2 === 'true';
     const llmProvider = useMockLLM
       ? createMockLLMProvider()
       : createRealLLMProvider({
           ollamaDefaultModel: process.env.LOCAL_LLM_MODEL_ENHANCED || 'gemma4:e4b',
           anthropicDefaultModel: 'claude-sonnet-4-20250514',
-          enableFallback: true,
-          preferAnthropicForCritical: true,
+          enableFallback: !tier2Disabled,
+          preferAnthropicForCritical: !tier2Disabled,
         });
 
     this.orchestrator = createOrchestrator({
       llmProvider,
     });
     this.documentRegistry = createDocumentRegistry();
-    this.modelRouter = createModelRoutingSystem();
+    this.modelRouter = createModelRoutingSystem({
+      enableTier2Fallback: !tier2Disabled,
+    });
     this.dualHouse = createDualHouseGovernance();
     this.pipeline = createPipeline();
     this.kpiCollector = createKPICollector();

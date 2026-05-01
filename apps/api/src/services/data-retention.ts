@@ -3,6 +3,9 @@ import type Database from 'better-sqlite3';
 export interface RetentionConfig {
   activityLogRetentionDays: number;
   heartbeatRetentionDays: number;
+  // High-volume noise types (COLLECTOR_HEALTH, AGENT_CHATTER, COLLECTOR) drown
+  // out the actual governance signal in activity_log. Trim them aggressively.
+  noiseRetentionDays: number;
   chatterRetentionDays: number;
   signalRetentionDays: number;
   budgetUsageRetentionDays: number;
@@ -25,10 +28,13 @@ export interface DataRetentionReport {
 const DEFAULT_CONFIG: RetentionConfig = {
   activityLogRetentionDays: 30,
   heartbeatRetentionDays: 7,
-  chatterRetentionDays: 90,
-  signalRetentionDays: 90,
+  noiseRetentionDays: 7,
+  chatterRetentionDays: 30,
+  signalRetentionDays: 30,
   budgetUsageRetentionDays: 365, // Keep budget data for a year
 };
+
+const NOISE_TYPES = ['HEARTBEAT', 'COLLECTOR_HEALTH', 'AGENT_CHATTER', 'COLLECTOR'] as const;
 
 export class DataRetentionService {
   private db: Database.Database;
@@ -49,7 +55,7 @@ export class DataRetentionService {
 
     console.log('[DataRetention] Starting data cleanup...');
 
-    // 1. Clean activity_log (except HEARTBEAT which has shorter retention)
+    // 1. Clean activity_log (governance/audit-relevant types)
     try {
       const result = this.cleanActivityLog();
       results.push(result);
@@ -57,12 +63,14 @@ export class DataRetentionService {
       errors.push(`activity_log: ${String(error)}`);
     }
 
-    // 2. Clean HEARTBEAT entries separately (shorter retention)
+    // 2. Clean high-volume noise types (HEARTBEAT, COLLECTOR_HEALTH,
+    //    AGENT_CHATTER, COLLECTOR) with shorter retention. These are 90%+ of
+    //    activity_log volume and have no audit value beyond a few days.
     try {
-      const result = this.cleanHeartbeat();
+      const result = this.cleanNoiseTypes();
       results.push(result);
     } catch (error) {
-      errors.push(`heartbeat: ${String(error)}`);
+      errors.push(`noise_types: ${String(error)}`);
     }
 
     // 3. Clean agent_chatter
@@ -117,19 +125,20 @@ export class DataRetentionService {
   }
 
   /**
-   * Clean activity_log entries older than retention period (excluding HEARTBEAT)
+   * Clean activity_log entries older than retention period (governance types only)
    */
   private cleanActivityLog(): CleanupResult {
     const startTime = Date.now();
     const cutoffDate = this.getCutoffDate(this.config.activityLogRetentionDays);
 
+    const placeholders = NOISE_TYPES.map(() => '?').join(',');
     const stmt = this.db.prepare(`
       DELETE FROM activity_log
-      WHERE type != 'HEARTBEAT'
+      WHERE type NOT IN (${placeholders})
       AND timestamp < ?
     `);
 
-    const result = stmt.run(cutoffDate);
+    const result = stmt.run(...NOISE_TYPES, cutoffDate);
 
     return {
       table: 'activity_log',
@@ -139,23 +148,30 @@ export class DataRetentionService {
   }
 
   /**
-   * Clean HEARTBEAT entries (shorter retention)
+   * Clean high-volume noise types from activity_log with short retention.
+   * Uses heartbeatRetentionDays for HEARTBEAT (compatibility) and
+   * noiseRetentionDays for the rest.
    */
-  private cleanHeartbeat(): CleanupResult {
+  private cleanNoiseTypes(): CleanupResult {
     const startTime = Date.now();
-    const cutoffDate = this.getCutoffDate(this.config.heartbeatRetentionDays);
+    const heartbeatCutoff = this.getCutoffDate(this.config.heartbeatRetentionDays);
+    const noiseCutoff = this.getCutoffDate(this.config.noiseRetentionDays);
 
-    const stmt = this.db.prepare(`
+    const heartbeatResult = this.db.prepare(`
+      DELETE FROM activity_log WHERE type = 'HEARTBEAT' AND timestamp < ?
+    `).run(heartbeatCutoff);
+
+    const otherTypes = NOISE_TYPES.filter((t) => t !== 'HEARTBEAT');
+    const placeholders = otherTypes.map(() => '?').join(',');
+    const otherResult = this.db.prepare(`
       DELETE FROM activity_log
-      WHERE type = 'HEARTBEAT'
+      WHERE type IN (${placeholders})
       AND timestamp < ?
-    `);
-
-    const result = stmt.run(cutoffDate);
+    `).run(...otherTypes, noiseCutoff);
 
     return {
-      table: 'activity_log (HEARTBEAT)',
-      deletedRows: result.changes,
+      table: 'activity_log (noise)',
+      deletedRows: heartbeatResult.changes + otherResult.changes,
       durationMs: Date.now() - startTime,
     };
   }
@@ -182,7 +198,10 @@ export class DataRetentionService {
   }
 
   /**
-   * Clean signals older than retention period
+   * Clean signals older than retention period.
+   * Preserves any signal referenced by issue_signals so we don't break the
+   * audit trail for detected issues — those signals are kept until the
+   * referencing issue itself ages out of the system.
    */
   private cleanSignals(): CleanupResult {
     const startTime = Date.now();
@@ -191,6 +210,7 @@ export class DataRetentionService {
     const stmt = this.db.prepare(`
       DELETE FROM signals
       WHERE created_at < ?
+        AND id NOT IN (SELECT signal_id FROM issue_signals)
     `);
 
     const result = stmt.run(cutoffDate);

@@ -243,6 +243,12 @@ export class SignalCollectorService {
 
   /**
    * Run health check for all collectors
+   *
+   * Each collector runs its own internal loop and doesn't call back into this
+   * service per fetch, so we infer liveness from the signals table instead:
+   * a collector is "healthy" if any of its sources wrote a row recently.
+   * Without this, last_success_at would only reflect the boot moment and stay
+   * frozen even though signals continue streaming in.
    */
   private runHealthCheck(): void {
     if (!this.isRunning) return;
@@ -250,6 +256,23 @@ export class SignalCollectorService {
     for (const wrapper of this.collectorWrappers) {
       const health = this.healthState.get(wrapper.name);
       if (!health) continue;
+
+      // Verify with the signals table — did this collector's source prefix
+      // produce any rows in the past 5 minutes? If yes, mark as success and
+      // refresh last_success_at; if no, the existing state stands.
+      try {
+        const prefix = `${wrapper.name.toLowerCase()}:%`;
+        const recent = this.db.prepare(`
+          SELECT COUNT(*) as n FROM signals
+          WHERE source LIKE ? AND created_at > datetime('now', '-5 minutes')
+        `).get(prefix) as { n: number };
+        if (recent.n > 0) {
+          this.recordSuccess(wrapper.name);
+        }
+      } catch (err) {
+        // signals query failure shouldn't break the health loop
+        console.warn(`[SignalCollector] verify-by-signals failed for ${wrapper.name}:`, err);
+      }
 
       // Check if collector is stale (no activity for too long)
       const isStale = health.lastSuccessAt &&

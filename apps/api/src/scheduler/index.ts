@@ -40,6 +40,7 @@ export class SchedulerService {
   private reportGenerator: ReportGeneratorService | null = null;
   private passiveConsensusService: PassiveConsensusService | null = null;
   private proposalService: ProposalService | null = null;
+  private agoraService: { cleanupStaleSessions: (opts?: { maxIdleMinutes?: number; limit?: number }) => { cleaned: number; ids: string[] } } | null = null;
   private dataRetention: DataRetentionService;
   private budgetAlerts: BudgetAlertService;
   private kpiPersistence: KPIPersistenceService;
@@ -72,12 +73,15 @@ export class SchedulerService {
       dataCleanupHour: config?.dataCleanupHour ?? 3, // 03:00 daily
     };
 
-    // Initialize data retention service with standard 30-day policy
+    // Initialize data retention service. Noise types (COLLECTOR_HEALTH,
+    // AGENT_CHATTER, COLLECTOR) account for ~90% of activity_log volume — they
+    // get a short window separate from governance/audit events.
     this.dataRetention = new DataRetentionService(db, {
       activityLogRetentionDays: 30,
       heartbeatRetentionDays: 7,
-      chatterRetentionDays: 90,
-      signalRetentionDays: 90,
+      noiseRetentionDays: 7,
+      chatterRetentionDays: 30,
+      signalRetentionDays: 30,
       budgetUsageRetentionDays: 365,
     });
 
@@ -284,6 +288,15 @@ export class SchedulerService {
   }
 
   /**
+   * Set the Agora Service so the scheduler can run periodic stale-session
+   * cleanup (orphaned 'active' sessions whose in-memory timer died).
+   */
+  setAgoraService(service: { cleanupStaleSessions: (opts?: { maxIdleMinutes?: number; limit?: number }) => { cleaned: number; ids: string[] } }): void {
+    this.agoraService = service;
+    console.info('[Scheduler] Agora Service connected');
+  }
+
+  /**
    * Set the Passive Consensus Service for opt-out approval processing
    */
   setPassiveConsensusService(service: PassiveConsensusService): void {
@@ -332,6 +345,9 @@ export class SchedulerService {
 
     // Schedule voting resolution (every 6 hours)
     this.scheduleVotingResolution();
+
+    // Schedule stale Agora session cleanup (every hour)
+    this.scheduleAgoraStaleCleanup();
 
     this.activityService.log('SYSTEM_STATUS', 'info', 'Scheduler started', {
       details: { config: this.config },
@@ -712,20 +728,25 @@ export class SchedulerService {
   }
 
   /**
-   * Schedule automatic proposal queue processing (hourly)
-   * Auto-progresses stale draft proposals with completed Agora sessions
+   * Schedule automatic proposal queue processing (hourly).
+   * Two-stage:
+   *   1) draft → discussion (autoProgressProposals, after 24h with completed Agora)
+   *   2) discussion → voting (autoPromoteDiscussions, after 24h soak)
+   * Without (2), proposals pile up in discussion forever — the actual cause of
+   * the 3,000+ stuck-in-discussion backlog observed in production.
    */
   private scheduleProposalQueueProcessing(): void {
     const interval = setInterval(async () => {
       if (!this.isRunning || !this.proposalService) return;
 
       try {
-        const result = this.proposalService.autoProgressProposals();
-        if (result.progressed > 0) {
-          console.info(`[Scheduler] Proposal queue: ${result.progressed} proposals progressed`);
+        const progressed = this.proposalService.autoProgressProposals();
+        const promoted = this.proposalService.autoPromoteDiscussions();
+        if (progressed.progressed > 0 || promoted.promoted > 0) {
+          console.info(`[Scheduler] Proposal queue: ${progressed.progressed} draft→discussion, ${promoted.promoted} discussion→voting`);
           this.activityService.log('PROPOSAL_QUEUE', 'info',
-            `Proposal queue processed: ${result.progressed} progressed`, {
-              details: result,
+            `Proposal queue: ${progressed.progressed} progressed, ${promoted.promoted} promoted`, {
+              details: { progressed, promoted },
             });
         }
       } catch (error) {
@@ -735,6 +756,28 @@ export class SchedulerService {
 
     this.intervals.set('proposalQueue', interval);
     console.info('[Scheduler] Proposal queue processing scheduled (every hour)');
+  }
+
+  /**
+   * Sweep orphaned active Agora sessions every hour. The in-process timeout
+   * checker handles healthy sessions; this catches the ones that slipped
+   * (e.g. process restart, hung LLM call, exception in the orchestrator).
+   */
+  private scheduleAgoraStaleCleanup(): void {
+    const interval = setInterval(() => {
+      if (!this.isRunning || !this.agoraService) return;
+      try {
+        const result = this.agoraService.cleanupStaleSessions({ maxIdleMinutes: 90 });
+        if (result.cleaned > 0) {
+          this.activityService.log('AGORA_STALE_CLEANUP', 'info',
+            `Closed ${result.cleaned} stale Agora session(s)`, { details: result });
+        }
+      } catch (error) {
+        console.error('[Scheduler] Agora stale cleanup failed:', error);
+      }
+    }, 60 * 60 * 1000); // every hour
+    this.intervals.set('agoraStaleCleanup', interval);
+    console.info('[Scheduler] Agora stale cleanup scheduled (every hour, idle > 90m)');
   }
 
   /**

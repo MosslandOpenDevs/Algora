@@ -11,6 +11,14 @@ module.exports = {
         NODE_ENV: 'production',
         PORT: 3201,
         CORS_ORIGIN: 'https://algora.moss.land',
+        // Force Ollama-only mode regardless of stale env in pm2's cache.
+        // This wins because pm2's `env:` block is applied last when starting
+        // the process — even if an old ANTHROPIC_API_KEY lingers, the LLM
+        // service short-circuits Tier 2 when this flag is true.
+        LLM_DISABLE_TIER2: 'true',
+        ANTHROPIC_API_KEY: '',
+        OPENAI_API_KEY: '',
+        GOOGLE_AI_API_KEY: '',
       },
       env_file: '.env',
       watch: false,
@@ -31,11 +39,17 @@ module.exports = {
       instances: 1,
       exec_mode: 'fork',
       autorestart: false,
-      cron_restart: '0 * * * *', // top of every hour
+      // Every 6 hours instead of hourly. Inter-hour delta on this DB is a few
+      // KB; an idle window doesn't justify a 100 MB compressed snapshot. The
+      // dedupe check inside backup-db.ts further skips any unchanged window.
+      cron_restart: '0 */6 * * *',
       env_file: '.env',
       env: {
         NODE_ENV: 'production',
-        BACKUP_RETENTION_DAYS: '14',
+        BACKUP_HOURLY_RETENTION_DAYS: '2',
+        BACKUP_DAILY_RETENTION_DAYS: '7',
+        BACKUP_COMPRESS: 'true',
+        BACKUP_DEDUPE: 'true',
       },
       error_file: './logs/backup-error.log',
       out_file: './logs/backup-out.log',

@@ -246,6 +246,20 @@ export class AgoraService {
     // Set minimum delay between LLM calls (10 seconds)
     globalLLMQueue.setMinDelay(10000);
     console.log('[Agora] Global LLM request queue initialized (10s min delay between calls)');
+
+    // Boot-time recovery: any session that was 'active' before the previous
+    // process exited has no timer running anymore. Without this sweep, those
+    // sessions stay 'active' forever (root cause of the 161 stuck sessions
+    // observed in production). Threshold is generous (24h) so we don't sweep
+    // sessions that are still legitimately mid-discussion under another node.
+    try {
+      const result = this.cleanupStaleSessions({ maxIdleMinutes: 24 * 60 });
+      if (result.cleaned > 0) {
+        console.log(`[Agora] Boot recovery: closed ${result.cleaned} orphaned active session(s)`);
+      }
+    } catch (err) {
+      console.error('[Agora] Boot recovery failed:', err);
+    }
   }
 
   // Create a new Agora session
@@ -1673,6 +1687,59 @@ Recommendation:`,
       content: closingStatement,
       messageType: 'agent',
     });
+  }
+
+  /**
+   * Mark sessions that have been 'active' but idle longer than `maxIdleMinutes`
+   * as completed. Lightweight, DB-only — does NOT generate summaries or call
+   * the LLM. Used for two cases:
+   *   1) Boot-time recovery: when the API restarts, in-memory timers are gone
+   *      so any session that was already active becomes orphaned. Without this
+   *      sweep they pile up forever in the DB.
+   *   2) Periodic safety net: a scheduler tick runs this hourly to catch
+   *      sessions whose timeoutChecker silently died (e.g. LLM call hang).
+   *
+   * Returns the number of sessions cleaned up.
+   */
+  cleanupStaleSessions(opts?: { maxIdleMinutes?: number; limit?: number }): { cleaned: number; ids: string[] } {
+    const maxIdleMinutes = opts?.maxIdleMinutes ?? 90; // 60min session limit + 30min grace
+    const limit = opts?.limit ?? 500;
+
+    const stale = this.db.prepare(`
+      SELECT id FROM agora_sessions
+      WHERE status = 'active'
+        AND updated_at < datetime('now', ?)
+      ORDER BY updated_at ASC
+      LIMIT ?
+    `).all(`-${maxIdleMinutes} minutes`, limit) as Array<{ id: string }>;
+
+    if (stale.length === 0) return { cleaned: 0, ids: [] };
+
+    const now = new Date().toISOString();
+    const updateSession = this.db.prepare(`
+      UPDATE agora_sessions
+      SET status = 'completed', updated_at = ?, concluded_at = COALESCE(concluded_at, ?)
+      WHERE id = ? AND status = 'active'
+    `);
+    const removeParticipants = this.db.prepare(`DELETE FROM agora_participants WHERE session_id = ?`);
+
+    const tx = this.db.transaction((rows: Array<{ id: string }>) => {
+      for (const row of rows) {
+        updateSession.run(now, now, row.id);
+        removeParticipants.run(row.id);
+      }
+    });
+    tx(stale);
+
+    // Free any in-memory timer that might still be alive for these IDs
+    for (const row of stale) {
+      this.stopAutomatedDiscussion(row.id);
+      this.stopTimeoutChecker(row.id);
+      this.io.emit('agora:sessionCompleted', { sessionId: row.id, reason: 'stale-cleanup' });
+    }
+
+    console.log(`[Orchestrator] Cleaned up ${stale.length} stale active session(s) idle > ${maxIdleMinutes}m`);
+    return { cleaned: stale.length, ids: stale.map((r) => r.id) };
   }
 
   // Complete a session with full closing flow

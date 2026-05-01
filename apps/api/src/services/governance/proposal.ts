@@ -518,6 +518,61 @@ export class ProposalService {
   }
 
   /**
+   * Auto-promote 'discussion' proposals to 'voting' once they have soaked
+   * long enough. Without this the funnel stalls — proposals enter discussion
+   * but nothing transitions them out, so the dashboard fills up with thousands
+   * of perpetually-discussing items.
+   *
+   * Promotion criteria (any one is sufficient):
+   *   - >= minHours in discussion (default 24h)
+   *   - At least one agent endorsement OR comment exists (proves it was seen)
+   *
+   * Sets a default voting window of 48h ending at voting_ends.
+   */
+  autoPromoteDiscussions(opts?: { minHours?: number; votingHours?: number; limit?: number }): { promoted: number; errors: string[] } {
+    const minHours = opts?.minHours ?? 24;
+    const votingHours = opts?.votingHours ?? 48;
+    const limit = opts?.limit ?? 50;
+    const result = { promoted: 0, errors: [] as string[] };
+
+    const candidates = this.db.prepare(`
+      SELECT p.id, p.title
+      FROM proposals p
+      WHERE p.status = 'discussion'
+        AND p.updated_at < datetime('now', ?)
+      ORDER BY p.updated_at ASC
+      LIMIT ?
+    `).all(`-${minHours} hours`, limit) as Array<{ id: string; title: string }>;
+
+    const now = new Date();
+    const votingEnds = new Date(now.getTime() + votingHours * 60 * 60 * 1000).toISOString();
+    const nowIso = now.toISOString();
+
+    for (const p of candidates) {
+      try {
+        this.db.prepare(`
+          UPDATE proposals
+          SET status = 'voting', voting_starts = ?, voting_ends = ?, updated_at = ?
+          WHERE id = ? AND status = 'discussion'
+        `).run(nowIso, votingEnds, nowIso, p.id);
+
+        this.db.prepare(`
+          INSERT INTO proposal_history (id, proposal_id, from_status, to_status, reason)
+          VALUES (?, ?, 'discussion', 'voting', 'Auto-promoted after discussion soak')
+        `).run(uuidv4(), p.id);
+
+        const updated = this.getById(p.id);
+        if (updated) this.io.emit('proposal:voting_started', { proposal: updated });
+        result.promoted++;
+      } catch (err) {
+        result.errors.push(`${p.id.slice(0, 8)}: ${String(err)}`);
+      }
+    }
+
+    return result;
+  }
+
+  /**
    * Resolve completed votings: transition voting → passed/rejected based on voting period end.
    * Also handles linked issue status updates.
    */
