@@ -121,7 +121,7 @@ export interface HealthCheckResult {
  * A model entry in the registry.
  */
 export interface ModelEntry {
-  /** Model identifier (e.g., "qwen2.5:32b", "claude-sonnet-4-20250514") */
+  /** Model identifier (e.g., "qwen3.5:9b", "claude-sonnet-4-20250514") */
   id: string;
   /** Display name */
   name: string;
@@ -183,22 +183,30 @@ export interface TaskTypeMapping {
 }
 
 /**
- * Default task type mappings based on the plan.
+ * Default task type mappings.
+ *
+ * The shared remote Ollama keeps exactly one chat model (qwen3.5:9b) and one
+ * embedding model (qwen3-embedding:0.6b) resident on the ~8GB GPU. All Tier-1
+ * routing flattens to that pair so we never trigger a VRAM swap. Anything else
+ * will 404 against the server until it's pulled again.
  */
 export const DEFAULT_TASK_TYPE_MAPPINGS: TaskTypeMapping[] = [
-  { taskType: 'scouting', primaryModel: 'qwen3.5:4b', backupModel: 'qwen3.5:9b', tier: 1, maxTokens: 1000 },
-  { taskType: 'debate', primaryModel: 'qwen3.5:9b', backupModel: 'gemma4:e4b', tier: 1, maxTokens: 2000 },
-  { taskType: 'core_decision', primaryModel: 'gemma4:e4b', backupModel: 'qwen3.5:9b', tier: 1, maxTokens: 4000 },
-  { taskType: 'coding', primaryModel: 'gemma4:e4b', backupModel: 'qwen3.5:9b', tier: 1, maxTokens: 4000 },
-  { taskType: 'vision', primaryModel: 'gemma4:e4b', backupModel: 'qwen3.5:9b', tier: 1, maxTokens: 2000 },
-  { taskType: 'korean', primaryModel: 'qwen3.5:9b', backupModel: 'gemma4:e4b', tier: 1, maxTokens: 2000 },
+  { taskType: 'scouting', primaryModel: 'qwen3.5:9b', backupModel: 'qwen3.5:9b', tier: 1, maxTokens: 1000 },
+  { taskType: 'debate', primaryModel: 'qwen3.5:9b', backupModel: 'qwen3.5:9b', tier: 1, maxTokens: 2000 },
+  { taskType: 'core_decision', primaryModel: 'qwen3.5:9b', backupModel: 'qwen3.5:9b', tier: 1, maxTokens: 4000 },
+  { taskType: 'coding', primaryModel: 'qwen3.5:9b', backupModel: 'qwen3.5:9b', tier: 1, maxTokens: 4000 },
+  { taskType: 'vision', primaryModel: 'qwen3.5:9b', backupModel: 'qwen3.5:9b', tier: 1, maxTokens: 2000 },
+  { taskType: 'korean', primaryModel: 'qwen3.5:9b', backupModel: 'qwen3.5:9b', tier: 1, maxTokens: 2000 },
   { taskType: 'complex_analysis', primaryModel: 'claude-sonnet-4-20250514', backupModel: 'gpt-4o', tier: 2, maxTokens: 8000 },
-  { taskType: 'chatter', primaryModel: 'qwen3.5:4b', backupModel: 'qwen3.5:9b', tier: 1, maxTokens: 500 },
-  { taskType: 'summarization', primaryModel: 'qwen3.5:9b', backupModel: 'qwen3.5:4b', tier: 1, maxTokens: 1000 },
-  { taskType: 'translation', primaryModel: 'qwen3.5:9b', backupModel: 'gemma4:e4b', tier: 1, maxTokens: 2000 },
-  { taskType: 'research', primaryModel: 'gemma4:e4b', backupModel: 'qwen3.5:9b', tier: 1, maxTokens: 3000 },
-  { taskType: 'embedding', primaryModel: 'nomic-embed-text', backupModel: 'mxbai-embed-large', tier: 1, maxTokens: 8192 },
-  { taskType: 'reranking', primaryModel: 'bge-reranker-v2-m3', backupModel: 'qwen3-reranker', tier: 1, maxTokens: 512 },
+  { taskType: 'chatter', primaryModel: 'qwen3.5:9b', backupModel: 'qwen3.5:9b', tier: 1, maxTokens: 500 },
+  { taskType: 'summarization', primaryModel: 'qwen3.5:9b', backupModel: 'qwen3.5:9b', tier: 1, maxTokens: 1000 },
+  { taskType: 'translation', primaryModel: 'qwen3.5:9b', backupModel: 'qwen3.5:9b', tier: 1, maxTokens: 2000 },
+  { taskType: 'research', primaryModel: 'qwen3.5:9b', backupModel: 'qwen3.5:9b', tier: 1, maxTokens: 3000 },
+  { taskType: 'embedding', primaryModel: 'qwen3-embedding:0.6b', backupModel: 'qwen3-embedding:0.6b', tier: 1, maxTokens: 8192 },
+  // No dedicated reranker on the remote anymore — fall back to the chat model
+  // emitting a relevance score. Cross-encoder pairs are short, so qwen3.5:9b
+  // handles them in a single small call.
+  { taskType: 'reranking', primaryModel: 'qwen3.5:9b', backupModel: 'qwen3.5:9b', tier: 1, maxTokens: 512 },
 ];
 
 // ============================================
@@ -339,7 +347,7 @@ export interface ModelSelection {
  */
 export const DEFAULT_MODEL_SELECTIONS: Record<DifficultyLevel, Omit<ModelSelection, 'reasoning'>> = {
   trivial: {
-    primaryModel: 'qwen3.5:4b',
+    primaryModel: 'qwen3.5:9b',
     fallbackModels: ['qwen3.5:9b'],
     tier: 1,
     maxRetries: 2,
@@ -347,20 +355,20 @@ export const DEFAULT_MODEL_SELECTIONS: Record<DifficultyLevel, Omit<ModelSelecti
   },
   simple: {
     primaryModel: 'qwen3.5:9b',
-    fallbackModels: ['gemma4:e4b', 'qwen3.5:4b'],
+    fallbackModels: ['qwen3.5:9b'],
     tier: 1,
     maxRetries: 2,
     qualityGate: { enabled: false, minConfidence: 0, requiresReview: false, escalateOnFailure: false },
   },
   moderate: {
-    primaryModel: 'gemma4:e4b',
+    primaryModel: 'qwen3.5:9b',
     fallbackModels: ['qwen3.5:9b'],
     tier: 1,
     maxRetries: 3,
     qualityGate: { enabled: true, minConfidence: 70, requiresReview: false, escalateOnFailure: false },
   },
   complex: {
-    primaryModel: 'gemma4:e4b',
+    primaryModel: 'qwen3.5:9b',
     fallbackModels: ['claude-sonnet-4-20250514'],
     tier: 1,
     maxRetries: 3,
@@ -368,7 +376,7 @@ export const DEFAULT_MODEL_SELECTIONS: Record<DifficultyLevel, Omit<ModelSelecti
   },
   critical: {
     primaryModel: 'claude-sonnet-4-20250514',
-    fallbackModels: ['gpt-4o', 'gemma4:e4b'],
+    fallbackModels: ['gpt-4o', 'qwen3.5:9b'],
     tier: 2,
     maxRetries: 5,
     qualityGate: { enabled: true, minConfidence: 90, requiresReview: true, escalateOnFailure: true },
@@ -471,34 +479,19 @@ export interface EmbeddingModel {
 
 /**
  * Default embedding models.
+ *
+ * Only one is on the shared remote Ollama; legacy entries (nomic / mxbai /
+ * bge-m3) were removed when the server was consolidated to a 2-model GPU.
  */
 export const DEFAULT_EMBEDDING_MODELS: EmbeddingModel[] = [
   {
-    id: 'nomic-embed-text',
-    name: 'Nomic Embed Text',
-    provider: 'ollama',
-    dimensions: 768,
-    maxTokens: 8192,
-    languages: ['en'],
-    useCase: 'General text',
-  },
-  {
-    id: 'mxbai-embed-large',
-    name: 'MixedBread Embed Large',
-    provider: 'ollama',
-    dimensions: 1024,
-    maxTokens: 512,
-    languages: ['en'],
-    useCase: 'High-quality retrieval',
-  },
-  {
-    id: 'bge-m3',
-    name: 'BGE M3',
+    id: 'qwen3-embedding:0.6b',
+    name: 'Qwen 3 Embedding 0.6B',
     provider: 'ollama',
     dimensions: 1024,
     maxTokens: 8192,
     languages: ['en', 'ko', 'zh', 'ja'],
-    useCase: 'Multilingual (EN/KO)',
+    useCase: 'Multilingual general-purpose retrieval (Matryoshka 64–1024)',
   },
 ];
 
@@ -516,23 +509,20 @@ export interface RerankerModel {
 
 /**
  * Default reranker models.
+ *
+ * No dedicated reranker model is resident on the shared remote Ollama
+ * anymore. Reranking falls back to the chat model (qwen3.5:9b) emitting a
+ * relevance score per pair — slower per call but avoids a third resident
+ * model on an already-tight 8GB GPU.
  */
 export const DEFAULT_RERANKER_MODELS: RerankerModel[] = [
   {
-    id: 'bge-reranker-v2-m3',
-    name: 'BGE Reranker v2 M3',
+    id: 'qwen3.5:9b',
+    name: 'Qwen 3.5 9B (LLM-as-reranker)',
     provider: 'ollama',
     maxTokens: 512,
     languages: ['en', 'ko', 'zh', 'ja'],
-    useCase: 'Cross-lingual reranking',
-  },
-  {
-    id: 'qwen3-reranker',
-    name: 'Qwen3 Reranker',
-    provider: 'ollama',
-    maxTokens: 512,
-    languages: ['en', 'zh'],
-    useCase: 'Quality-focused reranking',
+    useCase: 'LLM-as-reranker — pairwise scoring via the resident chat model',
   },
 ];
 

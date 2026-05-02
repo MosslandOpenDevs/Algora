@@ -106,11 +106,9 @@ export const DEFAULT_OLLAMA_CONFIG: OllamaProviderConfig = {
 /**
  * Ollama LLM Provider implementation.
  *
- * Provides integration with local Ollama models for:
- * - Text generation (qwen3.5, gemma4, etc.)
- * - Code generation (qwen3.5, gemma4)
- * - Embeddings (nomic-embed-text, bge-m3, mxbai-embed-large)
- * - Korean (qwen3.5)
+ * Provides integration with the shared remote Ollama. Only two models are
+ * resident on the GPU: qwen3.5:9b (chat / code / Korean / reranking via
+ * LLM-as-judge) and qwen3-embedding:0.6b (embeddings).
  */
 export class OllamaProvider {
   private config: OllamaProviderConfig;
@@ -491,36 +489,23 @@ export class OllamaError extends Error {
 }
 
 /**
- * Ollama model install commands from SPEC P.1.
- * These are documentation/helper commands for setting up local models.
+ * Ollama model install commands.
+ *
+ * Consolidated to a single chat model + a single embedding model so the shared
+ * remote Ollama (~8GB GPU) can keep both resident without ever swapping. Any
+ * other model name will 404 against the server until it's pulled again.
  */
 export const OLLAMA_INSTALL_COMMANDS = {
-  // Core text models (installed on local Ollama host)
-  chatter: ['ollama pull qwen3.5:4b'],
-  debate: ['ollama pull qwen3.5:9b'],
-  coreDecision: ['ollama pull gemma4:e4b'],
-  coding: ['ollama pull gemma4:e4b'],
-  korean: ['ollama pull qwen3.5:9b'],
-  fallback: ['ollama pull gemma4:e4b'],
-
-  // Embedding models
-  embeddings: [
-    'ollama pull nomic-embed-text',
-    'ollama pull mxbai-embed-large',
-    'ollama pull bge-m3',
-  ],
-
-  // Reranking
-  rerankers: ['ollama pull bge-reranker-v2-m3'],
+  chat: ['ollama pull qwen3.5:9b'],
+  embeddings: ['ollama pull qwen3-embedding:0.6b'],
 };
 
 /**
- * Hardware requirements from SPEC P.3.
+ * Hardware requirements for the resident model pair.
  */
 export const OLLAMA_HARDWARE_REQUIREMENTS = {
-  'qwen3.5:4b': { vram: '4GB', ram: '8GB' },
   'qwen3.5:9b': { vram: '7GB', ram: '16GB' },
-  'gemma4:e4b': { vram: '8GB', ram: '16GB' },
+  'qwen3-embedding:0.6b': { vram: '1GB', ram: '2GB' },
 };
 
 /**

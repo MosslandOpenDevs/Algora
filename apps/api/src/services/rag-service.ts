@@ -119,9 +119,9 @@ export class RAGService {
     this.db = db;
     this.io = io;
     this.config = {
-      embeddingModel: config?.embeddingModel || process.env.RAG_EMBEDDING_MODEL || 'nomic-embed-text',
+      embeddingModel: config?.embeddingModel || process.env.RAG_EMBEDDING_MODEL || 'qwen3-embedding:0.6b',
       embeddingEndpoint: config?.embeddingEndpoint || process.env.LOCAL_LLM_ENDPOINT || 'http://localhost:11434',
-      embeddingDimensions: config?.embeddingDimensions || 768, // nomic-embed-text default
+      embeddingDimensions: config?.embeddingDimensions || 1024, // qwen3-embedding:0.6b default (Matryoshka 64–1024)
       maxDocumentLength: config?.maxDocumentLength || 8192,
       defaultTopK: config?.defaultTopK || 5,
       similarityThreshold: config?.similarityThreshold || 0.3,
@@ -169,7 +169,7 @@ export class RAGService {
         this.isAvailable = models.some(m => m.name.includes('embed'));
 
         if (!this.isAvailable) {
-          console.warn('[RAG] No embedding model found. Run: ollama pull nomic-embed-text');
+          console.warn('[RAG] No embedding model found. Run: ollama pull qwen3-embedding:0.6b');
         } else {
           console.info(`[RAG] Service available with model: ${this.config.embeddingModel}`);
         }

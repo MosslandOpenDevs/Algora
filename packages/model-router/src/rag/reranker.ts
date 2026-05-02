@@ -98,7 +98,7 @@ export class RerankerService {
 
   constructor(options?: RerankerServiceOptions) {
     this.provider = options?.provider || new MockRerankerProvider();
-    this.defaultModel = options?.defaultModel || 'bge-reranker-v2-m3';
+    this.defaultModel = options?.defaultModel || 'qwen3.5:9b';
     this.defaultTopK = options?.defaultTopK || 10;
     this.minScore = options?.minScore || 0;
   }
