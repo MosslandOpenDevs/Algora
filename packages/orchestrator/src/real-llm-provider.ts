@@ -20,7 +20,7 @@ export interface RealLLMProviderConfig {
   ollama?: Partial<OllamaProviderConfig>;
   /** Anthropic configuration */
   anthropic?: Partial<AnthropicProviderConfig>;
-  /** Default model for Ollama (default: qwen3.5:4b) */
+  /** Default model for Ollama (default: gemma3:4b) */
   ollamaDefaultModel?: string;
   /** Default model for Anthropic (default: claude-sonnet-4-20250514) */
   anthropicDefaultModel?: string;
@@ -36,7 +36,7 @@ export interface RealLLMProviderConfig {
  * Default configuration.
  */
 export const DEFAULT_REAL_LLM_PROVIDER_CONFIG: RealLLMProviderConfig = {
-  ollamaDefaultModel: process.env.LOCAL_LLM_MODEL_CHATTER || 'qwen3.5:4b',
+  ollamaDefaultModel: process.env.LOCAL_LLM_MODEL_CHATTER || 'gemma3:4b',
   anthropicDefaultModel: 'claude-sonnet-4-20250514',
   enableFallback: true,
   anthropicMinTokens: 0,
@@ -124,7 +124,7 @@ export class RealLLMProvider implements LLMProvider {
     tokenCount: number;
     costUsd: number;
   }> {
-    const model = this.config.ollamaDefaultModel || 'qwen3.5:4b';
+    const model = this.config.ollamaDefaultModel || 'gemma3:4b';
     const result = await this.ollamaProvider.generate(model, options.prompt, {
       systemPrompt: options.systemPrompt,
       maxTokens: options.maxTokens,
@@ -295,7 +295,7 @@ export function createTier1LLMProvider(
   config?: Partial<RealLLMProviderConfig>
 ): RealLLMProvider {
   return new RealLLMProvider({
-    ollamaDefaultModel: process.env.LOCAL_LLM_MODEL_CHATTER || 'qwen3.5:4b',
+    ollamaDefaultModel: process.env.LOCAL_LLM_MODEL_CHATTER || 'gemma3:4b',
     enableFallback: true,
     preferAnthropicForCritical: false,
     ...config,
@@ -305,7 +305,7 @@ export function createTier1LLMProvider(
 /**
  * Create a RealLLMProvider optimized for Tier 2 (serious deliberation).
  *
- * The shared remote Ollama only carries qwen3.5:4b at Tier 1, so the local
+ * The shared remote Ollama only carries gemma3:4b at Tier 1, so the local
  * model is the same as Tier 1. Tier 2 differentiates by preferring Anthropic
  * for critical tasks instead of by swapping to a heavier local model.
  */
@@ -313,7 +313,7 @@ export function createTier2LLMProvider(
   config?: Partial<RealLLMProviderConfig>
 ): RealLLMProvider {
   return new RealLLMProvider({
-    ollamaDefaultModel: process.env.LOCAL_LLM_MODEL_ENHANCED || 'qwen3.5:4b',
+    ollamaDefaultModel: process.env.LOCAL_LLM_MODEL_ENHANCED || 'gemma3:4b',
     anthropicDefaultModel: 'claude-sonnet-4-20250514',
     enableFallback: true,
     preferAnthropicForCritical: true,

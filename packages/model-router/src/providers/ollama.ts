@@ -107,7 +107,7 @@ export const DEFAULT_OLLAMA_CONFIG: OllamaProviderConfig = {
  * Ollama LLM Provider implementation.
  *
  * Provides integration with the shared remote Ollama. Only two models are
- * resident on the GPU: qwen3.5:4b (chat / code / Korean / reranking via
+ * resident on the GPU: gemma3:4b (chat / code / Korean / reranking via
  * LLM-as-judge) and qwen3-embedding:0.6b (embeddings).
  */
 export class OllamaProvider {
@@ -512,7 +512,7 @@ export class OllamaError extends Error {
  * other model name will 404 against the server until it's pulled again.
  */
 export const OLLAMA_INSTALL_COMMANDS = {
-  chat: ['ollama pull qwen3.5:4b'],
+  chat: ['ollama pull gemma3:4b'],
   embeddings: ['ollama pull qwen3-embedding:0.6b'],
 };
 
@@ -520,7 +520,7 @@ export const OLLAMA_INSTALL_COMMANDS = {
  * Hardware requirements for the resident model pair.
  */
 export const OLLAMA_HARDWARE_REQUIREMENTS = {
-  'qwen3.5:4b': { vram: '7GB', ram: '16GB' },
+  'gemma3:4b': { vram: '7GB', ram: '16GB' },
   'qwen3-embedding:0.6b': { vram: '1GB', ram: '2GB' },
 };
 

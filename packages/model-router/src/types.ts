@@ -121,7 +121,7 @@ export interface HealthCheckResult {
  * A model entry in the registry.
  */
 export interface ModelEntry {
-  /** Model identifier (e.g., "qwen3.5:4b", "claude-sonnet-4-20250514") */
+  /** Model identifier (e.g., "gemma3:4b", "claude-sonnet-4-20250514") */
   id: string;
   /** Display name */
   name: string;
@@ -185,28 +185,28 @@ export interface TaskTypeMapping {
 /**
  * Default task type mappings.
  *
- * The shared remote Ollama keeps exactly one chat model (qwen3.5:4b) and one
+ * The shared remote Ollama keeps exactly one chat model (gemma3:4b) and one
  * embedding model (qwen3-embedding:0.6b) resident on the ~8GB GPU. All Tier-1
  * routing flattens to that pair so we never trigger a VRAM swap. Anything else
  * will 404 against the server until it's pulled again.
  */
 export const DEFAULT_TASK_TYPE_MAPPINGS: TaskTypeMapping[] = [
-  { taskType: 'scouting', primaryModel: 'qwen3.5:4b', backupModel: 'qwen3.5:4b', tier: 1, maxTokens: 1000 },
-  { taskType: 'debate', primaryModel: 'qwen3.5:4b', backupModel: 'qwen3.5:4b', tier: 1, maxTokens: 2000 },
-  { taskType: 'core_decision', primaryModel: 'qwen3.5:4b', backupModel: 'qwen3.5:4b', tier: 1, maxTokens: 4000 },
-  { taskType: 'coding', primaryModel: 'qwen3.5:4b', backupModel: 'qwen3.5:4b', tier: 1, maxTokens: 4000 },
-  { taskType: 'vision', primaryModel: 'qwen3.5:4b', backupModel: 'qwen3.5:4b', tier: 1, maxTokens: 2000 },
-  { taskType: 'korean', primaryModel: 'qwen3.5:4b', backupModel: 'qwen3.5:4b', tier: 1, maxTokens: 2000 },
+  { taskType: 'scouting', primaryModel: 'gemma3:4b', backupModel: 'gemma3:4b', tier: 1, maxTokens: 1000 },
+  { taskType: 'debate', primaryModel: 'gemma3:4b', backupModel: 'gemma3:4b', tier: 1, maxTokens: 2000 },
+  { taskType: 'core_decision', primaryModel: 'gemma3:4b', backupModel: 'gemma3:4b', tier: 1, maxTokens: 4000 },
+  { taskType: 'coding', primaryModel: 'gemma3:4b', backupModel: 'gemma3:4b', tier: 1, maxTokens: 4000 },
+  { taskType: 'vision', primaryModel: 'gemma3:4b', backupModel: 'gemma3:4b', tier: 1, maxTokens: 2000 },
+  { taskType: 'korean', primaryModel: 'gemma3:4b', backupModel: 'gemma3:4b', tier: 1, maxTokens: 2000 },
   { taskType: 'complex_analysis', primaryModel: 'claude-sonnet-4-20250514', backupModel: 'gpt-4o', tier: 2, maxTokens: 8000 },
-  { taskType: 'chatter', primaryModel: 'qwen3.5:4b', backupModel: 'qwen3.5:4b', tier: 1, maxTokens: 500 },
-  { taskType: 'summarization', primaryModel: 'qwen3.5:4b', backupModel: 'qwen3.5:4b', tier: 1, maxTokens: 1000 },
-  { taskType: 'translation', primaryModel: 'qwen3.5:4b', backupModel: 'qwen3.5:4b', tier: 1, maxTokens: 2000 },
-  { taskType: 'research', primaryModel: 'qwen3.5:4b', backupModel: 'qwen3.5:4b', tier: 1, maxTokens: 3000 },
+  { taskType: 'chatter', primaryModel: 'gemma3:4b', backupModel: 'gemma3:4b', tier: 1, maxTokens: 500 },
+  { taskType: 'summarization', primaryModel: 'gemma3:4b', backupModel: 'gemma3:4b', tier: 1, maxTokens: 1000 },
+  { taskType: 'translation', primaryModel: 'gemma3:4b', backupModel: 'gemma3:4b', tier: 1, maxTokens: 2000 },
+  { taskType: 'research', primaryModel: 'gemma3:4b', backupModel: 'gemma3:4b', tier: 1, maxTokens: 3000 },
   { taskType: 'embedding', primaryModel: 'qwen3-embedding:0.6b', backupModel: 'qwen3-embedding:0.6b', tier: 1, maxTokens: 8192 },
   // No dedicated reranker on the remote anymore — fall back to the chat model
-  // emitting a relevance score. Cross-encoder pairs are short, so qwen3.5:4b
+  // emitting a relevance score. Cross-encoder pairs are short, so gemma3:4b
   // handles them in a single small call.
-  { taskType: 'reranking', primaryModel: 'qwen3.5:4b', backupModel: 'qwen3.5:4b', tier: 1, maxTokens: 512 },
+  { taskType: 'reranking', primaryModel: 'gemma3:4b', backupModel: 'gemma3:4b', tier: 1, maxTokens: 512 },
 ];
 
 // ============================================
@@ -347,28 +347,28 @@ export interface ModelSelection {
  */
 export const DEFAULT_MODEL_SELECTIONS: Record<DifficultyLevel, Omit<ModelSelection, 'reasoning'>> = {
   trivial: {
-    primaryModel: 'qwen3.5:4b',
-    fallbackModels: ['qwen3.5:4b'],
+    primaryModel: 'gemma3:4b',
+    fallbackModels: ['gemma3:4b'],
     tier: 1,
     maxRetries: 2,
     qualityGate: { enabled: false, minConfidence: 0, requiresReview: false, escalateOnFailure: false },
   },
   simple: {
-    primaryModel: 'qwen3.5:4b',
-    fallbackModels: ['qwen3.5:4b'],
+    primaryModel: 'gemma3:4b',
+    fallbackModels: ['gemma3:4b'],
     tier: 1,
     maxRetries: 2,
     qualityGate: { enabled: false, minConfidence: 0, requiresReview: false, escalateOnFailure: false },
   },
   moderate: {
-    primaryModel: 'qwen3.5:4b',
-    fallbackModels: ['qwen3.5:4b'],
+    primaryModel: 'gemma3:4b',
+    fallbackModels: ['gemma3:4b'],
     tier: 1,
     maxRetries: 3,
     qualityGate: { enabled: true, minConfidence: 70, requiresReview: false, escalateOnFailure: false },
   },
   complex: {
-    primaryModel: 'qwen3.5:4b',
+    primaryModel: 'gemma3:4b',
     fallbackModels: ['claude-sonnet-4-20250514'],
     tier: 1,
     maxRetries: 3,
@@ -376,7 +376,7 @@ export const DEFAULT_MODEL_SELECTIONS: Record<DifficultyLevel, Omit<ModelSelecti
   },
   critical: {
     primaryModel: 'claude-sonnet-4-20250514',
-    fallbackModels: ['gpt-4o', 'qwen3.5:4b'],
+    fallbackModels: ['gpt-4o', 'gemma3:4b'],
     tier: 2,
     maxRetries: 5,
     qualityGate: { enabled: true, minConfidence: 90, requiresReview: true, escalateOnFailure: true },
@@ -511,13 +511,13 @@ export interface RerankerModel {
  * Default reranker models.
  *
  * No dedicated reranker model is resident on the shared remote Ollama
- * anymore. Reranking falls back to the chat model (qwen3.5:4b) emitting a
+ * anymore. Reranking falls back to the chat model (gemma3:4b) emitting a
  * relevance score per pair — slower per call but avoids a third resident
  * model on an already-tight 8GB GPU.
  */
 export const DEFAULT_RERANKER_MODELS: RerankerModel[] = [
   {
-    id: 'qwen3.5:4b',
+    id: 'gemma3:4b',
     name: 'Qwen 3.5 9B (LLM-as-reranker)',
     provider: 'ollama',
     maxTokens: 512,

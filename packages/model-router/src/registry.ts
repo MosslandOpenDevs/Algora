@@ -429,7 +429,7 @@ export class ModelRegistry {
       // Tier 1 — single chat model + single embedding model on the shared
       // remote Ollama (~8GB GPU). Both stay resident; nothing else is pulled.
       {
-        id: 'qwen3.5:4b',
+        id: 'gemma3:4b',
         name: 'Qwen 3.5 9B',
         provider: 'ollama',
         tier: 1,
