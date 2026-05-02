@@ -22,8 +22,8 @@ interface PipelineRetryJobData {
 }
 
 export interface SchedulerConfig {
-  tier0Interval: number;  // Default: 60000 (1 min)
-  tier1Interval: number;  // Default: 5000-15000 (5-15 sec)
+  tier0Interval: number;  // Default: 300000 (5 min) — see notes on tightening
+  tier1Interval: number;  // Default: 60000 (1 min) — chatter cadence
   tier2ScheduledRuns: number[];  // Default: [6, 12, 18, 23]
   weeklyReportDay: number;  // Day of week (0=Sunday, 1=Monday, etc.)
   weeklyReportHour: number; // Hour to run (0-23)
@@ -62,9 +62,18 @@ export class SchedulerService {
     this.db = db;
     this.io = io;
     this.activityService = activityService;
+    // Tier0/Tier1 defaults raised from 1min/10s to keep idle-time hits to the
+    // shared Ollama and DB at a minimum. Override via env when faster cadence
+    // is genuinely needed.
     this.config = {
-      tier0Interval: config?.tier0Interval || 60000,
-      tier1Interval: config?.tier1Interval || 10000,
+      tier0Interval:
+        config?.tier0Interval ||
+        Number(process.env.SCHEDULER_TIER0_INTERVAL_MS) ||
+        300_000, // 5 min
+      tier1Interval:
+        config?.tier1Interval ||
+        Number(process.env.SCHEDULER_TIER1_INTERVAL_MS) ||
+        60_000, // 1 min
       tier2ScheduledRuns: config?.tier2ScheduledRuns || [6, 12, 18, 23],
       weeklyReportDay: config?.weeklyReportDay ?? 1, // Monday
       weeklyReportHour: config?.weeklyReportHour ?? 0, // 00:00 UTC
