@@ -107,7 +107,7 @@ export const DEFAULT_OLLAMA_CONFIG: OllamaProviderConfig = {
  * Ollama LLM Provider implementation.
  *
  * Provides integration with the shared remote Ollama. Only two models are
- * resident on the GPU: qwen3.5:9b (chat / code / Korean / reranking via
+ * resident on the GPU: qwen3.5:4b (chat / code / Korean / reranking via
  * LLM-as-judge) and qwen3-embedding:0.6b (embeddings).
  */
 export class OllamaProvider {
@@ -297,29 +297,45 @@ export class OllamaProvider {
     };
   }
 
+  private healthCache?: { result: { healthy: boolean; latencyMs: number; error?: string }; expiresAt: number };
+  private static readonly HEALTH_CACHE_TTL_MS = 30_000;
+
   /**
    * Check if Ollama is running and responsive.
+   * Cached for 30s per provider instance to avoid pounding the same endpoint
+   * when many model wrappers share one provider.
    */
   async checkHealth(): Promise<{
     healthy: boolean;
     latencyMs: number;
     error?: string;
   }> {
+    if (this.healthCache && this.healthCache.expiresAt > Date.now()) {
+      return this.healthCache.result;
+    }
+
     const startTime = Date.now();
+    let result: { healthy: boolean; latencyMs: number; error?: string };
 
     try {
       await this.fetchWithRetry<unknown>('/api/tags', { method: 'GET' });
-      return {
+      result = {
         healthy: true,
         latencyMs: Date.now() - startTime,
       };
     } catch (error) {
-      return {
+      result = {
         healthy: false,
         latencyMs: Date.now() - startTime,
         error: error instanceof Error ? error.message : String(error),
       };
     }
+
+    this.healthCache = {
+      result,
+      expiresAt: Date.now() + OllamaProvider.HEALTH_CACHE_TTL_MS,
+    };
+    return result;
   }
 
   /**
@@ -496,7 +512,7 @@ export class OllamaError extends Error {
  * other model name will 404 against the server until it's pulled again.
  */
 export const OLLAMA_INSTALL_COMMANDS = {
-  chat: ['ollama pull qwen3.5:9b'],
+  chat: ['ollama pull qwen3.5:4b'],
   embeddings: ['ollama pull qwen3-embedding:0.6b'],
 };
 
@@ -504,7 +520,7 @@ export const OLLAMA_INSTALL_COMMANDS = {
  * Hardware requirements for the resident model pair.
  */
 export const OLLAMA_HARDWARE_REQUIREMENTS = {
-  'qwen3.5:9b': { vram: '7GB', ram: '16GB' },
+  'qwen3.5:4b': { vram: '7GB', ram: '16GB' },
   'qwen3-embedding:0.6b': { vram: '1GB', ram: '2GB' },
 };
 

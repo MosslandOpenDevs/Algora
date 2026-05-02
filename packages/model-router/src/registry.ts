@@ -154,7 +154,12 @@ export class ModelRegistry {
     this.storage = options?.storage || new InMemoryModelRegistryStorage();
     this.healthCheckProvider =
       options?.healthCheckProvider || new DefaultHealthCheckProvider();
-    this.healthCheckIntervalMs = options?.healthCheckIntervalMs || 60000;
+    // Default 5min (300s) and configurable via env to avoid hammering shared
+    // Ollama endpoints when many model wrappers share one provider.
+    this.healthCheckIntervalMs =
+      options?.healthCheckIntervalMs ||
+      Number(process.env.MODEL_HEALTH_CHECK_INTERVAL_MS) ||
+      300_000;
     this.autoHealthCheck = options?.autoHealthCheck ?? false;
 
     if (this.autoHealthCheck) {
@@ -424,7 +429,7 @@ export class ModelRegistry {
       // Tier 1 — single chat model + single embedding model on the shared
       // remote Ollama (~8GB GPU). Both stay resident; nothing else is pulled.
       {
-        id: 'qwen3.5:9b',
+        id: 'qwen3.5:4b',
         name: 'Qwen 3.5 9B',
         provider: 'ollama',
         tier: 1,
