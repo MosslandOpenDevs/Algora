@@ -9,6 +9,7 @@ import { Providers } from '@/components/providers';
 import { Header } from '@/components/layout/Header';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { ExperimentalBanner } from '@/components/ui/ExperimentalBanner';
+import { NpcCityStrip } from '@/components/cross-link/NpcCityStrip';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -69,7 +70,12 @@ export default async function RootLayout({
                 <Sidebar />
                 <div className="flex flex-1 flex-col overflow-hidden relative z-20">
                   <Header />
-                  <main className="flex-1 overflow-auto p-4 md:p-6">{children}</main>
+                  <main className="flex-1 overflow-auto p-4 md:p-6">
+                    {children}
+                    {/* NPC city cross-link — read-side fetch with 10-min
+                        revalidate; renders nothing if npc.moss.land is down. */}
+                    <NpcCityStrip />
+                  </main>
                 </div>
               </div>
             </div>
