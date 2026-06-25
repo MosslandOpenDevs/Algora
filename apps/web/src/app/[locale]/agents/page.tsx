@@ -77,7 +77,7 @@ export default function AgentsPage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold text-slate-900">{t('title')}</h1>
+            <h1 className="text-2xl font-bold text-agora-text">{t('title')}</h1>
             <HelpTooltip content={tGuide('agents')} />
           </div>
           <p className="text-agora-muted">{t('subtitle')}</p>
@@ -101,7 +101,7 @@ export default function AgentsPage() {
             placeholder={t('searchPlaceholder')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full rounded-lg border border-agora-border bg-agora-card py-2 pl-10 pr-4 text-slate-900 placeholder-agora-muted focus:border-agora-primary focus:outline-none focus:ring-1 focus:ring-agora-primary"
+            className="w-full rounded-lg border border-agora-border bg-agora-card py-2 pl-10 pr-4 text-agora-text placeholder-agora-muted focus:border-agora-primary focus:outline-none focus:ring-1 focus:ring-agora-primary"
           />
         </div>
 
@@ -165,7 +165,7 @@ export default function AgentsPage() {
           <div className="mb-4 rounded-full bg-agora-card p-4">
             <UserX className="h-12 w-12 text-agora-muted" />
           </div>
-          <h3 className="text-lg font-semibold text-slate-900">{t('noResults')}</h3>
+          <h3 className="text-lg font-semibold text-agora-text">{t('noResults')}</h3>
           <p className="mt-2 text-sm text-agora-muted max-w-md">
             {searchQuery
               ? t('noSearchResults', { query: searchQuery })
@@ -223,7 +223,7 @@ export default function AgentsPage() {
                   >
                     <ClusterIcon className="h-4 w-4" />
                   </span>
-                  <span className="text-lg font-semibold text-slate-900">
+                  <span className="text-lg font-semibold text-agora-text">
                     {t(`groups.${cluster}`)}
                   </span>
                   <span className={`text-sm font-normal ${config.color}`}>

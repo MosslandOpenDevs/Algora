@@ -124,7 +124,7 @@ export function SessionDetailModal({ session, agents, onClose, onJoinSession }: 
                     Round {session.current_round}/{session.max_rounds}
                   </span>
                 </div>
-                <h2 className="text-xl font-bold text-slate-900 pr-8">{session.title}</h2>
+                <h2 className="text-xl font-bold text-agora-text pr-8">{session.title}</h2>
                 {session.description && (
                   <p className="mt-1 text-sm text-agora-muted line-clamp-2">
                     {session.description}
@@ -135,7 +135,7 @@ export function SessionDetailModal({ session, agents, onClose, onJoinSession }: 
 
             <button
               onClick={onClose}
-              className="rounded-lg p-2 text-agora-muted transition-colors hover:bg-agora-card hover:text-slate-900"
+              className="rounded-lg p-2 text-agora-muted transition-colors hover:bg-agora-card hover:text-agora-text"
             >
               <X className="h-5 w-5" />
             </button>
@@ -154,7 +154,7 @@ export function SessionDetailModal({ session, agents, onClose, onJoinSession }: 
                   <Calendar className="h-4 w-4" />
                   <span>{t('detail.started')}</span>
                 </div>
-                <p className="text-slate-900 font-medium">
+                <p className="text-agora-text font-medium">
                   {createdDate ? format(createdDate, 'PPpp') : 'Unknown'}
                 </p>
                 <p className="text-sm text-agora-muted mt-1">
@@ -168,7 +168,7 @@ export function SessionDetailModal({ session, agents, onClose, onJoinSession }: 
                   <Clock className="h-4 w-4" />
                   <span>{t('detail.duration')}</span>
                 </div>
-                <p className="text-slate-900 font-medium">
+                <p className="text-agora-text font-medium">
                   {session.status === 'active' && createdDate
                     ? formatDistanceToNow(createdDate)
                     : session.status === 'pending'
@@ -194,7 +194,7 @@ export function SessionDetailModal({ session, agents, onClose, onJoinSession }: 
                   <Users className="h-4 w-4" />
                   <span>{t('detail.participants')}</span>
                 </div>
-                <span className="text-sm text-slate-900 font-medium">
+                <span className="text-sm text-agora-text font-medium">
                   {participantIds.length} {t('detail.agents')}
                 </span>
               </div>
@@ -218,7 +218,7 @@ export function SessionDetailModal({ session, agents, onClose, onJoinSession }: 
                       >
                         {agent.display_name?.charAt(0) || agent.name.charAt(0)}
                       </div>
-                      <span className="text-sm text-slate-900">
+                      <span className="text-sm text-agora-text">
                         {agent.display_name || agent.name}
                       </span>
                     </div>
@@ -252,7 +252,7 @@ export function SessionDetailModal({ session, agents, onClose, onJoinSession }: 
                   <FileText className="h-4 w-4" />
                   <span>{t('detail.summary')}</span>
                 </div>
-                <p className="text-slate-900 text-sm leading-relaxed">
+                <p className="text-agora-text text-sm leading-relaxed">
                   {t('detail.summaryPlaceholder')}
                 </p>
               </div>
@@ -265,17 +265,17 @@ export function SessionDetailModal({ session, agents, onClose, onJoinSession }: 
             >
               <div className="rounded-lg border border-agora-border bg-agora-card p-4 text-center transition-all hover:scale-[1.02] hover:border-agora-accent/30">
                 <MessageSquare className="h-6 w-6 text-agora-accent mx-auto mb-2" />
-                <p className="text-2xl font-bold text-slate-900">--</p>
+                <p className="text-2xl font-bold text-agora-text">--</p>
                 <p className="text-xs text-agora-muted">{t('detail.messages')}</p>
               </div>
               <div className="rounded-lg border border-agora-border bg-agora-card p-4 text-center transition-all hover:scale-[1.02] hover:border-agora-primary/30">
                 <Users className="h-6 w-6 text-agora-primary mx-auto mb-2" />
-                <p className="text-2xl font-bold text-slate-900">{participantIds.length}</p>
+                <p className="text-2xl font-bold text-agora-text">{participantIds.length}</p>
                 <p className="text-xs text-agora-muted">{t('detail.agents')}</p>
               </div>
               <div className="rounded-lg border border-agora-border bg-agora-card p-4 text-center transition-all hover:scale-[1.02] hover:border-agora-warning/30">
                 <Clock className="h-6 w-6 text-agora-warning mx-auto mb-2" />
-                <p className="text-2xl font-bold text-slate-900">
+                <p className="text-2xl font-bold text-agora-text">
                   {session.status !== 'pending' && createdDate
                     ? Math.round((Date.now() - createdDate.getTime()) / 60000)
                     : '--'
@@ -296,7 +296,7 @@ export function SessionDetailModal({ session, agents, onClose, onJoinSession }: 
             </div>
 
             <div className="flex items-center gap-3">
-              <button className="flex items-center gap-2 rounded-lg bg-agora-card px-4 py-2 text-sm font-medium text-slate-900 transition-all duration-200 hover:bg-agora-border hover:scale-105">
+              <button className="flex items-center gap-2 rounded-lg bg-agora-card px-4 py-2 text-sm font-medium text-agora-text transition-all duration-200 hover:bg-agora-border hover:scale-105">
                 <Share2 className="h-4 w-4" />
                 {t('detail.share')}
               </button>
@@ -319,7 +319,7 @@ export function SessionDetailModal({ session, agents, onClose, onJoinSession }: 
               )}
 
               {(session.status === 'concluded' || session.status === 'completed') && (
-                <button className="flex items-center gap-2 rounded-lg bg-agora-card px-4 py-2 text-sm font-medium text-slate-900 transition-all duration-200 hover:bg-agora-border hover:scale-105">
+                <button className="flex items-center gap-2 rounded-lg bg-agora-card px-4 py-2 text-sm font-medium text-agora-text transition-all duration-200 hover:bg-agora-border hover:scale-105">
                   <ExternalLink className="h-4 w-4" />
                   {t('detail.viewTranscript')}
                 </button>

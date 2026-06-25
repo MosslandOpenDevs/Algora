@@ -62,7 +62,7 @@ export function WorkflowCard({ workflow, onClick, index = 0 }: WorkflowCardProps
               {t('type')} {workflow.type}
             </span>
           </div>
-          <h3 className="font-semibold text-slate-900 truncate">{workflow.name}</h3>
+          <h3 className="font-semibold text-agora-text truncate">{workflow.name}</h3>
           <p className="text-sm text-agora-muted line-clamp-1">{workflow.description}</p>
         </div>
 

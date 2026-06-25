@@ -72,7 +72,7 @@ export function SessionCard({ session, isActive, index = 0, onClick, onDetailCli
           {statusIcons[session.status] || statusIcons.active}
         </div>
         <div className="flex-1 min-w-0">
-          <h4 className="font-medium text-slate-900 truncate text-sm group-hover:text-agora-primary transition-colors">
+          <h4 className="font-medium text-agora-text truncate text-sm group-hover:text-agora-primary transition-colors">
             {session.title}
           </h4>
           <p className="mt-1 text-xs text-agora-muted">
@@ -82,7 +82,7 @@ export function SessionCard({ session, isActive, index = 0, onClick, onDetailCli
         {onDetailClick && (
           <button
             onClick={handleDetailClick}
-            className="opacity-0 group-hover:opacity-100 rounded p-1 text-agora-muted hover:bg-agora-border hover:text-slate-900 transition-all"
+            className="opacity-0 group-hover:opacity-100 rounded p-1 text-agora-muted hover:bg-agora-border hover:text-agora-text transition-all"
             title="View details"
           >
             <Info className="h-4 w-4" />

@@ -66,7 +66,7 @@ export function NewSessionModal({ onClose, onCreated }: NewSessionModalProps) {
         {/* Close button */}
         <button
           onClick={onClose}
-          className="absolute right-4 top-4 rounded-lg p-1 text-agora-muted transition-colors hover:bg-agora-card hover:text-slate-900"
+          className="absolute right-4 top-4 rounded-lg p-1 text-agora-muted transition-colors hover:bg-agora-card hover:text-agora-text"
         >
           <X className="h-5 w-5" />
         </button>
@@ -77,14 +77,14 @@ export function NewSessionModal({ onClose, onCreated }: NewSessionModalProps) {
             <MessageSquare className="h-5 w-5 text-agora-primary" />
           </div>
           <div>
-            <h2 className="text-lg font-bold text-slate-900">{t('startSession')}</h2>
+            <h2 className="text-lg font-bold text-agora-text">{t('startSession')}</h2>
             <p className="text-sm text-agora-muted">Create a new deliberation session</p>
           </div>
         </div>
 
         {/* Form */}
         <div className="mt-6">
-          <label className="block text-sm font-medium text-slate-900">
+          <label className="block text-sm font-medium text-agora-text">
             Session Topic
           </label>
           <input
@@ -92,7 +92,7 @@ export function NewSessionModal({ onClose, onCreated }: NewSessionModalProps) {
             value={topic}
             onChange={(e) => setTopic(e.target.value)}
             placeholder="e.g., Budget allocation for Q2 2026"
-            className="mt-2 w-full rounded-lg border border-agora-border bg-agora-darker px-4 py-3 text-slate-900 placeholder-agora-muted focus:border-agora-primary focus:outline-none focus:ring-1 focus:ring-agora-primary"
+            className="mt-2 w-full rounded-lg border border-agora-border bg-agora-darker px-4 py-3 text-agora-text placeholder-agora-muted focus:border-agora-primary focus:outline-none focus:ring-1 focus:ring-agora-primary"
             autoFocus
           />
           <p className="mt-2 text-xs text-agora-muted">
@@ -121,7 +121,7 @@ export function NewSessionModal({ onClose, onCreated }: NewSessionModalProps) {
           </button>
           <button
             onClick={onClose}
-            className="rounded-lg bg-agora-card px-4 py-2.5 font-medium text-agora-muted transition-colors hover:bg-agora-border hover:text-slate-900"
+            className="rounded-lg bg-agora-card px-4 py-2.5 font-medium text-agora-muted transition-colors hover:bg-agora-border hover:text-agora-text"
           >
             Cancel
           </button>

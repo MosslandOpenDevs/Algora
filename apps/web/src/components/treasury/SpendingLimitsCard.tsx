@@ -55,7 +55,7 @@ export function SpendingLimitsCard({ limits }: SpendingLimitsCardProps) {
   return (
     <div className="rounded-xl border border-agora-border bg-agora-card p-6">
       <div className="mb-4 flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-slate-900">{t('spendingLimits.title')}</h3>
+        <h3 className="text-lg font-semibold text-agora-text">{t('spendingLimits.title')}</h3>
         <span className="text-xs text-agora-muted">{t('spendingLimits.monthly')}</span>
       </div>
 
@@ -73,7 +73,7 @@ export function SpendingLimitsCard({ limits }: SpendingLimitsCardProps) {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Icon className="h-4 w-4 text-agora-accent" />
-                    <span className="text-sm font-medium text-slate-900 capitalize">
+                    <span className="text-sm font-medium text-agora-text capitalize">
                       {limit.category}
                     </span>
                     {isNearLimit && (
@@ -81,7 +81,7 @@ export function SpendingLimitsCard({ limits }: SpendingLimitsCardProps) {
                     )}
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-semibold text-slate-900">
+                    <span className="text-sm font-semibold text-agora-text">
                       {currentMonthly.toLocaleString()}
                     </span>
                     <span className="text-sm text-agora-muted">/</span>

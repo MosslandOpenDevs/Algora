@@ -86,7 +86,7 @@ export function DocumentCard({ document, onClick, index = 0 }: DocumentCardProps
           </div>
 
           {/* Title */}
-          <h3 className="font-semibold text-slate-900 line-clamp-1">{document.title}</h3>
+          <h3 className="font-semibold text-agora-text line-clamp-1">{document.title}</h3>
 
           {/* Summary */}
           <p className="mt-1 text-sm text-agora-muted line-clamp-2">{document.summary}</p>

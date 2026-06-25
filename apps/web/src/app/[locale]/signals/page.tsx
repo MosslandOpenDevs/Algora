@@ -84,14 +84,14 @@ export default function SignalsPage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold text-slate-900">{t('title')}</h1>
+            <h1 className="text-2xl font-bold text-agora-text">{t('title')}</h1>
             <HelpTooltip content={tGuide('signals')} />
           </div>
           <p className="text-agora-muted">{t('subtitle')}</p>
         </div>
         <button
           onClick={() => refetch()}
-          className="flex items-center gap-2 rounded-lg bg-agora-card px-4 py-2 text-slate-900 transition-colors hover:bg-agora-border"
+          className="flex items-center gap-2 rounded-lg bg-agora-card px-4 py-2 text-agora-text transition-colors hover:bg-agora-border"
         >
           <RefreshCw className="h-4 w-4" />
           {t('refresh')}
@@ -111,7 +111,7 @@ export default function SignalsPage() {
             <Radio className="h-4 w-4" />
             <span className="text-sm">{t('stats.total')}</span>
           </div>
-          <p className="mt-2 text-2xl font-bold text-slate-900">{stats.total.toLocaleString()}</p>
+          <p className="mt-2 text-2xl font-bold text-agora-text">{stats.total.toLocaleString()}</p>
           {stats.showing < stats.total && (
             <p className="mt-1 text-xs text-agora-muted">
               Showing {stats.showing} of {stats.total.toLocaleString()}
@@ -126,7 +126,7 @@ export default function SignalsPage() {
             <CheckCircle className="h-4 w-4" />
             <span className="text-sm">{t('stats.processed')}</span>
           </div>
-          <p className="mt-2 text-2xl font-bold text-slate-900">{stats.processed}</p>
+          <p className="mt-2 text-2xl font-bold text-agora-text">{stats.processed}</p>
         </div>
         <div
           className="animate-slide-up rounded-lg border border-agora-border bg-agora-card p-4 transition-all duration-200 hover:scale-[1.02] hover:shadow-lg hover:border-agora-warning/30"
@@ -136,7 +136,7 @@ export default function SignalsPage() {
             <Clock className="h-4 w-4" />
             <span className="text-sm">{t('stats.pending')}</span>
           </div>
-          <p className="mt-2 text-2xl font-bold text-slate-900">{stats.unprocessed}</p>
+          <p className="mt-2 text-2xl font-bold text-agora-text">{stats.unprocessed}</p>
         </div>
         <div
           className="animate-slide-up rounded-lg border border-agora-border bg-agora-card p-4 transition-all duration-200 hover:scale-[1.02] hover:shadow-lg hover:border-agora-error/30"
@@ -146,7 +146,7 @@ export default function SignalsPage() {
             <AlertCircle className="h-4 w-4" />
             <span className="text-sm">{t('stats.highPriority')}</span>
           </div>
-          <p className="mt-2 text-2xl font-bold text-slate-900">{stats.highPriority}</p>
+          <p className="mt-2 text-2xl font-bold text-agora-text">{stats.highPriority}</p>
         </div>
       </div>
 

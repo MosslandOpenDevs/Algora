@@ -86,14 +86,14 @@ export function ApprovalDetailModal({ action, isOpen, onClose, onApprove }: Appr
                     <span className="text-sm font-medium capitalize">{t(`status.${action.status}`)}</span>
                   </div>
                 </div>
-                <h2 className="text-xl font-bold text-slate-900">{action.actionType}</h2>
+                <h2 className="text-xl font-bold text-agora-text">{action.actionType}</h2>
                 <p className="text-sm text-agora-muted mt-1">
                   ID: {action.id}
                 </p>
               </div>
               <button
                 onClick={onClose}
-                className="rounded-lg p-2 text-agora-muted transition-colors hover:bg-agora-border hover:text-slate-900"
+                className="rounded-lg p-2 text-agora-muted transition-colors hover:bg-agora-border hover:text-agora-text"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -109,14 +109,14 @@ export function ApprovalDetailModal({ action, isOpen, onClose, onApprove }: Appr
               <AlertTriangle className={`h-6 w-6 ${riskStyle.text} shrink-0`} />
               <div>
                 <h3 className={`font-semibold ${riskStyle.text}`}>{t('lockReason')}</h3>
-                <p className="text-sm text-slate-900 mt-1">{action.lockReason}</p>
+                <p className="text-sm text-agora-text mt-1">{action.lockReason}</p>
               </div>
             </div>
           </div>
 
           {/* Lock Reason */}
           <div className="mb-6">
-            <h3 className="text-sm font-semibold text-slate-900 mb-2">{t('lockReason')}</h3>
+            <h3 className="text-sm font-semibold text-agora-text mb-2">{t('lockReason')}</h3>
             <div className="rounded-lg border border-agora-border bg-agora-dark/30 p-4">
               <p className="text-sm text-agora-muted">{action.lockReason || 'No reason provided'}</p>
             </div>
@@ -124,13 +124,13 @@ export function ApprovalDetailModal({ action, isOpen, onClose, onApprove }: Appr
 
           {/* Approval Progress */}
           <div className="mb-6">
-            <h3 className="text-sm font-semibold text-slate-900 mb-3">{t('approvalProgress')}</h3>
+            <h3 className="text-sm font-semibold text-agora-text mb-3">{t('approvalProgress')}</h3>
             <div className="rounded-xl border border-agora-border bg-agora-card p-4">
               {/* Progress bar */}
               <div className="mb-4">
                 <div className="flex items-center justify-between text-sm mb-2">
                   <span className="text-agora-muted">{t('approvals')}</span>
-                  <span className="font-medium text-slate-900">
+                  <span className="font-medium text-agora-text">
                     {action.receivedApprovals.length} / {action.requiredApprovals.length}
                   </span>
                 </div>
@@ -164,7 +164,7 @@ export function ApprovalDetailModal({ action, isOpen, onClose, onApprove }: Appr
                           )}
                         </div>
                         <div>
-                          <p className="text-sm font-medium text-slate-900">{approver}</p>
+                          <p className="text-sm font-medium text-agora-text">{approver}</p>
                           <p className="text-xs text-agora-muted">
                             {isApproved ? t('approved') : t('pendingApproval')}
                           </p>
@@ -189,7 +189,7 @@ export function ApprovalDetailModal({ action, isOpen, onClose, onApprove }: Appr
                 <Calendar className="h-4 w-4" />
                 <span className="text-xs font-medium">{t('createdAt')}</span>
               </div>
-              <p className="text-sm text-slate-900">
+              <p className="text-sm text-agora-text">
                 {safeFormatDate(action.createdAt, (d) => format(d, 'PPP'))}
               </p>
               <p className="text-xs text-agora-muted mt-0.5">
@@ -203,7 +203,7 @@ export function ApprovalDetailModal({ action, isOpen, onClose, onApprove }: Appr
                   <FileText className="h-4 w-4" />
                   <span className="text-xs font-medium">{t('documentId')}</span>
                 </div>
-                <p className="text-sm font-mono text-slate-900 truncate">{action.documentId}</p>
+                <p className="text-sm font-mono text-agora-text truncate">{action.documentId}</p>
               </div>
             )}
 
@@ -211,7 +211,7 @@ export function ApprovalDetailModal({ action, isOpen, onClose, onApprove }: Appr
 
           {/* What happens after approval */}
           <div className="rounded-lg border border-agora-border bg-agora-dark/30 p-4">
-            <h3 className="text-sm font-semibold text-slate-900 mb-2">{t('afterApproval')}</h3>
+            <h3 className="text-sm font-semibold text-agora-text mb-2">{t('afterApproval')}</h3>
             <ul className="space-y-2 text-sm text-agora-muted">
               <li className="flex items-start gap-2">
                 <CheckCircle className="h-4 w-4 text-agora-success mt-0.5 shrink-0" />
@@ -233,7 +233,7 @@ export function ApprovalDetailModal({ action, isOpen, onClose, onApprove }: Appr
         <div className="sticky bottom-0 flex items-center justify-between border-t border-agora-border bg-agora-card p-4">
           <button
             onClick={onClose}
-            className="rounded-lg px-4 py-2 text-sm font-medium text-agora-muted transition-colors hover:bg-agora-border hover:text-slate-900"
+            className="rounded-lg px-4 py-2 text-sm font-medium text-agora-muted transition-colors hover:bg-agora-border hover:text-agora-text"
           >
             {t('close')}
           </button>

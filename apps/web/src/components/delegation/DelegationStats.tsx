@@ -71,7 +71,7 @@ export function DelegationStats({
             </div>
             <div>
               <p className="text-sm text-agora-muted">{stat.label}</p>
-              <p className={`text-xl font-bold ${stat.highlight ? 'text-agora-accent' : 'text-slate-900'}`}>
+              <p className={`text-xl font-bold ${stat.highlight ? 'text-agora-accent' : 'text-agora-text'}`}>
                 {stat.prefix}{stat.value.toLocaleString()}
               </p>
             </div>

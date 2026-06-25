@@ -144,7 +144,7 @@ Report ID: ${report.id}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold text-slate-900">{t('disclosure')}</h1>
+            <h1 className="text-2xl font-bold text-agora-text">{t('disclosure')}</h1>
             <HelpTooltip content="Transparency reports and governance disclosures for the DAO" />
           </div>
           <p className="text-agora-muted">Transparency reports and governance disclosures</p>
@@ -158,28 +158,28 @@ Report ID: ${report.id}
             <FileText className="h-4 w-4" />
             <span className="text-sm">Total Reports</span>
           </div>
-          <p className="mt-2 text-2xl font-bold text-slate-900">{displayStats.total}</p>
+          <p className="mt-2 text-2xl font-bold text-agora-text">{displayStats.total}</p>
         </div>
         <div className="rounded-lg border border-agora-border bg-agora-card p-4">
           <div className="flex items-center gap-2 text-agora-success">
             <CheckCircle className="h-4 w-4" />
             <span className="text-sm">Published</span>
           </div>
-          <p className="mt-2 text-2xl font-bold text-slate-900">{displayStats.published}</p>
+          <p className="mt-2 text-2xl font-bold text-agora-text">{displayStats.published}</p>
         </div>
         <div className="rounded-lg border border-agora-border bg-agora-card p-4">
           <div className="flex items-center gap-2 text-agora-primary">
             <Calendar className="h-4 w-4" />
             <span className="text-sm">Quarterly</span>
           </div>
-          <p className="mt-2 text-2xl font-bold text-slate-900">{displayStats.byType.quarterly}</p>
+          <p className="mt-2 text-2xl font-bold text-agora-text">{displayStats.byType.quarterly}</p>
         </div>
         <div className="rounded-lg border border-agora-border bg-agora-card p-4">
           <div className="flex items-center gap-2 text-agora-accent">
             <Shield className="h-4 w-4" />
             <span className="text-sm">Audits</span>
           </div>
-          <p className="mt-2 text-2xl font-bold text-slate-900">{displayStats.byType.audit}</p>
+          <p className="mt-2 text-2xl font-bold text-agora-text">{displayStats.byType.audit}</p>
         </div>
       </div>
 
@@ -193,7 +193,7 @@ Report ID: ${report.id}
             placeholder="Search reports..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full rounded-lg border border-agora-border bg-agora-card py-2 pl-10 pr-4 text-slate-900 placeholder-agora-muted focus:border-agora-primary focus:outline-none focus:ring-1 focus:ring-agora-primary"
+            className="w-full rounded-lg border border-agora-border bg-agora-card py-2 pl-10 pr-4 text-agora-text placeholder-agora-muted focus:border-agora-primary focus:outline-none focus:ring-1 focus:ring-agora-primary"
           />
         </div>
 
@@ -251,7 +251,7 @@ Report ID: ${report.id}
       ) : filteredReports?.length === 0 ? (
         <div className="rounded-lg border border-dashed border-agora-border p-8 text-center">
           <FileText className="mx-auto h-12 w-12 text-agora-muted/50" />
-          <h3 className="mt-4 text-lg font-semibold text-slate-900">No Reports</h3>
+          <h3 className="mt-4 text-lg font-semibold text-agora-text">No Reports</h3>
           <p className="mt-2 text-sm text-agora-muted">
             {searchQuery || selectedType !== 'all' || selectedStatus !== 'all'
               ? 'No reports match your filters.'
@@ -281,7 +281,7 @@ Report ID: ${report.id}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-4">
                       <div>
-                        <h3 className="font-semibold text-slate-900 group-hover:text-agora-primary transition-colors">
+                        <h3 className="font-semibold text-agora-text group-hover:text-agora-primary transition-colors">
                           {report.title}
                         </h3>
                         <p className="mt-1 text-sm text-agora-muted line-clamp-2">
@@ -326,7 +326,7 @@ Report ID: ${report.id}
                               e.stopPropagation();
                               handleDownload(report);
                             }}
-                            className="flex items-center gap-1 text-agora-muted hover:text-slate-900 transition-colors"
+                            className="flex items-center gap-1 text-agora-muted hover:text-agora-text transition-colors"
                           >
                             <Download className="h-3 w-3" />
                             Download

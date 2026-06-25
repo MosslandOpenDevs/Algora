@@ -138,7 +138,7 @@ export function SignalDetailModal({ signal, onClose }: SignalDetailModalProps) {
                 {sourceIcons[sourceType] || sourceIcons.api}
               </div>
               <div className="min-w-0 flex-1">
-                <h2 className="text-lg sm:text-xl font-bold text-slate-900 pr-8 line-clamp-2 break-words">{title}</h2>
+                <h2 className="text-lg sm:text-xl font-bold text-agora-text pr-8 line-clamp-2 break-words">{title}</h2>
                 <div className="mt-2 flex flex-wrap items-center gap-3">
                   {/* Source Badge */}
                   <span className={`flex items-center gap-1.5 text-sm ${(sourceColors[sourceType] || sourceColors.api).split(' ')[0]}`}>
@@ -164,7 +164,7 @@ export function SignalDetailModal({ signal, onClose }: SignalDetailModalProps) {
 
             <button
               onClick={onClose}
-              className="rounded-lg p-2 text-agora-muted transition-colors hover:bg-agora-card hover:text-slate-900"
+              className="rounded-lg p-2 text-agora-muted transition-colors hover:bg-agora-card hover:text-agora-text"
             >
               <X className="h-5 w-5" />
             </button>
@@ -181,7 +181,7 @@ export function SignalDetailModal({ signal, onClose }: SignalDetailModalProps) {
                 <FileText className="h-4 w-4" />
                 <span>{t('detail.content')}</span>
               </div>
-              <p className="text-slate-900 whitespace-pre-wrap leading-relaxed break-words overflow-hidden">
+              <p className="text-agora-text whitespace-pre-wrap leading-relaxed break-words overflow-hidden">
                 {signal.description}
               </p>
             </div>
@@ -197,7 +197,7 @@ export function SignalDetailModal({ signal, onClose }: SignalDetailModalProps) {
                   <Calendar className="h-4 w-4" />
                   <span>{t('detail.timestamp')}</span>
                 </div>
-                <p className="text-slate-900 font-medium">
+                <p className="text-agora-text font-medium">
                   {safeFormatDate(signal.timestamp || signal.created_at, (d) => format(d, 'PPpp'))}
                 </p>
                 <p className="text-sm text-agora-muted mt-1">
@@ -211,7 +211,7 @@ export function SignalDetailModal({ signal, onClose }: SignalDetailModalProps) {
                   <Tag className="h-4 w-4" />
                   <span>{t('detail.signalId')}</span>
                 </div>
-                <p className="text-slate-900 font-mono text-sm break-all">
+                <p className="text-agora-text font-mono text-sm break-all">
                   {signal.id}
                 </p>
               </div>
@@ -231,7 +231,7 @@ export function SignalDetailModal({ signal, onClose }: SignalDetailModalProps) {
                   {Object.entries(metadata).map(([key, value]) => (
                     <div key={key} className="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-2 text-sm">
                       <span className="text-agora-muted sm:min-w-[100px] flex-shrink-0">{key}:</span>
-                      <span className="text-slate-900 font-mono break-all overflow-hidden text-ellipsis">
+                      <span className="text-agora-text font-mono break-all overflow-hidden text-ellipsis">
                         {typeof value === 'object' ? JSON.stringify(value) : String(value)}
                       </span>
                     </div>
@@ -256,7 +256,7 @@ export function SignalDetailModal({ signal, onClose }: SignalDetailModalProps) {
                   href={url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center justify-center gap-2 rounded-lg bg-agora-card px-4 py-2 text-sm font-medium text-slate-900 transition-all duration-200 hover:bg-agora-border hover:scale-105"
+                  className="flex items-center justify-center gap-2 rounded-lg bg-agora-card px-4 py-2 text-sm font-medium text-agora-text transition-all duration-200 hover:bg-agora-border hover:scale-105"
                 >
                   <ExternalLink className="h-4 w-4 flex-shrink-0" />
                   <span className="truncate">{t('viewSource')}</span>

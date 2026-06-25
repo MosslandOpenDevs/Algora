@@ -66,7 +66,7 @@ export function AllocationCard({ allocation, onClick, index = 0 }: AllocationCar
           <Icon className="h-5 w-5 text-agora-accent" />
         </div>
         <div className="min-w-0 flex-1">
-          <p className="font-medium text-slate-900">{allocation.category}</p>
+          <p className="font-medium text-agora-text">{allocation.category}</p>
           <p className="text-sm text-agora-muted line-clamp-1 break-words">{allocation.description}</p>
           <p className="mt-1 font-mono text-xs text-agora-muted truncate">
             {t('recipient')}: {formatAddress(allocation.recipient)}
@@ -74,7 +74,7 @@ export function AllocationCard({ allocation, onClick, index = 0 }: AllocationCar
         </div>
       </div>
       <div className="text-left sm:text-right flex-shrink-0">
-        <p className="font-semibold text-slate-900">
+        <p className="font-semibold text-agora-text">
           {formatBalance(allocation.amount)} {allocation.tokenSymbol}
         </p>
         <span

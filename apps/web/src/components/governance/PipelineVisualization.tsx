@@ -70,8 +70,8 @@ function StageTooltip({
         transform: 'translate(-50%, -100%)',
       }}
     >
-      <div className="rounded-lg border border-agora-border bg-white p-3 shadow-2xl">
-        <div className="text-xs font-semibold text-slate-900 mb-1">
+      <div className="rounded-lg border border-agora-border bg-agora-card p-3 shadow-2xl">
+        <div className="text-xs font-semibold text-agora-text mb-1">
           {stageName}
         </div>
         <p className="text-xs text-agora-muted leading-relaxed">
@@ -83,7 +83,7 @@ function StageTooltip({
         </div>
       </div>
       <div
-        className="absolute w-2 h-2 rotate-45 bg-white border-r border-b border-agora-border"
+        className="absolute w-2 h-2 rotate-45 bg-agora-card border-r border-b border-agora-border"
         style={{
           bottom: -4,
           left: '50%',
@@ -168,7 +168,7 @@ export function PipelineVisualization({ status, compact = false }: PipelineVisua
       <div className="bg-gradient-to-r from-agora-primary/10 via-agora-secondary/10 to-agora-tertiary/10 p-4 border-b border-agora-border rounded-t-lg">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h3 className="font-semibold text-slate-900 flex items-center gap-2">
+            <h3 className="font-semibold text-agora-text flex items-center gap-2">
               <Activity className="h-5 w-5 text-agora-primary" />
               {t('title')}
             </h3>
@@ -179,13 +179,13 @@ export function PipelineVisualization({ status, compact = false }: PipelineVisua
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2 rounded-full bg-agora-card px-3 py-1.5 border border-agora-border">
               <Zap className="h-4 w-4 text-agora-warning" />
-              <span className="text-sm font-medium text-slate-900">
+              <span className="text-sm font-medium text-agora-text">
                 {completedCount}/{STAGES.length} {t('stages_completed', { defaultValue: 'stages' })}
               </span>
             </div>
             <div className="flex items-center gap-2 rounded-full bg-agora-card px-3 py-1.5 border border-agora-border">
               <TrendingUp className="h-4 w-4 text-agora-success" />
-              <span className="text-sm font-medium text-slate-900">{simulatedProgress}%</span>
+              <span className="text-sm font-medium text-agora-text">{simulatedProgress}%</span>
             </div>
           </div>
         </div>

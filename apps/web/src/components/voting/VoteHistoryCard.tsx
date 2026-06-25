@@ -63,7 +63,7 @@ export function VoteHistoryCard({ vote, index = 0 }: VoteHistoryCardProps) {
             href={`/${locale}/proposals`}
             className="group flex items-center gap-2"
           >
-            <h4 className="font-medium text-slate-900 truncate group-hover:text-agora-primary transition-colors">
+            <h4 className="font-medium text-agora-text truncate group-hover:text-agora-primary transition-colors">
               {vote.proposalTitle}
             </h4>
             <ExternalLink className="h-3 w-3 text-agora-muted opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
@@ -96,7 +96,7 @@ export function VoteHistoryCard({ vote, index = 0 }: VoteHistoryCardProps) {
       {/* Voting Power */}
       <div className="mt-3 pt-3 border-t border-agora-border flex items-center justify-between text-sm">
         <span className="text-agora-muted">{t('votingPower')}</span>
-        <span className="font-medium text-slate-900">{vote.votingPower.toLocaleString()}</span>
+        <span className="font-medium text-agora-text">{vote.votingPower.toLocaleString()}</span>
       </div>
     </div>
   );

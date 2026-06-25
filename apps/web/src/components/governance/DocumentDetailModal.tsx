@@ -107,12 +107,12 @@ export function DocumentDetailModal({ document, isOpen, onClose }: DocumentDetai
                 </span>
               </div>
             </div>
-            <h2 className="text-xl font-bold text-slate-900">{document.title}</h2>
+            <h2 className="text-xl font-bold text-agora-text">{document.title}</h2>
             <p className="text-sm text-agora-muted mt-1">{typeInfo.description}</p>
           </div>
           <button
             onClick={onClose}
-            className="rounded-lg p-2 text-agora-muted transition-colors hover:bg-agora-border hover:text-slate-900"
+            className="rounded-lg p-2 text-agora-muted transition-colors hover:bg-agora-border hover:text-agora-text"
           >
             <X className="h-5 w-5" />
           </button>
@@ -122,7 +122,7 @@ export function DocumentDetailModal({ document, isOpen, onClose }: DocumentDetai
         <div className="overflow-y-auto p-6" style={{ maxHeight: 'calc(85vh - 180px)' }}>
           {/* Summary */}
           <div className="mb-6">
-            <h3 className="text-sm font-semibold text-slate-900 mb-2">{t('summary')}</h3>
+            <h3 className="text-sm font-semibold text-agora-text mb-2">{t('summary')}</h3>
             <p className="text-sm text-agora-muted leading-relaxed">{document.summary}</p>
           </div>
 
@@ -133,7 +133,7 @@ export function DocumentDetailModal({ document, isOpen, onClose }: DocumentDetai
                 <Hash className="h-4 w-4" />
                 <span className="text-xs font-medium">{t('documentId')}</span>
               </div>
-              <p className="text-sm font-mono text-slate-900">{document.id}</p>
+              <p className="text-sm font-mono text-agora-text">{document.id}</p>
             </div>
 
             <div className="rounded-lg bg-agora-dark/50 p-4">
@@ -141,7 +141,7 @@ export function DocumentDetailModal({ document, isOpen, onClose }: DocumentDetai
                 <Tag className="h-4 w-4" />
                 <span className="text-xs font-medium">{t('version')}</span>
               </div>
-              <p className="text-sm font-mono text-slate-900">
+              <p className="text-sm font-mono text-agora-text">
                 v{document.version.major}.{document.version.minor}.{document.version.patch}
               </p>
             </div>
@@ -151,7 +151,7 @@ export function DocumentDetailModal({ document, isOpen, onClose }: DocumentDetai
                 <User className="h-4 w-4" />
                 <span className="text-xs font-medium">{t('createdBy')}</span>
               </div>
-              <p className="text-sm text-slate-900">{document.createdBy}</p>
+              <p className="text-sm text-agora-text">{document.createdBy}</p>
             </div>
 
             <div className="rounded-lg bg-agora-dark/50 p-4">
@@ -159,7 +159,7 @@ export function DocumentDetailModal({ document, isOpen, onClose }: DocumentDetai
                 <Calendar className="h-4 w-4" />
                 <span className="text-xs font-medium">{t('createdAt')}</span>
               </div>
-              <p className="text-sm text-slate-900">
+              <p className="text-sm text-agora-text">
                 {safeFormatDate(document.createdAt, (d) => format(d, 'PPP'))}
               </p>
             </div>
@@ -167,14 +167,14 @@ export function DocumentDetailModal({ document, isOpen, onClose }: DocumentDetai
 
           {/* Timeline */}
           <div className="mb-6">
-            <h3 className="text-sm font-semibold text-slate-900 mb-3">{t('timeline')}</h3>
+            <h3 className="text-sm font-semibold text-agora-text mb-3">{t('timeline')}</h3>
             <div className="space-y-3">
               <div className="flex items-center gap-3">
                 <div className="flex h-8 w-8 items-center justify-center rounded-full bg-agora-success/10">
                   <FileText className="h-4 w-4 text-agora-success" />
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-slate-900">{t('created')}</p>
+                  <p className="text-sm font-medium text-agora-text">{t('created')}</p>
                   <p className="text-xs text-agora-muted">
                     {safeFormatDate(document.createdAt, (d) => formatDistanceToNow(d, { addSuffix: true }))}
                   </p>
@@ -186,7 +186,7 @@ export function DocumentDetailModal({ document, isOpen, onClose }: DocumentDetai
                   <Clock className="h-4 w-4 text-agora-primary" />
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-slate-900">{t('lastUpdated')}</p>
+                  <p className="text-sm font-medium text-agora-text">{t('lastUpdated')}</p>
                   <p className="text-xs text-agora-muted">
                     {safeFormatDate(document.updatedAt, (d) => formatDistanceToNow(d, { addSuffix: true }))}
                   </p>
@@ -211,7 +211,7 @@ export function DocumentDetailModal({ document, isOpen, onClose }: DocumentDetai
         <div className="sticky bottom-0 flex items-center justify-end gap-3 border-t border-agora-border bg-agora-card p-4">
           <button
             onClick={onClose}
-            className="rounded-lg px-4 py-2 text-sm font-medium text-agora-muted transition-colors hover:bg-agora-border hover:text-slate-900"
+            className="rounded-lg px-4 py-2 text-sm font-medium text-agora-muted transition-colors hover:bg-agora-border hover:text-agora-text"
           >
             {t('close')}
           </button>

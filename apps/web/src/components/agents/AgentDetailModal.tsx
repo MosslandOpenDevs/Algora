@@ -176,7 +176,7 @@ export function AgentDetailModal({ agent, onClose }: AgentDetailModalProps) {
               />
             </div>
             <div className="flex-1 pt-1">
-              <h2 className="text-xl font-bold text-slate-900">
+              <h2 className="text-xl font-bold text-agora-text">
                 {agent.display_name || agent.name}
               </h2>
               <p className="text-sm text-agora-muted">@{agent.name}</p>
@@ -229,7 +229,7 @@ export function AgentDetailModal({ agent, onClose }: AgentDetailModalProps) {
             className="animate-slide-up mt-5"
             style={{ animationDelay: '100ms', animationFillMode: 'backwards' }}
           >
-            <h3 className="flex items-center gap-2 text-sm font-semibold text-slate-900">
+            <h3 className="flex items-center gap-2 text-sm font-semibold text-agora-text">
               <User className="h-4 w-4 text-agora-primary" />
               Persona
             </h3>
@@ -247,17 +247,17 @@ export function AgentDetailModal({ agent, onClose }: AgentDetailModalProps) {
           >
             <div className="rounded-lg border border-agora-border bg-agora-card p-3 text-center">
               <MessageCircle className="h-5 w-5 text-agora-accent mx-auto mb-1" />
-              <p className="text-lg font-bold text-slate-900">--</p>
+              <p className="text-lg font-bold text-agora-text">--</p>
               <p className="text-xs text-agora-muted">Messages</p>
             </div>
             <div className="rounded-lg border border-agora-border bg-agora-card p-3 text-center">
               <Users className="h-5 w-5 text-agora-primary mx-auto mb-1" />
-              <p className="text-lg font-bold text-slate-900">--</p>
+              <p className="text-lg font-bold text-agora-text">--</p>
               <p className="text-xs text-agora-muted">Sessions</p>
             </div>
             <div className="rounded-lg border border-agora-border bg-agora-card p-3 text-center">
               <BarChart3 className="h-5 w-5 text-agora-success mx-auto mb-1" />
-              <p className="text-lg font-bold text-slate-900">--</p>
+              <p className="text-lg font-bold text-agora-text">--</p>
               <p className="text-xs text-agora-muted">Trust Score</p>
             </div>
           </div>
@@ -267,7 +267,7 @@ export function AgentDetailModal({ agent, onClose }: AgentDetailModalProps) {
             className="animate-slide-up mt-5"
             style={{ animationDelay: '200ms', animationFillMode: 'backwards' }}
           >
-            <h3 className="flex items-center gap-2 text-sm font-semibold text-slate-900">
+            <h3 className="flex items-center gap-2 text-sm font-semibold text-agora-text">
               <MessageCircle className="h-4 w-4 text-agora-accent" />
               {t('recentActivity')}
             </h3>

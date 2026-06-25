@@ -84,7 +84,7 @@ export function AgentCard({ agent, index = 0, onClick }: AgentCardProps) {
           />
         </div>
         <div className="flex-1 min-w-0">
-          <h3 className="font-semibold text-slate-900 truncate group-hover:text-agora-primary transition-colors">
+          <h3 className="font-semibold text-agora-text truncate group-hover:text-agora-primary transition-colors">
             {agent.display_name || agent.name}
           </h3>
           {/* Group badge with color */}

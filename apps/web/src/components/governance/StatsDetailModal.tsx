@@ -81,18 +81,18 @@ function UptimeContent({ stats, health }: { stats: GovernanceOSStats; health?: G
       <div className="text-center py-6">
         <div className="inline-flex items-center justify-center w-32 h-32 rounded-full bg-gradient-to-br from-rose-500/20 to-pink-500/20 mb-4">
           <div className="text-center">
-            <p className="text-4xl font-bold text-slate-900">{uptimeHours}h</p>
+            <p className="text-4xl font-bold text-agora-text">{uptimeHours}h</p>
             <p className="text-sm text-agora-muted">{uptimeMinutes}m</p>
           </div>
         </div>
-        <p className="text-lg font-medium text-slate-900">Current Session</p>
+        <p className="text-lg font-medium text-agora-text">Current Session</p>
         <p className="text-sm text-agora-muted">Started {formattedStartDate}</p>
       </div>
 
       {/* Uptime Percentage */}
       <div className="rounded-xl bg-agora-dark/50 p-4">
         <div className="flex items-center justify-between mb-2">
-          <span className="text-sm font-medium text-slate-900">Overall Uptime</span>
+          <span className="text-sm font-medium text-agora-text">Overall Uptime</span>
           <span className="text-sm font-bold text-agora-success">{uptimePercent}%</span>
         </div>
         <div className="h-3 rounded-full bg-agora-border overflow-hidden">
@@ -106,7 +106,7 @@ function UptimeContent({ stats, health }: { stats: GovernanceOSStats; health?: G
       {/* Component Status */}
       {health && (
         <div>
-          <h4 className="text-sm font-semibold text-slate-900 mb-3">Component Status</h4>
+          <h4 className="text-sm font-semibold text-agora-text mb-3">Component Status</h4>
           <div className="grid grid-cols-2 gap-3">
             {health.components.map((component) => (
               <div
@@ -125,7 +125,7 @@ function UptimeContent({ stats, health }: { stats: GovernanceOSStats; health?: G
                   )}
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-slate-900 capitalize">{component.name}</p>
+                  <p className="text-sm font-medium text-agora-text capitalize">{component.name}</p>
                   <p className="text-xs text-agora-muted">{component.status.toUpperCase()}</p>
                 </div>
               </div>
@@ -138,17 +138,17 @@ function UptimeContent({ stats, health }: { stats: GovernanceOSStats; health?: G
       <div className="grid grid-cols-3 gap-3">
         <div className="rounded-lg bg-agora-dark/50 p-3 text-center">
           <Server className="h-5 w-5 text-agora-muted mx-auto mb-1" />
-          <p className="text-lg font-bold text-slate-900">OK</p>
+          <p className="text-lg font-bold text-agora-text">OK</p>
           <p className="text-xs text-agora-muted">API Server</p>
         </div>
         <div className="rounded-lg bg-agora-dark/50 p-3 text-center">
           <Database className="h-5 w-5 text-agora-muted mx-auto mb-1" />
-          <p className="text-lg font-bold text-slate-900">OK</p>
+          <p className="text-lg font-bold text-agora-text">OK</p>
           <p className="text-xs text-agora-muted">Database</p>
         </div>
         <div className="rounded-lg bg-agora-dark/50 p-3 text-center">
           <Wifi className="h-5 w-5 text-agora-muted mx-auto mb-1" />
-          <p className="text-lg font-bold text-slate-900">OK</p>
+          <p className="text-lg font-bold text-agora-text">OK</p>
           <p className="text-xs text-agora-muted">WebSocket</p>
         </div>
       </div>
@@ -179,24 +179,24 @@ function PipelinesContent({ stats }: { stats: GovernanceOSStats }) {
       <div className="grid grid-cols-3 gap-4">
         <div className="rounded-xl bg-gradient-to-br from-agora-primary/20 to-agora-primary/5 p-4 text-center">
           <PlayCircle className="h-6 w-6 text-agora-primary mx-auto mb-2" />
-          <p className="text-3xl font-bold text-slate-900">{running}</p>
+          <p className="text-3xl font-bold text-agora-text">{running}</p>
           <p className="text-sm text-agora-muted">Running</p>
         </div>
         <div className="rounded-xl bg-gradient-to-br from-agora-success/20 to-agora-success/5 p-4 text-center">
           <CheckCircle className="h-6 w-6 text-agora-success mx-auto mb-2" />
-          <p className="text-3xl font-bold text-slate-900">{completed}</p>
+          <p className="text-3xl font-bold text-agora-text">{completed}</p>
           <p className="text-sm text-agora-muted">Completed</p>
         </div>
         <div className="rounded-xl bg-gradient-to-br from-agora-accent/20 to-agora-accent/5 p-4 text-center">
           <Activity className="h-6 w-6 text-agora-accent mx-auto mb-2" />
-          <p className="text-3xl font-bold text-slate-900">{total}</p>
+          <p className="text-3xl font-bold text-agora-text">{total}</p>
           <p className="text-sm text-agora-muted">Total</p>
         </div>
       </div>
 
       {/* Stage Breakdown */}
       <div>
-        <h4 className="text-sm font-semibold text-slate-900 mb-3">Pipeline Stages</h4>
+        <h4 className="text-sm font-semibold text-agora-text mb-3">Pipeline Stages</h4>
         <div className="space-y-2">
           {stages.map((stage, index) => (
             <div key={stage.name} className="flex items-center gap-3">
@@ -205,7 +205,7 @@ function PipelinesContent({ stats }: { stats: GovernanceOSStats }) {
               </div>
               <div className="flex-1">
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-sm text-slate-900">{stage.name}</span>
+                  <span className="text-sm text-agora-text">{stage.name}</span>
                   <span className="text-xs text-agora-muted">
                     {stage.active} active / {stage.completed} done
                   </span>
@@ -230,7 +230,7 @@ function PipelinesContent({ stats }: { stats: GovernanceOSStats }) {
       <div className="rounded-lg border border-agora-border bg-agora-dark/30 p-4">
         <div className="flex items-center gap-2 mb-3">
           <BarChart3 className="h-4 w-4 text-agora-muted" />
-          <span className="text-sm font-medium text-slate-900">Throughput (24h)</span>
+          <span className="text-sm font-medium text-agora-text">Throughput (24h)</span>
         </div>
         <div className="flex items-end gap-1 h-20">
           {[35, 45, 60, 40, 75, 55, 80, 65, 90, 70, 85, 95].map((height, i) => (
@@ -264,15 +264,15 @@ function DocumentsContent({ stats }: { stats: GovernanceOSStats }) {
       {/* Total Count */}
       <div className="text-center py-6">
         <div className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-gradient-to-br from-blue-500/20 to-indigo-500/20 mb-4">
-          <p className="text-4xl font-bold text-slate-900">{stats.documentsPublished}</p>
+          <p className="text-4xl font-bold text-agora-text">{stats.documentsPublished}</p>
         </div>
-        <p className="text-lg font-medium text-slate-900">Total Documents</p>
+        <p className="text-lg font-medium text-agora-text">Total Documents</p>
         <p className="text-sm text-agora-muted">Published to the registry</p>
       </div>
 
       {/* Document Types */}
       <div>
-        <h4 className="text-sm font-semibold text-slate-900 mb-3">By Document Type</h4>
+        <h4 className="text-sm font-semibold text-agora-text mb-3">By Document Type</h4>
         <div className="space-y-3">
           {docTypes.map((doc) => (
             <div key={doc.type} className="flex items-center gap-3">
@@ -281,7 +281,7 @@ function DocumentsContent({ stats }: { stats: GovernanceOSStats }) {
               </div>
               <div className="flex-1">
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-sm font-medium text-slate-900">{doc.name}</span>
+                  <span className="text-sm font-medium text-agora-text">{doc.name}</span>
                   <span className="text-sm text-agora-muted">{doc.count}</span>
                 </div>
                 <div className="h-2 rounded-full bg-agora-border overflow-hidden">
@@ -298,7 +298,7 @@ function DocumentsContent({ stats }: { stats: GovernanceOSStats }) {
 
       {/* Recent Activity */}
       <div className="rounded-lg border border-agora-border bg-agora-dark/30 p-4">
-        <h4 className="text-sm font-semibold text-slate-900 mb-3">Recent Activity</h4>
+        <h4 className="text-sm font-semibold text-agora-text mb-3">Recent Activity</h4>
         <div className="space-y-2">
           <div className="flex items-center gap-2 text-sm">
             <TrendingUp className="h-4 w-4 text-agora-success" />
@@ -329,14 +329,14 @@ function LockedContent({ stats }: { stats: GovernanceOSStats }) {
         <div className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-gradient-to-br from-amber-500/20 to-orange-500/20 mb-4">
           <Lock className="h-10 w-10 text-amber-500" />
         </div>
-        <p className="text-4xl font-bold text-slate-900">{stats.lockedActions}</p>
-        <p className="text-lg font-medium text-slate-900">Locked Actions</p>
+        <p className="text-4xl font-bold text-agora-text">{stats.lockedActions}</p>
+        <p className="text-lg font-medium text-agora-text">Locked Actions</p>
         <p className="text-sm text-agora-muted">Awaiting human approval</p>
       </div>
 
       {/* By Risk Level */}
       <div>
-        <h4 className="text-sm font-semibold text-slate-900 mb-3">By Risk Level</h4>
+        <h4 className="text-sm font-semibold text-agora-text mb-3">By Risk Level</h4>
         <div className="grid grid-cols-3 gap-3">
           {riskLevels.map((risk) => (
             <div
@@ -352,7 +352,7 @@ function LockedContent({ stats }: { stats: GovernanceOSStats }) {
 
       {/* Safe Autonomy Explanation */}
       <div className="rounded-lg border border-agora-border bg-agora-dark/30 p-4">
-        <h4 className="text-sm font-semibold text-slate-900 mb-2">About Safe Autonomy</h4>
+        <h4 className="text-sm font-semibold text-agora-text mb-2">About Safe Autonomy</h4>
         <p className="text-sm text-agora-muted leading-relaxed">
           High-risk actions are automatically locked and require explicit human approval
           before execution. This ensures AI agents cannot perform critical operations
@@ -431,7 +431,7 @@ export function StatsDetailModal({ type, stats, health, isOpen, onClose }: Stats
           </span>
           <button
             onClick={onClose}
-            className="rounded-lg px-4 py-2 text-sm font-medium text-agora-muted transition-colors hover:bg-agora-border hover:text-slate-900"
+            className="rounded-lg px-4 py-2 text-sm font-medium text-agora-muted transition-colors hover:bg-agora-border hover:text-agora-text"
           >
             Close
           </button>

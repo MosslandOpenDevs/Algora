@@ -108,7 +108,7 @@ export function ProposalCard({ proposal, onClick }: ProposalCardProps) {
                 {t(`status.${proposal.status}`)}
               </span>
             </div>
-            <h3 className="mt-1 font-semibold text-slate-900 group-hover:text-agora-primary transition-colors line-clamp-2 break-words">
+            <h3 className="mt-1 font-semibold text-agora-text group-hover:text-agora-primary transition-colors line-clamp-2 break-words">
               {proposal.title}
             </h3>
           </div>

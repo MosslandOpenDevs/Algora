@@ -55,7 +55,7 @@ export function Header() {
           {/* Mobile menu button */}
           <button
             onClick={() => setIsMobileNavOpen(true)}
-            className="md:hidden p-2 -ml-1 rounded-lg text-agora-muted hover:bg-agora-card hover:text-slate-900 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
+            className="md:hidden p-2 -ml-1 rounded-lg text-agora-muted hover:bg-agora-card hover:text-agora-text transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
             aria-label="Open menu"
           >
             <Menu className="h-6 w-6" />

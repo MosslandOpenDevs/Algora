@@ -58,12 +58,12 @@ export function HolderCard({ holder, onClick, index = 0 }: HolderCardProps) {
         </div>
         <div>
           <div className="flex items-center gap-2">
-            <p className="font-mono text-sm font-medium text-slate-900">
+            <p className="font-mono text-sm font-medium text-agora-text">
               {formatAddress(holder.walletAddress)}
             </p>
             <button
               onClick={copyAddress}
-              className="rounded p-1 text-agora-muted transition-colors hover:bg-agora-border hover:text-slate-900"
+              className="rounded p-1 text-agora-muted transition-colors hover:bg-agora-border hover:text-agora-text"
               title={t('copy')}
             >
               {copied ? (
@@ -77,7 +77,7 @@ export function HolderCard({ holder, onClick, index = 0 }: HolderCardProps) {
               target="_blank"
               rel="noopener noreferrer"
               onClick={(e) => e.stopPropagation()}
-              className="rounded p-1 text-agora-muted transition-colors hover:bg-agora-border hover:text-slate-900"
+              className="rounded p-1 text-agora-muted transition-colors hover:bg-agora-border hover:text-agora-text"
               title={t('viewOnEtherscan')}
             >
               <ExternalLink className="h-3 w-3" />
@@ -93,7 +93,7 @@ export function HolderCard({ holder, onClick, index = 0 }: HolderCardProps) {
       <div className="text-right">
         <div className="flex items-center justify-end gap-1">
           <Vote className="h-4 w-4 text-agora-accent" />
-          <p className="font-semibold text-slate-900">
+          <p className="font-semibold text-agora-text">
             {holder.votingPower.toLocaleString()} {t('votingPower')}
           </p>
         </div>

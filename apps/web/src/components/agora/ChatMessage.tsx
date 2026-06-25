@@ -153,7 +153,7 @@ export function ChatMessage({ message, index = 0, onAgentClick, showTranslation 
           <button
             onClick={handleAgentClick}
             disabled={!message.agentId || message.agentId === 'system' || !onAgentClick}
-            className={`font-semibold text-slate-900 transition-colors ${
+            className={`font-semibold text-agora-text transition-colors ${
               message.agentId && message.agentId !== 'system' && onAgentClick ? 'hover:text-agora-primary cursor-pointer' : ''
             }`}
           >

@@ -129,7 +129,7 @@ export function ProgressSteps({
                 key={step}
                 className={`
                   ${sizes.label}
-                  ${status === 'current' ? 'text-slate-900 font-medium' : 'text-agora-muted'}
+                  ${status === 'current' ? 'text-agora-text font-medium' : 'text-agora-muted'}
                   ${index === 0 ? 'text-left' : index === steps.length - 1 ? 'text-right' : 'text-center'}
                   flex-1
                 `}

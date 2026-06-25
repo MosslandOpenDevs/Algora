@@ -105,7 +105,7 @@ export default function TreasuryPage() {
       <div className="flex items-center justify-between">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold text-slate-900">{t('title')}</h1>
+            <h1 className="text-2xl font-bold text-agora-text">{t('title')}</h1>
             <HelpTooltip content={tGuide('treasury')} />
             {dashboard?.tokenInfo?.mockMode && <MockDataBadge />}
           </div>
@@ -126,7 +126,7 @@ export default function TreasuryPage() {
           <button
             onClick={() => refetch()}
             disabled={isLoading}
-            className="flex items-center gap-2 rounded-lg bg-agora-card px-4 py-2 text-sm font-medium text-slate-900 transition-colors hover:bg-agora-border disabled:opacity-50"
+            className="flex items-center gap-2 rounded-lg bg-agora-card px-4 py-2 text-sm font-medium text-agora-text transition-colors hover:bg-agora-border disabled:opacity-50"
           >
             <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
             {t('refresh')}
@@ -143,7 +143,7 @@ export default function TreasuryPage() {
             </div>
             <div>
               <p className="text-sm text-agora-muted">{t('stats.mocBalance')}</p>
-              <p className="text-xl font-bold text-slate-900">
+              <p className="text-xl font-bold text-agora-text">
                 {mocBalance ? mocBalance.balanceFormatted.toLocaleString() : '0'}
               </p>
             </div>
@@ -157,7 +157,7 @@ export default function TreasuryPage() {
             </div>
             <div>
               <p className="text-sm text-agora-muted">{t('stats.ethBalance')}</p>
-              <p className="text-xl font-bold text-slate-900">
+              <p className="text-xl font-bold text-agora-text">
                 {ethBalance ? ethBalance.balanceFormatted.toLocaleString() : '0'}
               </p>
             </div>
@@ -171,7 +171,7 @@ export default function TreasuryPage() {
             </div>
             <div>
               <p className="text-sm text-agora-muted">{t('stats.holders')}</p>
-              <p className="text-xl font-bold text-slate-900">
+              <p className="text-xl font-bold text-agora-text">
                 {dashboard?.token?.holders?.verified || 0}
               </p>
             </div>
@@ -185,7 +185,7 @@ export default function TreasuryPage() {
             </div>
             <div>
               <p className="text-sm text-agora-muted">{t('stats.activeVoting')}</p>
-              <p className="text-xl font-bold text-slate-900">
+              <p className="text-xl font-bold text-agora-text">
                 {dashboard?.voting?.activeVoting || 0}
               </p>
             </div>
@@ -202,8 +202,8 @@ export default function TreasuryPage() {
               onClick={() => setActiveTab(tab)}
               className={`border-b-2 px-1 pb-3 text-sm font-medium transition-colors whitespace-nowrap ${
                 activeTab === tab
-                  ? 'border-agora-accent text-slate-900'
-                  : 'border-transparent text-agora-muted hover:text-slate-900'
+                  ? 'border-agora-accent text-agora-text'
+                  : 'border-transparent text-agora-muted hover:text-agora-text'
               }`}
             >
               {t(tab)}
@@ -228,19 +228,19 @@ export default function TreasuryPage() {
             {/* Token Info & Voting Stats */}
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
               <div className="rounded-xl border border-agora-border bg-agora-card p-6">
-                <h3 className="mb-4 text-lg font-semibold text-slate-900">Token Info</h3>
+                <h3 className="mb-4 text-lg font-semibold text-agora-text">Token Info</h3>
                 <div className="space-y-3">
                   <div className="flex justify-between">
                     <span className="text-agora-muted">Name</span>
-                    <span className="text-slate-900">{dashboard?.tokenInfo?.name || 'MOC'}</span>
+                    <span className="text-agora-text">{dashboard?.tokenInfo?.name || 'MOC'}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-agora-muted">Symbol</span>
-                    <span className="text-slate-900">{dashboard?.tokenInfo?.symbol || 'MOC'}</span>
+                    <span className="text-agora-text">{dashboard?.tokenInfo?.symbol || 'MOC'}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-agora-muted">Total Supply</span>
-                    <span className="text-slate-900">
+                    <span className="text-agora-text">
                       {dashboard?.tokenInfo?.totalSupply
                         ? formatBalance(dashboard.tokenInfo.totalSupply)
                         : '0'}
@@ -262,25 +262,25 @@ export default function TreasuryPage() {
               </div>
 
               <div className="rounded-xl border border-agora-border bg-agora-card p-6">
-                <h3 className="mb-4 text-lg font-semibold text-slate-900">Voting Stats</h3>
+                <h3 className="mb-4 text-lg font-semibold text-agora-text">Voting Stats</h3>
                 <div className="space-y-3">
                   <div className="flex justify-between">
                     <span className="text-agora-muted">Total Votes</span>
-                    <span className="text-slate-900">{dashboard?.voting?.totalVotes || 0}</span>
+                    <span className="text-agora-text">{dashboard?.voting?.totalVotes || 0}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-agora-muted">Voting Power Used</span>
-                    <span className="text-slate-900">
+                    <span className="text-agora-text">
                       {dashboard?.voting?.totalVotingPowerUsed || 0}
                     </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-agora-muted">Active Voting</span>
-                    <span className="text-slate-900">{dashboard?.voting?.activeVoting || 0}</span>
+                    <span className="text-agora-text">{dashboard?.voting?.activeVoting || 0}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-agora-muted">Completed</span>
-                    <span className="text-slate-900">
+                    <span className="text-agora-text">
                       {dashboard?.voting?.completedVoting || 0}
                     </span>
                   </div>

@@ -42,7 +42,7 @@ export function AllocationStatusBreakdown({ stats }: AllocationStatusBreakdownPr
 
   return (
     <div className="rounded-xl border border-agora-border bg-agora-card p-6">
-      <h3 className="mb-4 text-lg font-semibold text-slate-900">{t('allocationBreakdown')}</h3>
+      <h3 className="mb-4 text-lg font-semibold text-agora-text">{t('allocationBreakdown')}</h3>
 
       {hasData ? (
         <>
@@ -82,7 +82,7 @@ export function AllocationStatusBreakdown({ stats }: AllocationStatusBreakdownPr
                     {t(`allocation.${s.label}`)}
                   </span>
                 </div>
-                <span className="font-semibold text-slate-900">{s.count}</span>
+                <span className="font-semibold text-agora-text">{s.count}</span>
               </div>
             ))}
           </div>
@@ -90,7 +90,7 @@ export function AllocationStatusBreakdown({ stats }: AllocationStatusBreakdownPr
           {/* Total */}
           <div className="mt-4 flex items-center justify-between border-t border-agora-border pt-4">
             <span className="text-sm text-agora-muted">{t('stats.allocations')}</span>
-            <span className="font-bold text-slate-900">{total}</span>
+            <span className="font-bold text-agora-text">{total}</span>
           </div>
         </>
       ) : (

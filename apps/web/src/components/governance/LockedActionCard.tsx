@@ -66,7 +66,7 @@ export function LockedActionCard({ action, onClick, onApprove, index = 0 }: Lock
             <Shield className="h-3.5 w-3.5" />
             <span className="text-xs font-bold">{action.riskLevel}</span>
           </div>
-          <span className="text-sm font-medium text-slate-900">{action.actionType}</span>
+          <span className="text-sm font-medium text-agora-text">{action.actionType}</span>
         </div>
 
         <div className="flex items-center gap-2">
@@ -83,7 +83,7 @@ export function LockedActionCard({ action, onClick, onApprove, index = 0 }: Lock
         <div className="flex items-start gap-2">
           <AlertTriangle className="h-4 w-4 text-agora-warning shrink-0 mt-0.5" />
           <div>
-            <p className="text-xs font-medium text-slate-900">{t('lockReason')}</p>
+            <p className="text-xs font-medium text-agora-text">{t('lockReason')}</p>
             <p className="text-xs text-agora-muted mt-0.5">{action.lockReason}</p>
           </div>
         </div>
@@ -93,7 +93,7 @@ export function LockedActionCard({ action, onClick, onApprove, index = 0 }: Lock
       <div className="mb-3">
         <div className="flex items-center justify-between text-xs mb-1">
           <span className="text-agora-muted">{t('approvals')}</span>
-          <span className="text-slate-900 font-medium">
+          <span className="text-agora-text font-medium">
             {action.receivedApprovals.length} / {action.requiredApprovals.length}
           </span>
         </div>

@@ -225,7 +225,7 @@ export function TokenVoting({ proposalId, onVoteSuccess }: TokenVotingProps) {
     <div className="rounded-lg border border-agora-border bg-agora-card p-4">
       {/* Real-time connection indicator */}
       <div className="flex items-center justify-between mb-4">
-        <h4 className="font-medium text-slate-900">{tVoting('castYourVote')}</h4>
+        <h4 className="font-medium text-agora-text">{tVoting('castYourVote')}</h4>
         <div className="flex items-center gap-1.5 text-xs">
           <Radio className={`h-3 w-3 ${isSocketConnected ? 'text-green-400 animate-pulse' : 'text-agora-muted'}`} />
           <span className={isSocketConnected ? 'text-green-400' : 'text-agora-muted'}>
@@ -258,7 +258,7 @@ export function TokenVoting({ proposalId, onVoteSuccess }: TokenVotingProps) {
       <div className="mb-4 rounded-lg bg-agora-darker p-3">
         <div className="flex items-center justify-between text-sm">
           <span className="text-agora-muted">{tVoting('ownVotingPower')}:</span>
-          <span className="text-slate-900 font-medium">{ownVotingPower.toLocaleString()}</span>
+          <span className="text-agora-text font-medium">{ownVotingPower.toLocaleString()}</span>
         </div>
         {delegatedVotingPower > 0 && (
           <div className="flex items-center justify-between text-sm mt-1">
@@ -329,7 +329,7 @@ export function TokenVoting({ proposalId, onVoteSuccess }: TokenVotingProps) {
           value={reason}
           onChange={(e) => setReason(e.target.value)}
           placeholder={tVoting('reasonPlaceholder')}
-          className="w-full rounded-lg border border-agora-border bg-agora-darker px-3 py-2 text-sm text-slate-900 placeholder-agora-muted focus:border-agora-primary focus:outline-none resize-none"
+          className="w-full rounded-lg border border-agora-border bg-agora-darker px-3 py-2 text-sm text-agora-text placeholder-agora-muted focus:border-agora-primary focus:outline-none resize-none"
           rows={2}
         />
       </div>

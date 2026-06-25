@@ -126,7 +126,7 @@ export function IssueCard({ issue, index = 0, onClick }: IssueCardProps) {
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-2 sm:gap-4">
             <div className="min-w-0 flex-1">
-              <h3 className="font-semibold text-slate-900 group-hover:text-agora-primary transition-colors line-clamp-1 break-words">
+              <h3 className="font-semibold text-agora-text group-hover:text-agora-primary transition-colors line-clamp-1 break-words">
                 {issue.title}
               </h3>
               <p className="mt-1 text-sm text-agora-muted line-clamp-2 break-words">

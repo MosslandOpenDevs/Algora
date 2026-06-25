@@ -139,7 +139,7 @@ export function DelegationModal({
         {/* Close Button */}
         <button
           onClick={handleClose}
-          className="absolute right-4 top-4 rounded-lg p-1 text-agora-muted transition-colors hover:bg-agora-card hover:text-slate-900"
+          className="absolute right-4 top-4 rounded-lg p-1 text-agora-muted transition-colors hover:bg-agora-card hover:text-agora-text"
         >
           <X className="h-5 w-5" />
         </button>
@@ -150,7 +150,7 @@ export function DelegationModal({
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-agora-accent/20">
               <Users className="h-8 w-8 text-agora-accent" />
             </div>
-            <h2 className="mb-2 text-xl font-bold text-slate-900">{t('modal.title')}</h2>
+            <h2 className="mb-2 text-xl font-bold text-agora-text">{t('modal.title')}</h2>
             <p className="mb-6 text-agora-muted">{t('modal.intro')}</p>
 
             <div className="mb-6 rounded-lg bg-agora-card p-4">
@@ -172,11 +172,11 @@ export function DelegationModal({
         {/* Input Step */}
         {step === 'input' && (
           <div>
-            <h2 className="mb-6 text-xl font-bold text-slate-900">{t('modal.inputTitle')}</h2>
+            <h2 className="mb-6 text-xl font-bold text-agora-text">{t('modal.inputTitle')}</h2>
 
             {/* Delegate Address */}
             <div className="mb-6">
-              <label className="mb-2 block text-sm font-medium text-slate-900">
+              <label className="mb-2 block text-sm font-medium text-agora-text">
                 {t('delegateAddress')}
               </label>
               <input
@@ -184,7 +184,7 @@ export function DelegationModal({
                 value={delegateAddress}
                 onChange={(e) => setDelegateAddress(e.target.value)}
                 placeholder={t('enterAddress')}
-                className="w-full rounded-lg border border-agora-border bg-agora-card px-4 py-3 text-sm text-slate-900 placeholder-agora-muted focus:border-agora-accent focus:outline-none"
+                className="w-full rounded-lg border border-agora-border bg-agora-card px-4 py-3 text-sm text-agora-text placeholder-agora-muted focus:border-agora-accent focus:outline-none"
               />
               {delegateAddress && !isValidAddress(delegateAddress) && (
                 <p className="mt-1 text-xs text-red-400">{t('invalidAddress')}</p>
@@ -196,7 +196,7 @@ export function DelegationModal({
 
             {/* Categories */}
             <div className="mb-6">
-              <label className="mb-2 block text-sm font-medium text-slate-900">
+              <label className="mb-2 block text-sm font-medium text-agora-text">
                 {t('categories')} <span className="text-agora-muted">({t('optional')})</span>
               </label>
               <div className="flex flex-wrap gap-2">
@@ -221,7 +221,7 @@ export function DelegationModal({
 
             {/* Expiration */}
             <div className="mb-6">
-              <label className="mb-2 block text-sm font-medium text-slate-900">
+              <label className="mb-2 block text-sm font-medium text-agora-text">
                 {t('expiresAt')} <span className="text-agora-muted">({t('optional')})</span>
               </label>
               <div className="flex flex-wrap gap-2">
@@ -245,7 +245,7 @@ export function DelegationModal({
             <div className="flex gap-3">
               <button
                 onClick={handleBack}
-                className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-agora-card px-4 py-3 text-sm font-medium text-slate-900 transition-colors hover:bg-agora-border"
+                className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-agora-card px-4 py-3 text-sm font-medium text-agora-text transition-colors hover:bg-agora-border"
               >
                 <ArrowLeft className="h-4 w-4" />
                 {t('modal.back')}
@@ -265,12 +265,12 @@ export function DelegationModal({
         {/* Confirm Step */}
         {step === 'confirm' && (
           <div>
-            <h2 className="mb-6 text-xl font-bold text-slate-900">{t('confirmDelegation')}</h2>
+            <h2 className="mb-6 text-xl font-bold text-agora-text">{t('confirmDelegation')}</h2>
 
             <div className="mb-6 space-y-4">
               <div className="rounded-lg bg-agora-card p-4">
                 <div className="text-sm text-agora-muted">{t('delegateTo')}</div>
-                <div className="font-mono text-slate-900">{formatAddress(delegateAddress)}</div>
+                <div className="font-mono text-agora-text">{formatAddress(delegateAddress)}</div>
               </div>
 
               <div className="rounded-lg bg-agora-card p-4">
@@ -287,7 +287,7 @@ export function DelegationModal({
                     {selectedCategories.map((cat) => (
                       <span
                         key={cat}
-                        className="rounded-full bg-agora-border px-2 py-0.5 text-xs text-slate-900"
+                        className="rounded-full bg-agora-border px-2 py-0.5 text-xs text-agora-text"
                       >
                         {t(`category.${cat}`)}
                       </span>
@@ -298,7 +298,7 @@ export function DelegationModal({
 
               <div className="rounded-lg bg-agora-card p-4">
                 <div className="text-sm text-agora-muted">{t('expiresAt')}</div>
-                <div className="text-slate-900">
+                <div className="text-agora-text">
                   {expiration
                     ? t(`expiration.${EXPIRATION_OPTIONS.find((o) => o.value === expiration)?.label}`)
                     : t('noExpiration')}
@@ -311,7 +311,7 @@ export function DelegationModal({
               <button
                 onClick={handleBack}
                 disabled={delegationMutation.isPending}
-                className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-agora-card px-4 py-3 text-sm font-medium text-slate-900 transition-colors hover:bg-agora-border disabled:opacity-50"
+                className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-agora-card px-4 py-3 text-sm font-medium text-agora-text transition-colors hover:bg-agora-border disabled:opacity-50"
               >
                 <ArrowLeft className="h-4 w-4" />
                 {t('modal.back')}
@@ -343,7 +343,7 @@ export function DelegationModal({
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-500/20">
               <CheckCircle className="h-8 w-8 text-green-400" />
             </div>
-            <h2 className="mb-2 text-xl font-bold text-slate-900">{t('delegationSuccess')}</h2>
+            <h2 className="mb-2 text-xl font-bold text-agora-text">{t('delegationSuccess')}</h2>
             <p className="mb-6 text-agora-muted">
               {t('delegationSuccessDesc', {
                 power: votingPower.toLocaleString(),
@@ -352,7 +352,7 @@ export function DelegationModal({
             </p>
             <button
               onClick={handleClose}
-              className="w-full rounded-lg bg-agora-card px-4 py-3 text-sm font-medium text-slate-900 transition-colors hover:bg-agora-border"
+              className="w-full rounded-lg bg-agora-card px-4 py-3 text-sm font-medium text-agora-text transition-colors hover:bg-agora-border"
             >
               {t('modal.done')}
             </button>
@@ -365,12 +365,12 @@ export function DelegationModal({
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-red-500/20">
               <AlertCircle className="h-8 w-8 text-red-400" />
             </div>
-            <h2 className="mb-2 text-xl font-bold text-slate-900">{t('delegationFailed')}</h2>
+            <h2 className="mb-2 text-xl font-bold text-agora-text">{t('delegationFailed')}</h2>
             <p className="mb-6 text-agora-muted">{errorMessage || t('delegationFailedDesc')}</p>
             <div className="flex gap-3">
               <button
                 onClick={() => setStep('input')}
-                className="flex-1 rounded-lg bg-agora-card px-4 py-3 text-sm font-medium text-slate-900 transition-colors hover:bg-agora-border"
+                className="flex-1 rounded-lg bg-agora-card px-4 py-3 text-sm font-medium text-agora-text transition-colors hover:bg-agora-border"
               >
                 {t('modal.tryAgain')}
               </button>

@@ -51,7 +51,7 @@ export function ParticipantList({ agents, participants, onAgentClick }: Particip
 
   return (
     <div className="animate-slide-up rounded-lg border border-agora-border bg-agora-card p-4">
-      <h3 className="flex items-center gap-2 font-semibold text-slate-900">
+      <h3 className="flex items-center gap-2 font-semibold text-agora-text">
         <Users className="h-4 w-4" />
         Participants ({participantAgents.length})
       </h3>
@@ -101,7 +101,7 @@ export function ParticipantList({ agents, participants, onAgentClick }: Particip
                   />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className={`text-sm font-medium truncate ${isSpeaking ? 'text-agora-accent' : 'text-slate-900'}`}>
+                  <p className={`text-sm font-medium truncate ${isSpeaking ? 'text-agora-accent' : 'text-agora-text'}`}>
                     {agent.display_name || agent.name}
                     {isSpeaking && <span className="ml-2 text-xs">🎤</span>}
                   </p>

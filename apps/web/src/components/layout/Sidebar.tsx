@@ -50,7 +50,7 @@ export function Sidebar() {
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-agora-primary to-agora-accent">
             <span className="text-lg font-bold text-slate-900">A</span>
           </div>
-          <span className="text-xl font-bold text-slate-900">Algora</span>
+          <span className="text-xl font-bold text-agora-text">Algora</span>
         </Link>
       </div>
 
@@ -75,7 +75,7 @@ export function Sidebar() {
                     ? 'text-red-600 hover:bg-red-50 hover:text-red-700'
                     : isNew
                       ? 'text-agora-accent hover:bg-agora-accent/10 hover:text-agora-accent'
-                      : 'text-agora-muted hover:bg-agora-card hover:text-slate-900'
+                      : 'text-agora-muted hover:bg-agora-card hover:text-agora-text'
               }`}
             >
               <Icon className="h-5 w-5" />
@@ -100,7 +100,7 @@ export function Sidebar() {
       <div className="border-t border-agora-border p-4">
         <div className="rounded-lg bg-agora-card p-3">
           <p className="text-xs text-agora-muted">Powered by</p>
-          <p className="text-sm font-medium text-slate-900">MOC Governance</p>
+          <p className="text-sm font-medium text-agora-text">MOC Governance</p>
         </div>
       </div>
     </aside>

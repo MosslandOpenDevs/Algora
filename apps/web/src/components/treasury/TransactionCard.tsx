@@ -69,7 +69,7 @@ export function TransactionCard({ transaction, onClick, index = 0 }: Transaction
           <Icon className={`h-5 w-5 ${colors.icon}`} />
         </div>
         <div className="min-w-0 flex-1">
-          <p className="font-medium text-slate-900">{t(`transaction.${transaction.type}`)}</p>
+          <p className="font-medium text-agora-text">{t(`transaction.${transaction.type}`)}</p>
           <p className="text-sm text-agora-muted line-clamp-1 break-words">{transaction.description}</p>
           {transaction.txHash && (
             <p className="mt-1 font-mono text-xs text-agora-muted truncate">

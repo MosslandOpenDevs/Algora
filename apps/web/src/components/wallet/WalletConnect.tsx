@@ -61,7 +61,7 @@ export function WalletConnect() {
         <div className="relative">
           <button
             onClick={() => setIsOpen(!isOpen)}
-            className="flex items-center gap-2 rounded-lg bg-agora-card px-3 py-2 text-sm font-medium text-slate-900 transition-colors hover:bg-agora-border"
+            className="flex items-center gap-2 rounded-lg bg-agora-card px-3 py-2 text-sm font-medium text-agora-text transition-colors hover:bg-agora-border"
           >
             <div className="relative flex h-6 w-6 items-center justify-center rounded-full bg-agora-accent/20">
               <Wallet className="h-3.5 w-3.5 text-agora-accent" />
@@ -85,7 +85,7 @@ export function WalletConnect() {
                 <div className="mb-4 flex items-center justify-between">
                   <div>
                     <div className="mb-1 text-xs text-agora-muted">{t('connectedWith')}</div>
-                    <div className="text-sm font-medium text-slate-900">
+                    <div className="text-sm font-medium text-agora-text">
                       {connector?.name || 'Unknown'}
                     </div>
                   </div>
@@ -107,13 +107,13 @@ export function WalletConnect() {
                 <div className="mb-4 rounded-lg bg-agora-card p-3">
                   <div className="mb-1 text-xs text-agora-muted">{t('address')}</div>
                   <div className="flex items-center justify-between">
-                    <span className="font-mono text-sm text-slate-900">
+                    <span className="font-mono text-sm text-agora-text">
                       {formatAddress(address)}
                     </span>
                     <div className="flex gap-1">
                       <button
                         onClick={copyAddress}
-                        className="rounded p-1 text-agora-muted transition-colors hover:bg-agora-border hover:text-slate-900"
+                        className="rounded p-1 text-agora-muted transition-colors hover:bg-agora-border hover:text-agora-text"
                         title={t('copy')}
                       >
                         {copied ? (
@@ -126,7 +126,7 @@ export function WalletConnect() {
                         href={`https://etherscan.io/address/${address}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="rounded p-1 text-agora-muted transition-colors hover:bg-agora-border hover:text-slate-900"
+                        className="rounded p-1 text-agora-muted transition-colors hover:bg-agora-border hover:text-agora-text"
                         title={t('viewOnEtherscan')}
                       >
                         <ExternalLink className="h-4 w-4" />
@@ -141,7 +141,7 @@ export function WalletConnect() {
                   {balance && (
                     <div className="rounded-lg bg-agora-card p-3">
                       <div className="mb-1 text-xs text-agora-muted">{t('balance')}</div>
-                      <div className="text-sm font-semibold text-slate-900">
+                      <div className="text-sm font-semibold text-agora-text">
                         {(Number(balance.value) / 10 ** balance.decimals).toFixed(4)}{' '}
                         {balance.symbol}
                       </div>
@@ -154,7 +154,7 @@ export function WalletConnect() {
                       <Coins className="h-3 w-3" />
                       {t('mocBalance')}
                     </div>
-                    <div className="text-sm font-semibold text-slate-900">
+                    <div className="text-sm font-semibold text-agora-text">
                       {holder ? formatBalance(holder.balance) : '0'} MOC
                     </div>
                   </div>
@@ -173,7 +173,7 @@ export function WalletConnect() {
                     <button
                       onClick={refreshHolder}
                       disabled={isLoading}
-                      className="rounded p-1 text-agora-muted transition-colors hover:bg-agora-border hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-50"
+                      className="rounded p-1 text-agora-muted transition-colors hover:bg-agora-border hover:text-agora-text disabled:cursor-not-allowed disabled:opacity-50"
                       title={t('refresh')}
                     >
                       <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
@@ -232,7 +232,7 @@ export function WalletConnect() {
         <>
           <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
           <div className="absolute right-0 top-full z-50 mt-2 w-72 rounded-lg border border-agora-border bg-agora-dark p-4 shadow-xl">
-            <div className="mb-3 text-sm font-medium text-slate-900">{t('selectWallet')}</div>
+            <div className="mb-3 text-sm font-medium text-agora-text">{t('selectWallet')}</div>
             <div className="space-y-2">
               {connectors.map((connector) => (
                 <button
@@ -242,7 +242,7 @@ export function WalletConnect() {
                     setIsOpen(false);
                   }}
                   disabled={isPending}
-                  className="flex w-full items-center gap-3 rounded-lg bg-agora-card px-4 py-3 text-left text-sm font-medium text-slate-900 transition-colors hover:bg-agora-border disabled:cursor-not-allowed disabled:opacity-50"
+                  className="flex w-full items-center gap-3 rounded-lg bg-agora-card px-4 py-3 text-left text-sm font-medium text-agora-text transition-colors hover:bg-agora-border disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-agora-accent/20">
                     <Wallet className="h-4 w-4 text-agora-accent" />

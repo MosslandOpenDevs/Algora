@@ -229,7 +229,7 @@ export function WelcomeTour({ forceShow = false, onComplete }: WelcomeTourProps)
             <Icon className={`h-10 w-10 ${step.color}`} />
           </div>
 
-          <h2 className="text-center text-2xl font-bold text-slate-900">
+          <h2 className="text-center text-2xl font-bold text-agora-text">
             {t(`${step.key}.title`)}
           </h2>
           <p className="mt-3 text-center text-agora-muted leading-relaxed">
@@ -251,7 +251,7 @@ export function WelcomeTour({ forceShow = false, onComplete }: WelcomeTourProps)
               {['24/7 monitoring when humans sleep', 'AI agents analyze all incoming data', 'Humans approve only final actions'].map((point, i) => (
                 <div key={i} className="flex items-center gap-2 rounded-lg bg-agora-card p-2">
                   <CheckCircle className="h-4 w-4 text-agora-success flex-shrink-0" />
-                  <span className="text-sm text-slate-900">{point}</span>
+                  <span className="text-sm text-agora-text">{point}</span>
                 </div>
               ))}
             </div>
@@ -307,7 +307,7 @@ export function WelcomeTour({ forceShow = false, onComplete }: WelcomeTourProps)
             {!isFirstStep && (
               <button
                 onClick={handlePrev}
-                className="flex items-center gap-1 rounded-lg bg-agora-darker px-4 py-2 text-sm font-medium text-slate-900 transition-colors hover:bg-agora-border"
+                className="flex items-center gap-1 rounded-lg bg-agora-darker px-4 py-2 text-sm font-medium text-agora-text transition-colors hover:bg-agora-border"
               >
                 <ChevronLeft className="h-4 w-4" />
                 {t('prev')}

@@ -86,13 +86,13 @@ export function AllocationDetailModal({
               <FileText className={`h-5 sm:h-6 w-5 sm:w-6 ${statusConfig[allocation.status]?.color}`} />
             </div>
             <div className="min-w-0 flex-1">
-              <h2 className="text-lg sm:text-xl font-bold text-slate-900">{t('modals.allocationDetail')}</h2>
+              <h2 className="text-lg sm:text-xl font-bold text-agora-text">{t('modals.allocationDetail')}</h2>
               <p className="text-sm text-agora-muted">{allocation.category}</p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="rounded-lg p-1 text-agora-muted transition-colors hover:bg-agora-card hover:text-slate-900 flex-shrink-0"
+            className="rounded-lg p-1 text-agora-muted transition-colors hover:bg-agora-card hover:text-agora-text flex-shrink-0"
           >
             <X className="h-5 w-5" />
           </button>
@@ -103,7 +103,7 @@ export function AllocationDetailModal({
         {/* Status Timeline */}
         {allocation.status !== 'cancelled' && (
           <div className="mb-4 sm:mb-6 rounded-lg bg-agora-card p-4">
-            <h3 className="mb-3 text-sm font-medium text-slate-900">{t('status')}</h3>
+            <h3 className="mb-3 text-sm font-medium text-agora-text">{t('status')}</h3>
             <div className="flex items-center justify-between">
               {statusSteps.map((step, index) => {
                 const isCompleted = index <= currentStepIndex;
@@ -128,7 +128,7 @@ export function AllocationDetailModal({
                       </div>
                       <span
                         className={`mt-1 text-xs ${
-                          isCurrent ? 'font-medium text-slate-900' : 'text-agora-muted'
+                          isCurrent ? 'font-medium text-agora-text' : 'text-agora-muted'
                         }`}
                       >
                         {t(`allocation.${step}`)}
@@ -171,20 +171,20 @@ export function AllocationDetailModal({
           {/* Description */}
           <div className="rounded-lg bg-agora-card p-4">
             <div className="mb-1 text-sm text-agora-muted">{t('description')}</div>
-            <div className="text-slate-900">{allocation.description}</div>
+            <div className="text-agora-text">{allocation.description}</div>
           </div>
 
           {/* Recipient */}
           <div className="rounded-lg bg-agora-card p-4">
             <div className="mb-1 text-sm text-agora-muted">{t('recipient')}</div>
             <div className="flex items-center justify-between">
-              <span className="font-mono text-sm text-slate-900">
+              <span className="font-mono text-sm text-agora-text">
                 {formatAddress(allocation.recipient)}
               </span>
               <div className="flex gap-1">
                 <button
                   onClick={() => copyToClipboard(allocation.recipient, 'recipient')}
-                  className="rounded p-1 text-agora-muted transition-colors hover:bg-agora-border hover:text-slate-900"
+                  className="rounded p-1 text-agora-muted transition-colors hover:bg-agora-border hover:text-agora-text"
                 >
                   {copiedField === 'recipient' ? (
                     <Check className="h-4 w-4 text-agora-success" />
@@ -196,7 +196,7 @@ export function AllocationDetailModal({
                   href={`https://etherscan.io/address/${allocation.recipient}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="rounded p-1 text-agora-muted transition-colors hover:bg-agora-border hover:text-slate-900"
+                  className="rounded p-1 text-agora-muted transition-colors hover:bg-agora-border hover:text-agora-text"
                 >
                   <ExternalLink className="h-4 w-4" />
                 </a>
@@ -209,13 +209,13 @@ export function AllocationDetailModal({
             <div className="rounded-lg bg-agora-card p-4">
               <div className="mb-1 text-sm text-agora-muted">{t('txHash')}</div>
               <div className="flex items-center justify-between">
-                <span className="font-mono text-sm text-slate-900">
+                <span className="font-mono text-sm text-agora-text">
                   {allocation.txHash.slice(0, 10)}...{allocation.txHash.slice(-8)}
                 </span>
                 <div className="flex gap-1">
                   <button
                     onClick={() => copyToClipboard(allocation.txHash!, 'txHash')}
-                    className="rounded p-1 text-agora-muted transition-colors hover:bg-agora-border hover:text-slate-900"
+                    className="rounded p-1 text-agora-muted transition-colors hover:bg-agora-border hover:text-agora-text"
                   >
                     {copiedField === 'txHash' ? (
                       <Check className="h-4 w-4 text-agora-success" />
@@ -227,7 +227,7 @@ export function AllocationDetailModal({
                     href={`https://etherscan.io/tx/${allocation.txHash}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="rounded p-1 text-agora-muted transition-colors hover:bg-agora-border hover:text-slate-900"
+                    className="rounded p-1 text-agora-muted transition-colors hover:bg-agora-border hover:text-agora-text"
                   >
                     <ExternalLink className="h-4 w-4" />
                   </a>
@@ -240,14 +240,14 @@ export function AllocationDetailModal({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="rounded-lg bg-agora-card p-4">
               <div className="mb-1 text-sm text-agora-muted">{t('createdAt')}</div>
-              <div className="text-sm text-slate-900">
+              <div className="text-sm text-agora-text">
                 {safeFormatDate(allocation.createdAt, (d) => d.toLocaleString())}
               </div>
             </div>
             {allocation.approvedAt && (
               <div className="rounded-lg bg-agora-card p-4">
                 <div className="mb-1 text-sm text-agora-muted">{t('approvedAt')}</div>
-                <div className="text-sm text-slate-900">
+                <div className="text-sm text-agora-text">
                   {safeFormatDate(allocation.approvedAt, (d) => d.toLocaleString())}
                 </div>
               </div>
@@ -255,7 +255,7 @@ export function AllocationDetailModal({
             {allocation.disbursedAt && (
               <div className="rounded-lg bg-agora-card p-4">
                 <div className="mb-1 text-sm text-agora-muted">{t('disbursedAt')}</div>
-                <div className="text-sm text-slate-900">
+                <div className="text-sm text-agora-text">
                   {safeFormatDate(allocation.disbursedAt, (d) => d.toLocaleString())}
                 </div>
               </div>
@@ -268,7 +268,7 @@ export function AllocationDetailModal({
         <div className="border-t border-agora-border p-4 flex-shrink-0">
         <button
           onClick={onClose}
-          className="w-full rounded-lg bg-agora-card px-4 py-3 text-sm font-medium text-slate-900 transition-colors hover:bg-agora-border"
+          className="w-full rounded-lg bg-agora-card px-4 py-3 text-sm font-medium text-agora-text transition-colors hover:bg-agora-border"
         >
           {t('modals.close')}
         </button>

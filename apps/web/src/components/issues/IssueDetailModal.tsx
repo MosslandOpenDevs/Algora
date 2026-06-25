@@ -115,7 +115,7 @@ export function IssueDetailModal({ issue, onClose }: IssueDetailModalProps) {
                 <StatusIcon className={`h-5 w-5 ${statusConfig[issue.status].color}`} />
               </div>
               <div className="min-w-0 flex-1">
-                <h2 className="text-lg sm:text-xl font-bold text-slate-900 pr-8 line-clamp-2 break-words">{issue.title}</h2>
+                <h2 className="text-lg sm:text-xl font-bold text-agora-text pr-8 line-clamp-2 break-words">{issue.title}</h2>
                 <div className="mt-2 flex flex-wrap items-center gap-3">
                   {/* Status Badge */}
                   <span
@@ -142,7 +142,7 @@ export function IssueDetailModal({ issue, onClose }: IssueDetailModalProps) {
 
             <button
               onClick={onClose}
-              className="rounded-lg p-2 text-agora-muted transition-colors hover:bg-agora-card hover:text-slate-900"
+              className="rounded-lg p-2 text-agora-muted transition-colors hover:bg-agora-card hover:text-agora-text"
             >
               <X className="h-5 w-5" />
             </button>
@@ -159,7 +159,7 @@ export function IssueDetailModal({ issue, onClose }: IssueDetailModalProps) {
                 <FileText className="h-4 w-4" />
                 <span>{t('detail.description')}</span>
               </div>
-              <p className="text-slate-900 whitespace-pre-wrap leading-relaxed break-words overflow-hidden">
+              <p className="text-agora-text whitespace-pre-wrap leading-relaxed break-words overflow-hidden">
                 {issue.description}
               </p>
             </div>
@@ -175,7 +175,7 @@ export function IssueDetailModal({ issue, onClose }: IssueDetailModalProps) {
                   <Radio className="h-4 w-4" />
                   <span>{t('detail.relatedSignals')}</span>
                 </div>
-                <p className="text-2xl font-bold text-slate-900">{getSignalCount(issue.signal_ids)}</p>
+                <p className="text-2xl font-bold text-agora-text">{getSignalCount(issue.signal_ids)}</p>
                 <p className="text-xs text-agora-muted mt-1">{t('signals')}</p>
               </div>
 
@@ -185,7 +185,7 @@ export function IssueDetailModal({ issue, onClose }: IssueDetailModalProps) {
                   <Tag className="h-4 w-4" />
                   <span>Category</span>
                 </div>
-                <p className="text-lg font-bold text-slate-900 capitalize">{issue.category || 'General'}</p>
+                <p className="text-lg font-bold text-agora-text capitalize">{issue.category || 'General'}</p>
               </div>
             </div>
 
@@ -200,7 +200,7 @@ export function IssueDetailModal({ issue, onClose }: IssueDetailModalProps) {
                   <Calendar className="h-4 w-4" />
                   <span>{t('detail.created')}</span>
                 </div>
-                <p className="text-slate-900 font-medium">
+                <p className="text-agora-text font-medium">
                   {safeFormatDate(issue.created_at, (d) => format(d, 'PPpp'))}
                 </p>
                 <p className="text-sm text-agora-muted mt-1">
@@ -214,7 +214,7 @@ export function IssueDetailModal({ issue, onClose }: IssueDetailModalProps) {
                   <Clock className="h-4 w-4" />
                   <span>{t('detail.lastUpdated')}</span>
                 </div>
-                <p className="text-slate-900 font-medium">
+                <p className="text-agora-text font-medium">
                   {safeFormatDate(issue.updated_at, (d) => format(d, 'PPpp'))}
                 </p>
                 <p className="text-sm text-agora-muted mt-1">

@@ -123,7 +123,7 @@ export default function GovernancePage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold text-slate-900">{t('title')}</h1>
+            <h1 className="text-2xl font-bold text-agora-text">{t('title')}</h1>
             <HelpTooltip content={tGuide('governance')} />
             {health && (
               <span
@@ -149,7 +149,7 @@ export default function GovernancePage() {
         </div>
         <button
           onClick={() => refetchStats()}
-          className="flex items-center gap-2 rounded-lg bg-agora-card px-4 py-2 text-slate-900 transition-colors hover:bg-agora-border"
+          className="flex items-center gap-2 rounded-lg bg-agora-card px-4 py-2 text-agora-text transition-colors hover:bg-agora-border"
         >
           <RefreshCw className="h-4 w-4" />
           {t('refresh')}
@@ -178,7 +178,7 @@ export default function GovernancePage() {
               <Heart className="h-4 w-4" />
               <span className="text-sm">{t('stats.uptime')}</span>
             </div>
-            <p className="mt-2 text-2xl font-bold text-slate-900">
+            <p className="mt-2 text-2xl font-bold text-agora-text">
               {stats?.uptime ? `${Math.floor(stats.uptime / 3600)}h` : '--'}
             </p>
           </button>
@@ -191,7 +191,7 @@ export default function GovernancePage() {
               <Cpu className="h-4 w-4" />
               <span className="text-sm">{t('stats.pipelines')}</span>
             </div>
-            <p className="mt-2 text-2xl font-bold text-slate-900">
+            <p className="mt-2 text-2xl font-bold text-agora-text">
               {stats?.pipelinesRunning ?? 0}
             </p>
             <p className="text-xs text-agora-muted">
@@ -207,7 +207,7 @@ export default function GovernancePage() {
               <FileText className="h-4 w-4" />
               <span className="text-sm">{t('stats.documents')}</span>
             </div>
-            <p className="mt-2 text-2xl font-bold text-slate-900">
+            <p className="mt-2 text-2xl font-bold text-agora-text">
               {stats?.documentsPublished ?? 0}
             </p>
           </button>
@@ -220,7 +220,7 @@ export default function GovernancePage() {
               <Lock className="h-4 w-4" />
               <span className="text-sm">{t('stats.locked')}</span>
             </div>
-            <p className="mt-2 text-2xl font-bold text-slate-900">
+            <p className="mt-2 text-2xl font-bold text-agora-text">
               {stats?.lockedActions ?? 0}
             </p>
           </button>
@@ -241,7 +241,7 @@ export default function GovernancePage() {
               className={`flex items-center gap-2 rounded-t-lg px-4 py-2 text-sm font-medium transition-all whitespace-nowrap ${
                 activeTab === tab.key
                   ? 'bg-agora-primary text-slate-900'
-                  : 'text-agora-muted hover:bg-agora-card hover:text-slate-900'
+                  : 'text-agora-muted hover:bg-agora-card hover:text-agora-text'
               }`}
             >
               <Icon className="h-4 w-4" />
@@ -256,7 +256,7 @@ export default function GovernancePage() {
         <div className="grid gap-6 lg:grid-cols-2 animate-fade-in">
           {/* Recent Activity */}
           <div className="rounded-lg border border-agora-border bg-agora-card p-4 animate-slide-up" style={{ animationDelay: '0ms', animationFillMode: 'backwards' }}>
-            <h3 className="mb-4 flex items-center gap-2 font-semibold text-slate-900">
+            <h3 className="mb-4 flex items-center gap-2 font-semibold text-agora-text">
               <TrendingUp className="h-5 w-5 text-agora-primary" />
               {t('overview.recentWorkflows')}
             </h3>
@@ -280,7 +280,7 @@ export default function GovernancePage() {
 
           {/* Active Votes */}
           <div className="rounded-lg border border-agora-border bg-agora-card p-4 animate-slide-up" style={{ animationDelay: '100ms', animationFillMode: 'backwards' }}>
-            <h3 className="mb-4 flex items-center gap-2 font-semibold text-slate-900">
+            <h3 className="mb-4 flex items-center gap-2 font-semibold text-agora-text">
               <Vote className="h-5 w-5 text-agora-accent" />
               {t('overview.activeVotes')}
             </h3>
@@ -307,7 +307,7 @@ export default function GovernancePage() {
 
           {/* Pending Approvals */}
           <div className="rounded-lg border border-agora-border bg-agora-card p-4 lg:col-span-2 animate-slide-up" style={{ animationDelay: '200ms', animationFillMode: 'backwards' }}>
-            <h3 className="mb-4 flex items-center gap-2 font-semibold text-slate-900">
+            <h3 className="mb-4 flex items-center gap-2 font-semibold text-agora-text">
               <Lock className="h-5 w-5 text-agora-warning" />
               {t('overview.pendingApprovals')}
             </h3>

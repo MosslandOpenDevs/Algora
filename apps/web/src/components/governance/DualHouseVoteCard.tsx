@@ -62,7 +62,7 @@ function HouseResult({
     <div className="flex-1 rounded-lg bg-agora-dark/50 p-3">
       <div className="flex items-center gap-2 mb-2">
         <Icon className="h-4 w-4 text-agora-muted" />
-        <span className="text-xs font-medium text-slate-900">{name}</span>
+        <span className="text-xs font-medium text-agora-text">{name}</span>
         {passed !== undefined && (
           <span
             className={`ml-auto text-xs font-medium ${passed ? 'text-agora-success' : 'text-agora-error'}`}
@@ -122,7 +122,7 @@ export function DualHouseVoteCard({ vote, onClick, index = 0 }: DualHouseVoteCar
       {/* Header */}
       <div className="flex items-start justify-between gap-4 mb-4">
         <div className="flex-1 min-w-0">
-          <h3 className="font-semibold text-slate-900 line-clamp-1">{vote.title}</h3>
+          <h3 className="font-semibold text-agora-text line-clamp-1">{vote.title}</h3>
           <p className="text-xs text-agora-muted mt-1">
             {vote.status === 'voting'
               ? `Ends ${safeFormatDate(vote.expiresAt, (d) => formatDistanceToNow(d, { addSuffix: true }))}`

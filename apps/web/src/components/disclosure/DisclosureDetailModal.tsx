@@ -115,22 +115,22 @@ const statusConfig: Record<DisclosureReportStatus, {
 // Custom components for markdown rendering
 const MarkdownComponents = {
   h1: ({ children }: { children?: React.ReactNode }) => (
-    <h1 className="text-2xl font-bold text-slate-900 mt-6 mb-4 pb-2 border-b border-agora-border">
+    <h1 className="text-2xl font-bold text-agora-text mt-6 mb-4 pb-2 border-b border-agora-border">
       {children}
     </h1>
   ),
   h2: ({ children }: { children?: React.ReactNode }) => (
-    <h2 className="text-xl font-semibold text-slate-900 mt-5 mb-3 pb-1 border-b border-agora-border/50">
+    <h2 className="text-xl font-semibold text-agora-text mt-5 mb-3 pb-1 border-b border-agora-border/50">
       {children}
     </h2>
   ),
   h3: ({ children }: { children?: React.ReactNode }) => (
-    <h3 className="text-lg font-semibold text-slate-900 mt-4 mb-2">
+    <h3 className="text-lg font-semibold text-agora-text mt-4 mb-2">
       {children}
     </h3>
   ),
   h4: ({ children }: { children?: React.ReactNode }) => (
-    <h4 className="text-base font-semibold text-slate-900 mt-3 mb-2">
+    <h4 className="text-base font-semibold text-agora-text mt-3 mb-2">
       {children}
     </h4>
   ),
@@ -155,7 +155,7 @@ const MarkdownComponents = {
     </li>
   ),
   strong: ({ children }: { children?: React.ReactNode }) => (
-    <strong className="font-semibold text-slate-900">
+    <strong className="font-semibold text-agora-text">
       {children}
     </strong>
   ),
@@ -212,7 +212,7 @@ const MarkdownComponents = {
     </tr>
   ),
   th: ({ children }: { children?: React.ReactNode }) => (
-    <th className="px-4 py-2 text-left text-sm font-semibold text-slate-900 border-b border-agora-border">
+    <th className="px-4 py-2 text-left text-sm font-semibold text-agora-text border-b border-agora-border">
       {children}
     </th>
   ),
@@ -342,7 +342,7 @@ Report ID: ${report.id}
                     {status.label}
                   </span>
                 </div>
-                <h2 className="text-lg sm:text-xl font-bold text-slate-900 pr-8 line-clamp-2 break-words">{report.title}</h2>
+                <h2 className="text-lg sm:text-xl font-bold text-agora-text pr-8 line-clamp-2 break-words">{report.title}</h2>
                 <div className="mt-2 flex flex-wrap items-center gap-2 sm:gap-3 text-sm text-agora-muted">
                   <span className="flex items-center gap-1">
                     <User className="h-4 w-4 flex-shrink-0" />
@@ -358,7 +358,7 @@ Report ID: ${report.id}
 
             <button
               onClick={onClose}
-              className="rounded-lg p-2 text-agora-muted transition-colors hover:bg-agora-card hover:text-slate-900 flex-shrink-0"
+              className="rounded-lg p-2 text-agora-muted transition-colors hover:bg-agora-card hover:text-agora-text flex-shrink-0"
             >
               <X className="h-5 w-5" />
             </button>
@@ -391,7 +391,7 @@ Report ID: ${report.id}
                     <FileText className="h-4 w-4" />
                     <span>Summary</span>
                   </div>
-                  <p className="text-slate-900 whitespace-pre-wrap leading-relaxed">
+                  <p className="text-agora-text whitespace-pre-wrap leading-relaxed">
                     {report.summary}
                   </p>
                 </div>
@@ -403,7 +403,7 @@ Report ID: ${report.id}
                       <BookOpen className="h-4 w-4" />
                       <span>Full Report Content</span>
                     </div>
-                    <div className="text-slate-900 whitespace-pre-wrap leading-relaxed">
+                    <div className="text-agora-text whitespace-pre-wrap leading-relaxed">
                       {report.content}
                     </div>
                   </div>
@@ -417,7 +417,7 @@ Report ID: ${report.id}
                       <Calendar className="h-4 w-4" />
                       <span>Report Date</span>
                     </div>
-                    <p className="text-slate-900 font-medium">
+                    <p className="text-agora-text font-medium">
                       {safeFormatDate(report.date, (d) => format(d, 'PPP'))}
                     </p>
                     <p className="text-sm text-agora-muted mt-1">
@@ -431,7 +431,7 @@ Report ID: ${report.id}
                       <Clock className="h-4 w-4" />
                       <span>{report.published_at ? 'Published' : 'Created'}</span>
                     </div>
-                    <p className="text-slate-900 font-medium">
+                    <p className="text-agora-text font-medium">
                       {safeFormatDate(report.published_at || report.created_at, (d) => format(d, 'PPP'))}
                     </p>
                     <p className="text-sm text-agora-muted mt-1">
@@ -447,7 +447,7 @@ Report ID: ${report.id}
               <div className="mt-4 rounded-lg border border-agora-warning/30 bg-agora-warning/5 p-4">
                 <div className="flex items-center gap-2">
                   <Clock className="h-5 w-5 text-agora-warning" />
-                  <span className="font-medium text-slate-900">Pending Review</span>
+                  <span className="font-medium text-agora-text">Pending Review</span>
                 </div>
                 <p className="mt-2 text-sm text-agora-muted">
                   This report is currently under review and will be published once approved.
@@ -459,7 +459,7 @@ Report ID: ${report.id}
               <div className="mt-4 rounded-lg border border-gray-500/30 bg-gray-500/5 p-4">
                 <div className="flex items-center gap-2">
                   <AlertCircle className="h-5 w-5 text-gray-400" />
-                  <span className="font-medium text-slate-900">Draft</span>
+                  <span className="font-medium text-agora-text">Draft</span>
                 </div>
                 <p className="mt-2 text-sm text-agora-muted">
                   This report is still being prepared and has not been submitted for review.
@@ -473,7 +473,7 @@ Report ID: ${report.id}
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <ExternalLink className="h-5 w-5 text-agora-primary" />
-                    <span className="font-medium text-slate-900">External Document</span>
+                    <span className="font-medium text-agora-text">External Document</span>
                   </div>
                   <a
                     href={report.file_url}
@@ -499,7 +499,7 @@ Report ID: ${report.id}
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
               <button
                 onClick={handleShare}
-                className="flex items-center justify-center gap-2 rounded-lg bg-agora-card px-4 py-2 text-sm font-medium text-slate-900 transition-colors hover:bg-agora-border"
+                className="flex items-center justify-center gap-2 rounded-lg bg-agora-card px-4 py-2 text-sm font-medium text-agora-text transition-colors hover:bg-agora-border"
               >
                 <Share2 className="h-4 w-4 flex-shrink-0" />
                 <span>Share</span>

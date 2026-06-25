@@ -170,7 +170,7 @@ export default function GuidePage() {
         <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-agora-primary to-agora-accent">
           <BookOpen className="h-8 w-8 text-slate-900" />
         </div>
-        <h1 className="text-3xl font-bold text-slate-900">{t('title')}</h1>
+        <h1 className="text-3xl font-bold text-agora-text">{t('title')}</h1>
         <p className="mt-2 text-lg text-agora-muted">{t('subtitle')}</p>
       </div>
 
@@ -181,7 +181,7 @@ export default function GuidePage() {
             <Building2 className="h-6 w-6 text-agora-primary" />
           </div>
           <div>
-            <h2 className="text-xl font-bold text-slate-900">Mossland Vision</h2>
+            <h2 className="text-xl font-bold text-agora-text">Mossland Vision</h2>
             <p className="mt-2 text-agora-muted">
               Algora transforms governance from manual discussions into an autonomous AI-powered operating system.
               Building the bridge between virtual and physical worlds through community-driven governance,
@@ -201,7 +201,7 @@ export default function GuidePage() {
               className={`rounded-xl border border-agora-border ${feature.bgColor} p-6`}
             >
               <Icon className={`h-8 w-8 ${feature.color}`} />
-              <h3 className="mt-3 text-lg font-semibold text-slate-900">
+              <h3 className="mt-3 text-lg font-semibold text-agora-text">
                 {t(`features.${feature.key}.title`)}
               </h3>
               <p className="mt-1 text-sm text-agora-muted">
@@ -215,7 +215,7 @@ export default function GuidePage() {
       {/* v2.0 Features */}
       <div className="rounded-xl border border-agora-border bg-agora-card p-6">
         <div className="mb-6 flex items-center justify-between">
-          <h2 className="text-xl font-semibold text-slate-900">
+          <h2 className="text-xl font-semibold text-agora-text">
             Governance OS v2.0 Features
           </h2>
           <Link
@@ -233,7 +233,7 @@ export default function GuidePage() {
               <div key={index} className="flex items-start gap-3 rounded-lg bg-agora-darker p-4">
                 <Icon className={`h-6 w-6 ${feature.color} flex-shrink-0`} />
                 <div>
-                  <h3 className="font-semibold text-slate-900">{feature.title}</h3>
+                  <h3 className="font-semibold text-agora-text">{feature.title}</h3>
                   <p className="mt-1 text-sm text-agora-muted">{feature.description}</p>
                 </div>
               </div>
@@ -247,7 +247,7 @@ export default function GuidePage() {
         <div className="mb-6 flex items-center gap-3">
           <ShieldCheck className="h-8 w-8 text-emerald-500" />
           <div>
-            <h2 className="text-xl font-semibold text-slate-900">Safe Autonomy Guarantee</h2>
+            <h2 className="text-xl font-semibold text-agora-text">Safe Autonomy Guarantee</h2>
             <p className="text-sm text-agora-muted">Your assets are safe. AI recommends, humans decide.</p>
           </div>
           <HelpTooltip content={th('safeAutonomy')} position="right" />
@@ -259,7 +259,7 @@ export default function GuidePage() {
               <div key={index} className="flex items-start gap-3 rounded-lg bg-white/50 p-4">
                 <Icon className="h-5 w-5 text-emerald-600 flex-shrink-0 mt-0.5" />
                 <div>
-                  <h3 className="font-medium text-slate-900">{principle.title}</h3>
+                  <h3 className="font-medium text-agora-text">{principle.title}</h3>
                   <p className="mt-1 text-xs text-agora-muted">{principle.description}</p>
                 </div>
               </div>
@@ -270,7 +270,7 @@ export default function GuidePage() {
 
       {/* Visual Flow */}
       <div className="rounded-xl border border-agora-border bg-agora-card p-6">
-        <h2 className="mb-6 text-center text-xl font-semibold text-slate-900">
+        <h2 className="mb-6 text-center text-xl font-semibold text-agora-text">
           {t('flowTitle')}
         </h2>
         <SystemFlowDiagram showDescriptions={true} highlightCurrent={false} />
@@ -278,7 +278,7 @@ export default function GuidePage() {
 
       {/* Detailed Steps */}
       <div className="space-y-4">
-        <h2 className="text-xl font-semibold text-slate-900">{t('stepsTitle')}</h2>
+        <h2 className="text-xl font-semibold text-agora-text">{t('stepsTitle')}</h2>
         <div className="space-y-4">
           {detailedSteps.map((step, index) => {
             const Icon = step.icon;
@@ -289,14 +289,14 @@ export default function GuidePage() {
                 className={`group flex items-start gap-4 rounded-xl border ${step.borderColor} ${step.bgColor} p-4 transition-all hover:ring-2 hover:ring-current ${step.color}`}
               >
                 <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-agora-dark">
-                  <span className="text-lg font-bold text-slate-900">
+                  <span className="text-lg font-bold text-agora-text">
                     {index + 1}
                   </span>
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
                     <Icon className={`h-5 w-5 ${step.color}`} />
-                    <h3 className="text-lg font-semibold text-slate-900">
+                    <h3 className="text-lg font-semibold text-agora-text">
                       {t(`steps.${step.key}.title`)}
                     </h3>
                   </div>
@@ -317,7 +317,7 @@ export default function GuidePage() {
 
       {/* Other Menu Sections */}
       <div className="rounded-xl border border-agora-border bg-agora-card p-6">
-        <h2 className="mb-4 text-xl font-semibold text-slate-900">
+        <h2 className="mb-4 text-xl font-semibold text-agora-text">
           {t('otherMenus.title')}
         </h2>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -327,7 +327,7 @@ export default function GuidePage() {
           >
             <Users className="h-6 w-6 text-agora-primary" />
             <div>
-              <h3 className="font-medium text-slate-900">
+              <h3 className="font-medium text-agora-text">
                 {t('otherMenus.agents.title')}
               </h3>
               <p className="text-xs text-agora-muted">
@@ -341,7 +341,7 @@ export default function GuidePage() {
           >
             <Sparkles className="h-6 w-6 text-agora-accent" />
             <div>
-              <h3 className="font-medium text-slate-900">
+              <h3 className="font-medium text-agora-text">
                 {t('otherMenus.dashboard.title')}
               </h3>
               <p className="text-xs text-agora-muted">
@@ -355,7 +355,7 @@ export default function GuidePage() {
           >
             <Zap className="h-6 w-6 text-red-500" />
             <div>
-              <h3 className="font-medium text-slate-900">{t('otherMenus.live.title')}</h3>
+              <h3 className="font-medium text-agora-text">{t('otherMenus.live.title')}</h3>
               <p className="text-xs text-agora-muted">
                 {t('otherMenus.live.desc')}
               </p>
@@ -367,7 +367,7 @@ export default function GuidePage() {
           >
             <Shield className="h-6 w-6 text-emerald-500" />
             <div>
-              <h3 className="font-medium text-slate-900">{t('otherMenus.governance.title')}</h3>
+              <h3 className="font-medium text-agora-text">{t('otherMenus.governance.title')}</h3>
               <p className="text-xs text-agora-muted">
                 {t('otherMenus.governance.desc')}
               </p>
@@ -379,7 +379,7 @@ export default function GuidePage() {
           >
             <PiggyBank className="h-6 w-6 text-cyan-500" />
             <div>
-              <h3 className="font-medium text-slate-900">{t('otherMenus.treasury.title')}</h3>
+              <h3 className="font-medium text-agora-text">{t('otherMenus.treasury.title')}</h3>
               <p className="text-xs text-agora-muted">
                 {t('otherMenus.treasury.desc')}
               </p>
@@ -391,7 +391,7 @@ export default function GuidePage() {
           >
             <Wallet className="h-6 w-6 text-pink-500" />
             <div>
-              <h3 className="font-medium text-slate-900">{t('otherMenus.profile.title')}</h3>
+              <h3 className="font-medium text-agora-text">{t('otherMenus.profile.title')}</h3>
               <p className="text-xs text-agora-muted">
                 {t('otherMenus.profile.desc')}
               </p>
@@ -402,7 +402,7 @@ export default function GuidePage() {
 
       {/* CTA */}
       <div className="rounded-xl bg-gradient-to-r from-agora-primary/20 to-agora-accent/20 p-6 text-center">
-        <h2 className="text-xl font-semibold text-slate-900">{t('cta.title')}</h2>
+        <h2 className="text-xl font-semibold text-agora-text">{t('cta.title')}</h2>
         <p className="mt-1 text-sm text-agora-muted">{t('cta.desc')}</p>
         <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
           <Link
@@ -414,7 +414,7 @@ export default function GuidePage() {
           </Link>
           <Link
             href={`/${locale}/governance`}
-            className="inline-flex items-center gap-2 rounded-lg border border-agora-border bg-agora-card px-6 py-2.5 font-medium text-slate-900 transition-colors hover:bg-agora-border"
+            className="inline-flex items-center gap-2 rounded-lg border border-agora-border bg-agora-card px-6 py-2.5 font-medium text-agora-text transition-colors hover:bg-agora-border"
           >
             View Governance OS
             <ArrowRight className="h-4 w-4" />

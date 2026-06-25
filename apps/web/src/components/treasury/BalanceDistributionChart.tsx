@@ -53,7 +53,7 @@ export function BalanceDistributionChart({ balances }: BalanceDistributionChartP
 
   return (
     <div className="rounded-xl border border-agora-border bg-agora-card p-6">
-      <h3 className="mb-4 text-lg font-semibold text-slate-900">{t('balanceDistribution')}</h3>
+      <h3 className="mb-4 text-lg font-semibold text-agora-text">{t('balanceDistribution')}</h3>
 
       {hasData ? (
         <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
@@ -84,10 +84,10 @@ export function BalanceDistributionChart({ balances }: BalanceDistributionChartP
                     className="h-3 w-3 rounded-full flex-shrink-0"
                     style={{ backgroundColor: b.color }}
                   />
-                  <span className="text-sm font-medium text-slate-900">{b.tokenSymbol}</span>
+                  <span className="text-sm font-medium text-agora-text">{b.tokenSymbol}</span>
                 </div>
                 <div className="text-right flex-shrink-0">
-                  <span className="text-xs sm:text-sm font-semibold text-slate-900">
+                  <span className="text-xs sm:text-sm font-semibold text-agora-text">
                     {b.balanceFormatted.toLocaleString()}
                   </span>
                   <span className="ml-1.5 sm:ml-2 text-xs text-agora-muted">

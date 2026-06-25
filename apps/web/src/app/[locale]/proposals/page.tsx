@@ -154,7 +154,7 @@ export default function ProposalsPage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold text-slate-900">{t('title')}</h1>
+            <h1 className="text-2xl font-bold text-agora-text">{t('title')}</h1>
             <HelpTooltip content={tGuide('proposals')} />
           </div>
           <p className="text-agora-muted">{t('subtitle')}</p>
@@ -172,28 +172,28 @@ export default function ProposalsPage() {
             <Vote className="h-4 w-4" />
             <span className="text-sm">{t('stats.active')}</span>
           </div>
-          <p className="mt-2 text-2xl font-bold text-slate-900">{stats.active}</p>
+          <p className="mt-2 text-2xl font-bold text-agora-text">{stats.active}</p>
         </div>
         <div className="rounded-lg border border-agora-border bg-agora-card p-4">
           <div className="flex items-center gap-2 text-agora-success">
             <CheckCircle className="h-4 w-4" />
             <span className="text-sm">{t('stats.passed')}</span>
           </div>
-          <p className="mt-2 text-2xl font-bold text-slate-900">{stats.passed}</p>
+          <p className="mt-2 text-2xl font-bold text-agora-text">{stats.passed}</p>
         </div>
         <div className="rounded-lg border border-agora-border bg-agora-card p-4">
           <div className="flex items-center gap-2 text-agora-error">
             <XCircle className="h-4 w-4" />
             <span className="text-sm">{t('stats.rejected')}</span>
           </div>
-          <p className="mt-2 text-2xl font-bold text-slate-900">{stats.rejected}</p>
+          <p className="mt-2 text-2xl font-bold text-agora-text">{stats.rejected}</p>
         </div>
         <div className="rounded-lg border border-agora-border bg-agora-card p-4">
           <div className="flex items-center gap-2 text-agora-accent">
             <TrendingUp className="h-4 w-4" />
             <span className="text-sm">{t('stats.executed')}</span>
           </div>
-          <p className="mt-2 text-2xl font-bold text-slate-900">{stats.executed}</p>
+          <p className="mt-2 text-2xl font-bold text-agora-text">{stats.executed}</p>
         </div>
       </div>
 
@@ -207,7 +207,7 @@ export default function ProposalsPage() {
             placeholder={t('searchPlaceholder')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full rounded-lg border border-agora-border bg-agora-card py-2 pl-10 pr-4 text-slate-900 placeholder-agora-muted focus:border-agora-primary focus:outline-none focus:ring-1 focus:ring-agora-primary"
+            className="w-full rounded-lg border border-agora-border bg-agora-card py-2 pl-10 pr-4 text-agora-text placeholder-agora-muted focus:border-agora-primary focus:outline-none focus:ring-1 focus:ring-agora-primary"
           />
         </div>
 
@@ -245,7 +245,7 @@ export default function ProposalsPage() {
       ) : filteredProposals?.length === 0 ? (
         <div className="rounded-lg border border-dashed border-agora-border p-8 text-center">
           <FileText className="mx-auto h-12 w-12 text-agora-muted/50" />
-          <h3 className="mt-4 text-lg font-semibold text-slate-900">{t('noProposals')}</h3>
+          <h3 className="mt-4 text-lg font-semibold text-agora-text">{t('noProposals')}</h3>
           <p className="mt-2 text-sm text-agora-muted">{t('noProposalsDesc')}</p>
         </div>
       ) : (

@@ -100,13 +100,13 @@ export function StatsDetailModal({ stat, onClose }: StatsDetailModalProps) {
               {stat.icon}
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-slate-900">{stat.title}</h2>
+              <h2 className="text-lg font-semibold text-agora-text">{stat.title}</h2>
               <p className="text-sm text-agora-muted">{t('statDetails.title')}</p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="rounded-lg p-2 text-agora-muted transition-colors hover:bg-agora-card hover:text-slate-900"
+            className="rounded-lg p-2 text-agora-muted transition-colors hover:bg-agora-card hover:text-agora-text"
           >
             <X className="h-5 w-5" />
           </button>
@@ -119,7 +119,7 @@ export function StatsDetailModal({ stat, onClose }: StatsDetailModalProps) {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-agora-muted">{t('statDetails.currentValue')}</p>
-                <p className="text-4xl font-bold text-slate-900 mt-1">
+                <p className="text-4xl font-bold text-agora-text mt-1">
                   {typeof stat.value === 'number' ? stat.value.toLocaleString() : stat.value}
                 </p>
               </div>
@@ -155,7 +155,7 @@ export function StatsDetailModal({ stat, onClose }: StatsDetailModalProps) {
           {/* Breakdown */}
           {breakdown.length > 0 && (
             <div>
-              <h3 className="flex items-center gap-2 text-sm font-medium text-slate-900 mb-3">
+              <h3 className="flex items-center gap-2 text-sm font-medium text-agora-text mb-3">
                 <BarChart3 className="h-4 w-4" />
                 {t('statDetails.breakdown')}
               </h3>
@@ -178,7 +178,7 @@ export function StatsDetailModal({ stat, onClose }: StatsDetailModalProps) {
                         <div className={`h-3 w-3 rounded-full ${item.color}`} />
                         <span className="text-sm text-agora-muted">{item.label}</span>
                       </div>
-                      <span className="text-sm font-medium text-slate-900">{item.value}</span>
+                      <span className="text-sm font-medium text-agora-text">{item.value}</span>
                     </div>
                   ))}
                 </div>
@@ -189,7 +189,7 @@ export function StatsDetailModal({ stat, onClose }: StatsDetailModalProps) {
           {/* Recent Related Activities */}
           {activities && activities.length > 0 && (
             <div>
-              <h3 className="flex items-center gap-2 text-sm font-medium text-slate-900 mb-3">
+              <h3 className="flex items-center gap-2 text-sm font-medium text-agora-text mb-3">
                 <Clock className="h-4 w-4" />
                 {t('statDetails.recentActivity')}
               </h3>
@@ -200,7 +200,7 @@ export function StatsDetailModal({ stat, onClose }: StatsDetailModalProps) {
                     className="flex items-center justify-between rounded-lg bg-agora-darker p-2 text-sm"
                   >
                     <div className="flex-1 min-w-0">
-                      <p className="text-slate-900 truncate">{activity.message}</p>
+                      <p className="text-agora-text truncate">{activity.message}</p>
                       <p className="text-xs text-agora-muted">{activity.type}</p>
                     </div>
                     <span className="text-xs text-agora-muted whitespace-nowrap ml-2">
@@ -219,7 +219,7 @@ export function StatsDetailModal({ stat, onClose }: StatsDetailModalProps) {
         <div className="border-t border-agora-border p-4">
           <button
             onClick={onClose}
-            className="w-full rounded-lg bg-agora-card py-2 text-sm font-medium text-slate-900 transition-colors hover:bg-agora-border"
+            className="w-full rounded-lg bg-agora-card py-2 text-sm font-medium text-agora-text transition-colors hover:bg-agora-border"
           >
             {t('statDetails.close')}
           </button>

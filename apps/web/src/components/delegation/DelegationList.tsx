@@ -39,7 +39,7 @@ export function DelegationList({
             className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
               activeTab === 'given'
                 ? 'bg-agora-accent text-white'
-                : 'text-agora-muted hover:bg-agora-border hover:text-slate-900'
+                : 'text-agora-muted hover:bg-agora-border hover:text-agora-text'
             }`}
           >
             {t('tabs.given')}
@@ -58,7 +58,7 @@ export function DelegationList({
             className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
               activeTab === 'received'
                 ? 'bg-agora-accent text-white'
-                : 'text-agora-muted hover:bg-agora-border hover:text-slate-900'
+                : 'text-agora-muted hover:bg-agora-border hover:text-agora-text'
             }`}
           >
             {t('tabs.received')}

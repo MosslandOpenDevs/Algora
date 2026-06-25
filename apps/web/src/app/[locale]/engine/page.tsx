@@ -95,7 +95,7 @@ export default function EngineRoomPage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold text-slate-900">{t('title')}</h1>
+            <h1 className="text-2xl font-bold text-agora-text">{t('title')}</h1>
             <HelpTooltip content={tGuide('engine')} />
           </div>
           <p className="text-agora-muted">{t('subtitle')}</p>
@@ -113,7 +113,7 @@ export default function EngineRoomPage() {
           className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-all duration-200 ${
             showSuccess
               ? 'bg-agora-success/20 text-agora-success'
-              : 'bg-agora-card text-slate-900 hover:bg-agora-border'
+              : 'bg-agora-card text-agora-text hover:bg-agora-border'
           } disabled:opacity-50`}
         >
           {showSuccess ? (
@@ -148,7 +148,7 @@ export default function EngineRoomPage() {
           <AlertTriangle className="h-5 w-5 text-agora-error" />
         )}
         <div>
-          <p className="font-medium text-slate-900">
+          <p className="font-medium text-agora-text">
             {t(`status.${systemHealth.status}`)}
           </p>
           <p className="text-sm text-agora-muted">
@@ -179,7 +179,7 @@ export default function EngineRoomPage() {
             <Server className="h-4 w-4" />
             <span className="text-sm">{t('stats.apiCalls')}</span>
           </div>
-          <p className="mt-2 text-2xl font-bold text-slate-900">
+          <p className="mt-2 text-2xl font-bold text-agora-text">
             {(tierUsage.tier0.calls + tierUsage.tier1.calls + tierUsage.tier2.calls).toLocaleString()}
           </p>
           <p className="text-xs text-agora-muted">{t('stats.today')}</p>
@@ -189,7 +189,7 @@ export default function EngineRoomPage() {
             <Cpu className="h-4 w-4" />
             <span className="text-sm">{t('stats.llmCalls')}</span>
           </div>
-          <p className="mt-2 text-2xl font-bold text-slate-900">
+          <p className="mt-2 text-2xl font-bold text-agora-text">
             {(tierUsage.tier1.calls + tierUsage.tier2.calls).toLocaleString()}
           </p>
           <p className="text-xs text-agora-muted">{t('stats.today')}</p>
@@ -199,7 +199,7 @@ export default function EngineRoomPage() {
             <Database className="h-4 w-4" />
             <span className="text-sm">{t('stats.dbSize')}</span>
           </div>
-          <p className="mt-2 text-2xl font-bold text-slate-900">{systemHealth.dbSize} MB</p>
+          <p className="mt-2 text-2xl font-bold text-agora-text">{systemHealth.dbSize} MB</p>
           <p className="text-xs text-agora-muted">SQLite WAL</p>
         </div>
         <div className="rounded-lg border border-agora-border bg-agora-card p-4">
@@ -207,7 +207,7 @@ export default function EngineRoomPage() {
             <TrendingUp className="h-4 w-4" />
             <span className="text-sm">{t('stats.activeAgents')}</span>
           </div>
-          <p className="mt-2 text-2xl font-bold text-slate-900">
+          <p className="mt-2 text-2xl font-bold text-agora-text">
             {systemHealth.agents.active}/{systemHealth.agents.total}
           </p>
           <p className="text-xs text-agora-muted">{t('stats.agents')}</p>

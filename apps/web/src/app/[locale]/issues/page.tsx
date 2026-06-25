@@ -58,7 +58,7 @@ export default function IssuesPage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold text-slate-900">{t('title')}</h1>
+            <h1 className="text-2xl font-bold text-agora-text">{t('title')}</h1>
             <HelpTooltip content={tGuide('issues')} />
           </div>
           <p className="text-agora-muted">{t('subtitle')}</p>
@@ -80,7 +80,7 @@ export default function IssuesPage() {
             <AlertCircle className="h-4 w-4" />
             <span className="text-sm">{t('stats.detected')}</span>
           </div>
-          <p className="mt-2 text-2xl font-bold text-slate-900">{stats.detected}</p>
+          <p className="mt-2 text-2xl font-bold text-agora-text">{stats.detected}</p>
         </div>
         <div
           className="animate-slide-up rounded-lg border border-agora-border bg-agora-card p-4 transition-all duration-200 hover:scale-[1.02] hover:shadow-lg hover:border-agora-accent/30 cursor-pointer"
@@ -91,7 +91,7 @@ export default function IssuesPage() {
             <Eye className="h-4 w-4" />
             <span className="text-sm">{t('stats.confirmed')}</span>
           </div>
-          <p className="mt-2 text-2xl font-bold text-slate-900">{stats.confirmed}</p>
+          <p className="mt-2 text-2xl font-bold text-agora-text">{stats.confirmed}</p>
         </div>
         <div
           className="animate-slide-up rounded-lg border border-agora-border bg-agora-card p-4 transition-all duration-200 hover:scale-[1.02] hover:shadow-lg hover:border-agora-primary/30 cursor-pointer"
@@ -102,7 +102,7 @@ export default function IssuesPage() {
             <PlayCircle className="h-4 w-4" />
             <span className="text-sm">{t('stats.in_progress')}</span>
           </div>
-          <p className="mt-2 text-2xl font-bold text-slate-900">{stats.in_progress}</p>
+          <p className="mt-2 text-2xl font-bold text-agora-text">{stats.in_progress}</p>
         </div>
         <div
           className="animate-slide-up rounded-lg border border-agora-border bg-agora-card p-4 transition-all duration-200 hover:scale-[1.02] hover:shadow-lg hover:border-agora-success/30 cursor-pointer"
@@ -113,7 +113,7 @@ export default function IssuesPage() {
             <CheckCircle className="h-4 w-4" />
             <span className="text-sm">{t('stats.resolved')}</span>
           </div>
-          <p className="mt-2 text-2xl font-bold text-slate-900">{stats.resolved}</p>
+          <p className="mt-2 text-2xl font-bold text-agora-text">{stats.resolved}</p>
         </div>
       </div>
 
@@ -127,7 +127,7 @@ export default function IssuesPage() {
             placeholder={t('searchPlaceholder')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full rounded-lg border border-agora-border bg-agora-card py-2 pl-10 pr-4 text-slate-900 placeholder-agora-muted focus:border-agora-primary focus:outline-none focus:ring-1 focus:ring-agora-primary"
+            className="w-full rounded-lg border border-agora-border bg-agora-card py-2 pl-10 pr-4 text-agora-text placeholder-agora-muted focus:border-agora-primary focus:outline-none focus:ring-1 focus:ring-agora-primary"
           />
         </div>
 
@@ -194,7 +194,7 @@ export default function IssuesPage() {
           <div className="mb-4 rounded-full bg-agora-card p-4">
             <AlertCircle className="h-12 w-12 text-agora-muted" />
           </div>
-          <h3 className="text-lg font-semibold text-slate-900">{t('noIssues')}</h3>
+          <h3 className="text-lg font-semibold text-agora-text">{t('noIssues')}</h3>
           <p className="mt-2 text-sm text-agora-muted max-w-md">{t('noIssuesDesc')}</p>
           {(selectedStatus !== 'all' || selectedPriority !== 'all' || searchQuery) && (
             <button

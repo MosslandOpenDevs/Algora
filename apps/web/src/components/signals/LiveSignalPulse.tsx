@@ -133,7 +133,7 @@ export function LiveSignalPulse() {
         <div className="flex items-center gap-3">
           <PulseRing rate={ratePerMinute} />
           <div>
-            <h3 className="text-lg font-semibold text-slate-900">Signal Pulse</h3>
+            <h3 className="text-lg font-semibold text-agora-text">Signal Pulse</h3>
             <p className="text-xs text-agora-muted italic">{wittyMessage}</p>
           </div>
         </div>
@@ -191,7 +191,7 @@ export function LiveSignalPulse() {
       {/* Total */}
       <div className="flex items-center justify-between pt-2 border-t border-agora-border">
         <span className="text-sm text-agora-muted">Total signals collected</span>
-        <span className="text-lg font-semibold text-slate-900">
+        <span className="text-lg font-semibold text-agora-text">
           {timeStats.total.toLocaleString()}
         </span>
       </div>
@@ -217,7 +217,7 @@ export function LiveSignalBadge() {
   return (
     <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-agora-card border border-agora-border">
       <span className={`h-2 w-2 rounded-full ${isActive ? 'bg-agora-primary animate-pulse' : 'bg-agora-muted'}`} />
-      <span className="text-xs font-medium text-slate-900">{timeStats.last10min}</span>
+      <span className="text-xs font-medium text-agora-text">{timeStats.last10min}</span>
       <span className="text-xs text-agora-muted">signals/10m</span>
     </div>
   );

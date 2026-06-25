@@ -20,7 +20,7 @@ export function HelpTooltip({ content, title, position = 'bottom' }: HelpTooltip
     <Tooltip>
       <TooltipTrigger asChild>
         <button
-          className="rounded-full p-1 text-agora-muted transition-colors hover:bg-agora-card hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-agora-primary"
+          className="rounded-full p-1 text-agora-muted transition-colors hover:bg-agora-card hover:text-agora-text focus:outline-none focus:ring-2 focus:ring-agora-primary"
           aria-label="Help"
         >
           <HelpCircle className="h-4 w-4" />

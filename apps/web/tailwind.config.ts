@@ -26,13 +26,16 @@ const config: Config = {
           foreground: 'hsl(var(--primary-foreground))',
         },
         agora: {
-          // Light theme (moss.land style) - used without dark: prefix
-          dark: '#ffffff',
-          darker: '#f8fafc',
-          card: '#ffffff',
-          border: '#e2e8f0',
-          text: '#0f172a',
-          muted: '#64748b',
+          // Theme-aware via CSS vars: light defaults live in :root, dark in
+          // .dark (globals.css). RGB-channel form keeps Tailwind opacity
+          // modifiers (e.g. bg-agora-card/50) working. Light values are
+          // numerically identical to the previous static hexes.
+          dark: 'rgb(var(--agora-dark) / <alpha-value>)',
+          darker: 'rgb(var(--agora-darker) / <alpha-value>)',
+          card: 'rgb(var(--agora-card) / <alpha-value>)',
+          border: 'rgb(var(--agora-border) / <alpha-value>)',
+          text: 'rgb(var(--agora-text) / <alpha-value>)',
+          muted: 'rgb(var(--agora-muted) / <alpha-value>)',
           primary: '#16f6ab',
           secondary: '#00c2c2',
           tertiary: '#0080e8',

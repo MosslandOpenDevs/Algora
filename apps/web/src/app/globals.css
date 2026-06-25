@@ -12,13 +12,13 @@
     --moss-secondary: #00c2c2;
     --moss-tertiary: #0080e8;
 
-    /* Theme-aware colors */
-    --agora-dark: #ffffff;
-    --agora-darker: #f8fafc;
-    --agora-card: #ffffff;
-    --agora-border: #e2e8f0;
-    --agora-text: #0f172a;
-    --agora-muted: #64748b;
+    /* Theme-aware colors (RGB channels so Tailwind <alpha-value> opacity works) */
+    --agora-dark: 255 255 255;
+    --agora-darker: 248 250 252;
+    --agora-card: 255 255 255;
+    --agora-border: 226 232 240;
+    --agora-text: 15 23 42;
+    --agora-muted: 100 116 139;
 
     /* Shadcn CSS variables - Light */
     --background: 0 0% 100%;
@@ -47,13 +47,13 @@
     --foreground-rgb: 248, 250, 252;
     --background-rgb: 15, 15, 20;
 
-    /* Dark theme colors */
-    --agora-dark: #0f0f14;
-    --agora-darker: #0a0a0f;
-    --agora-card: #161621;
-    --agora-border: #2a2a3a;
-    --agora-text: #f8fafc;
-    --agora-muted: #94a3b8;
+    /* Dark theme colors (RGB channels) */
+    --agora-dark: 15 15 20;
+    --agora-darker: 10 10 15;
+    --agora-card: 22 22 33;
+    --agora-border: 42 42 58;
+    --agora-text: 248 250 252;
+    --agora-muted: 148 163 184;
 
     /* Shadcn CSS variables - Dark */
     --background: 240 10% 6%;

@@ -98,13 +98,13 @@ export function TransactionDetailModal({
               <TypeIcon className={`h-5 sm:h-6 w-5 sm:w-6 ${colors.icon}`} />
             </div>
             <div className="min-w-0 flex-1">
-              <h2 className="text-lg sm:text-xl font-bold text-slate-900">{t('modals.transactionDetail')}</h2>
+              <h2 className="text-lg sm:text-xl font-bold text-agora-text">{t('modals.transactionDetail')}</h2>
               <p className="text-sm text-agora-muted">{t(`transaction.${transaction.type}`)}</p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="rounded-lg p-1 text-agora-muted transition-colors hover:bg-agora-card hover:text-slate-900 flex-shrink-0"
+            className="rounded-lg p-1 text-agora-muted transition-colors hover:bg-agora-card hover:text-agora-text flex-shrink-0"
           >
             <X className="h-5 w-5" />
           </button>
@@ -134,7 +134,7 @@ export function TransactionDetailModal({
           {/* Description */}
           <div className="rounded-lg bg-agora-card p-4">
             <div className="mb-1 text-sm text-agora-muted">{t('description')}</div>
-            <div className="text-slate-900">{transaction.description}</div>
+            <div className="text-agora-text">{transaction.description}</div>
           </div>
 
           {/* From Address */}
@@ -142,13 +142,13 @@ export function TransactionDetailModal({
             <div className="rounded-lg bg-agora-card p-4">
               <div className="mb-1 text-sm text-agora-muted">{t('from')}</div>
               <div className="flex items-center justify-between">
-                <span className="font-mono text-sm text-slate-900">
+                <span className="font-mono text-sm text-agora-text">
                   {formatAddress(transaction.fromAddress)}
                 </span>
                 <div className="flex gap-1">
                   <button
                     onClick={() => copyToClipboard(transaction.fromAddress!, 'from')}
-                    className="rounded p-1 text-agora-muted transition-colors hover:bg-agora-border hover:text-slate-900"
+                    className="rounded p-1 text-agora-muted transition-colors hover:bg-agora-border hover:text-agora-text"
                   >
                     {copiedField === 'from' ? (
                       <Check className="h-4 w-4 text-agora-success" />
@@ -160,7 +160,7 @@ export function TransactionDetailModal({
                     href={`https://etherscan.io/address/${transaction.fromAddress}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="rounded p-1 text-agora-muted transition-colors hover:bg-agora-border hover:text-slate-900"
+                    className="rounded p-1 text-agora-muted transition-colors hover:bg-agora-border hover:text-agora-text"
                   >
                     <ExternalLink className="h-4 w-4" />
                   </a>
@@ -174,13 +174,13 @@ export function TransactionDetailModal({
             <div className="rounded-lg bg-agora-card p-4">
               <div className="mb-1 text-sm text-agora-muted">{t('to')}</div>
               <div className="flex items-center justify-between">
-                <span className="font-mono text-sm text-slate-900">
+                <span className="font-mono text-sm text-agora-text">
                   {formatAddress(transaction.toAddress)}
                 </span>
                 <div className="flex gap-1">
                   <button
                     onClick={() => copyToClipboard(transaction.toAddress!, 'to')}
-                    className="rounded p-1 text-agora-muted transition-colors hover:bg-agora-border hover:text-slate-900"
+                    className="rounded p-1 text-agora-muted transition-colors hover:bg-agora-border hover:text-agora-text"
                   >
                     {copiedField === 'to' ? (
                       <Check className="h-4 w-4 text-agora-success" />
@@ -192,7 +192,7 @@ export function TransactionDetailModal({
                     href={`https://etherscan.io/address/${transaction.toAddress}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="rounded p-1 text-agora-muted transition-colors hover:bg-agora-border hover:text-slate-900"
+                    className="rounded p-1 text-agora-muted transition-colors hover:bg-agora-border hover:text-agora-text"
                   >
                     <ExternalLink className="h-4 w-4" />
                   </a>
@@ -206,13 +206,13 @@ export function TransactionDetailModal({
             <div className="rounded-lg bg-agora-card p-4">
               <div className="mb-1 text-sm text-agora-muted">{t('txHash')}</div>
               <div className="flex items-center justify-between">
-                <span className="font-mono text-sm text-slate-900">
+                <span className="font-mono text-sm text-agora-text">
                   {transaction.txHash.slice(0, 10)}...{transaction.txHash.slice(-8)}
                 </span>
                 <div className="flex gap-1">
                   <button
                     onClick={() => copyToClipboard(transaction.txHash!, 'txHash')}
-                    className="rounded p-1 text-agora-muted transition-colors hover:bg-agora-border hover:text-slate-900"
+                    className="rounded p-1 text-agora-muted transition-colors hover:bg-agora-border hover:text-agora-text"
                   >
                     {copiedField === 'txHash' ? (
                       <Check className="h-4 w-4 text-agora-success" />
@@ -224,7 +224,7 @@ export function TransactionDetailModal({
                     href={`https://etherscan.io/tx/${transaction.txHash}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="rounded p-1 text-agora-muted transition-colors hover:bg-agora-border hover:text-slate-900"
+                    className="rounded p-1 text-agora-muted transition-colors hover:bg-agora-border hover:text-agora-text"
                   >
                     <ExternalLink className="h-4 w-4" />
                   </a>
@@ -237,14 +237,14 @@ export function TransactionDetailModal({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="rounded-lg bg-agora-card p-4">
               <div className="mb-1 text-sm text-agora-muted">{t('createdAt')}</div>
-              <div className="text-sm text-slate-900">
+              <div className="text-sm text-agora-text">
                 {safeFormatDate(transaction.createdAt, (d) => d.toLocaleString())}
               </div>
             </div>
             {transaction.confirmedAt && (
               <div className="rounded-lg bg-agora-card p-4">
                 <div className="mb-1 text-sm text-agora-muted">{t('confirmedAt')}</div>
-                <div className="text-sm text-slate-900">
+                <div className="text-sm text-agora-text">
                   {safeFormatDate(transaction.confirmedAt, (d) => d.toLocaleString())}
                 </div>
               </div>
@@ -271,7 +271,7 @@ export function TransactionDetailModal({
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="w-full rounded-lg bg-agora-card px-4 py-3 text-sm font-medium text-slate-900 transition-colors hover:bg-agora-border"
+          className="w-full rounded-lg bg-agora-card px-4 py-3 text-sm font-medium text-agora-text transition-colors hover:bg-agora-border"
         >
           {t('modals.close')}
         </button>

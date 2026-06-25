@@ -111,7 +111,7 @@ export function AgentDetailModal({ agent, onClose, messageCount = 0 }: AgentDeta
             {/* Name and Status */}
             <div className="flex items-start justify-between">
               <div>
-                <h2 className="text-xl font-bold text-slate-900">
+                <h2 className="text-xl font-bold text-agora-text">
                   {agent.display_name || agent.name}
                 </h2>
                 <p className="text-sm text-agora-muted">@{agent.name}</p>
@@ -158,12 +158,12 @@ export function AgentDetailModal({ agent, onClose, messageCount = 0 }: AgentDeta
             <div className="mt-4 grid grid-cols-2 gap-3">
               <div className="rounded-lg bg-agora-card p-3 text-center border border-agora-border">
                 <MessageSquare className="h-5 w-5 mx-auto text-agora-primary mb-1" />
-                <p className="text-lg font-bold text-slate-900">{messageCount}</p>
+                <p className="text-lg font-bold text-agora-text">{messageCount}</p>
                 <p className="text-xs text-agora-muted">Messages</p>
               </div>
               <div className="rounded-lg bg-agora-card p-3 text-center border border-agora-border">
                 <Zap className="h-5 w-5 mx-auto text-agora-accent mb-1" />
-                <p className="text-lg font-bold text-slate-900">
+                <p className="text-lg font-bold text-agora-text">
                   {agent.status === 'speaking' ? 'Active' : agent.status === 'active' ? 'Ready' : 'Idle'}
                 </p>
                 <p className="text-xs text-agora-muted">Status</p>
@@ -175,7 +175,7 @@ export function AgentDetailModal({ agent, onClose, messageCount = 0 }: AgentDeta
           <div className="flex items-center justify-end gap-3 border-t border-agora-border px-6 py-4">
             <button
               onClick={onClose}
-              className="rounded-lg bg-agora-card px-4 py-2 text-sm font-medium text-slate-900 transition-all hover:bg-agora-border"
+              className="rounded-lg bg-agora-card px-4 py-2 text-sm font-medium text-agora-text transition-all hover:bg-agora-border"
             >
               Close
             </button>

@@ -132,7 +132,7 @@ export default function IssueDetailPage() {
         <div className="mb-4 rounded-full bg-agora-card p-4">
           <AlertCircle className="h-12 w-12 text-agora-error" />
         </div>
-        <h1 className="text-2xl font-bold text-slate-900 mb-2">Issue Not Found</h1>
+        <h1 className="text-2xl font-bold text-agora-text mb-2">Issue Not Found</h1>
         <p className="text-agora-muted mb-6 max-w-md">
           The issue you&apos;re looking for doesn&apos;t exist or may have been removed.
         </p>
@@ -156,7 +156,7 @@ export default function IssueDetailPage() {
       <div className="flex items-center justify-between">
         <button
           onClick={() => router.back()}
-          className="flex items-center gap-2 text-agora-muted hover:text-slate-900 transition-colors"
+          className="flex items-center gap-2 text-agora-muted hover:text-agora-text transition-colors"
         >
           <ArrowLeft className="h-4 w-4" />
           <span>Back</span>
@@ -164,7 +164,7 @@ export default function IssueDetailPage() {
 
         <button
           onClick={handleShare}
-          className="flex items-center gap-2 text-agora-muted hover:text-slate-900 transition-colors"
+          className="flex items-center gap-2 text-agora-muted hover:text-agora-text transition-colors"
         >
           <Share2 className="h-4 w-4" />
           <span>Share</span>
@@ -181,7 +181,7 @@ export default function IssueDetailPage() {
           </div>
 
           <div className="flex-1 min-w-0">
-            <h1 className="text-2xl font-bold text-slate-900 break-words">{issue.title}</h1>
+            <h1 className="text-2xl font-bold text-agora-text break-words">{issue.title}</h1>
 
             <div className="mt-3 flex flex-wrap items-center gap-3">
               {/* Status Badge */}
@@ -224,7 +224,7 @@ export default function IssueDetailPage() {
           <span>{t('detail.description')}</span>
         </div>
         <div className="prose prose-slate max-w-none">
-          <p className="text-slate-900 whitespace-pre-wrap leading-relaxed">
+          <p className="text-agora-text whitespace-pre-wrap leading-relaxed">
             {issue.description}
           </p>
         </div>
@@ -241,7 +241,7 @@ export default function IssueDetailPage() {
             <Radio className="h-4 w-4" />
             <span>{t('detail.relatedSignals')}</span>
           </div>
-          <p className="text-2xl font-bold text-slate-900">{getSignalCount(issue.signal_ids)}</p>
+          <p className="text-2xl font-bold text-agora-text">{getSignalCount(issue.signal_ids)}</p>
           <p className="text-xs text-agora-muted mt-1">{t('signals')}</p>
         </div>
 
@@ -251,7 +251,7 @@ export default function IssueDetailPage() {
             <Calendar className="h-4 w-4" />
             <span>{t('detail.created')}</span>
           </div>
-          <p className="text-lg font-bold text-slate-900">
+          <p className="text-lg font-bold text-agora-text">
             {safeFormatDate(issue.created_at, (d) => format(d, 'MMM d, yyyy'))}
           </p>
           <p className="text-xs text-agora-muted mt-1">
@@ -265,7 +265,7 @@ export default function IssueDetailPage() {
             <Clock className="h-4 w-4" />
             <span>{t('detail.lastUpdated')}</span>
           </div>
-          <p className="text-lg font-bold text-slate-900">
+          <p className="text-lg font-bold text-agora-text">
             {safeFormatDate(issue.updated_at, (d) => format(d, 'MMM d, yyyy'))}
           </p>
           <p className="text-xs text-agora-muted mt-1">
@@ -279,7 +279,7 @@ export default function IssueDetailPage() {
             <Tag className="h-4 w-4" />
             <span>Category</span>
           </div>
-          <p className="text-lg font-bold text-slate-900 capitalize">{issue.category || 'General'}</p>
+          <p className="text-lg font-bold text-agora-text capitalize">{issue.category || 'General'}</p>
           <p className="text-xs text-agora-muted mt-1">{t(`priority.${issue.priority}`)} priority</p>
         </div>
       </div>
@@ -374,7 +374,7 @@ export default function IssueDetailPage() {
                   {item.severity}
                 </span>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm text-slate-900 break-words">{item.description}</p>
+                  <p className="text-sm text-agora-text break-words">{item.description}</p>
                   <p className="text-xs text-agora-muted mt-1">{item.source}</p>
                 </div>
               </div>
@@ -428,7 +428,7 @@ export default function IssueDetailPage() {
 
           <Link
             href="/issues"
-            className="flex items-center justify-center gap-2 rounded-lg border border-agora-border px-4 py-2 text-sm font-medium text-agora-muted transition-all hover:bg-agora-border hover:text-slate-900"
+            className="flex items-center justify-center gap-2 rounded-lg border border-agora-border px-4 py-2 text-sm font-medium text-agora-muted transition-all hover:bg-agora-border hover:text-agora-text"
           >
             <ExternalLink className="h-4 w-4" />
             <span>All Issues</span>

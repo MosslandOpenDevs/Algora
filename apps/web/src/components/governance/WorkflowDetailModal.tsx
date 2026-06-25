@@ -170,13 +170,13 @@ export function WorkflowDetailModal({ workflow, isOpen, onClose }: WorkflowDetai
         <div className="overflow-y-auto p-6" style={{ maxHeight: 'calc(85vh - 280px)' }}>
           {/* Purpose */}
           <div className="mb-6">
-            <h3 className="text-sm font-semibold text-slate-900 mb-2">{t('purpose')}</h3>
+            <h3 className="text-sm font-semibold text-agora-text mb-2">{t('purpose')}</h3>
             <p className="text-sm text-agora-muted leading-relaxed">{details.purpose}</p>
           </div>
 
           {/* Pipeline Stages */}
           <div className="mb-6">
-            <h3 className="text-sm font-semibold text-slate-900 mb-3">{t('pipelineStages')}</h3>
+            <h3 className="text-sm font-semibold text-agora-text mb-3">{t('pipelineStages')}</h3>
             <div className="flex flex-wrap items-center gap-2">
               {details.stages.map((stage, index) => (
                 <div key={stage} className="flex items-center gap-2">
@@ -184,7 +184,7 @@ export function WorkflowDetailModal({ workflow, isOpen, onClose }: WorkflowDetai
                     <div className="flex h-5 w-5 items-center justify-center rounded-full bg-agora-primary text-xs font-bold text-slate-900">
                       {index + 1}
                     </div>
-                    <span className="text-xs font-medium text-slate-900">{stage}</span>
+                    <span className="text-xs font-medium text-agora-text">{stage}</span>
                   </div>
                   {index < details.stages.length - 1 && (
                     <ArrowRight className="h-4 w-4 text-agora-muted" />
@@ -196,7 +196,7 @@ export function WorkflowDetailModal({ workflow, isOpen, onClose }: WorkflowDetai
 
           {/* Stakeholders */}
           <div className="mb-6">
-            <h3 className="text-sm font-semibold text-slate-900 mb-3">{t('stakeholders')}</h3>
+            <h3 className="text-sm font-semibold text-agora-text mb-3">{t('stakeholders')}</h3>
             <div className="flex flex-wrap gap-2">
               {details.stakeholders.map((stakeholder) => (
                 <span
@@ -212,7 +212,7 @@ export function WorkflowDetailModal({ workflow, isOpen, onClose }: WorkflowDetai
 
           {/* Output Documents */}
           <div className="mb-6">
-            <h3 className="text-sm font-semibold text-slate-900 mb-3">{t('outputDocuments')}</h3>
+            <h3 className="text-sm font-semibold text-agora-text mb-3">{t('outputDocuments')}</h3>
             <div className="grid grid-cols-3 gap-3">
               {details.outcomes.map((outcome) => (
                 <div
@@ -220,7 +220,7 @@ export function WorkflowDetailModal({ workflow, isOpen, onClose }: WorkflowDetai
                   className="rounded-lg border border-agora-border bg-agora-dark/30 p-3 text-center"
                 >
                   <Workflow className="h-5 w-5 text-agora-primary mx-auto mb-2" />
-                  <span className="text-xs font-medium text-slate-900">{outcome}</span>
+                  <span className="text-xs font-medium text-agora-text">{outcome}</span>
                 </div>
               ))}
             </div>
@@ -230,7 +230,7 @@ export function WorkflowDetailModal({ workflow, isOpen, onClose }: WorkflowDetai
           <div className="rounded-lg border border-agora-border bg-agora-dark/30 p-4">
             <div className="flex items-center gap-2 mb-3">
               <BarChart3 className="h-4 w-4 text-agora-muted" />
-              <span className="text-sm font-medium text-slate-900">{t('recentActivity')}</span>
+              <span className="text-sm font-medium text-agora-text">{t('recentActivity')}</span>
             </div>
             <div className="flex items-end gap-1 h-16">
               {[40, 65, 45, 80, 55, 70, 90].map((height, i) => (
@@ -258,7 +258,7 @@ export function WorkflowDetailModal({ workflow, isOpen, onClose }: WorkflowDetai
           </div>
           <button
             onClick={onClose}
-            className="rounded-lg px-4 py-2 text-sm font-medium text-agora-muted transition-colors hover:bg-agora-border hover:text-slate-900"
+            className="rounded-lg px-4 py-2 text-sm font-medium text-agora-muted transition-colors hover:bg-agora-border hover:text-agora-text"
           >
             {t('close')}
           </button>

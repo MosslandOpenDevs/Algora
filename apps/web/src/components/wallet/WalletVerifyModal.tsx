@@ -94,7 +94,7 @@ export function WalletVerifyModal({ isOpen, onClose }: WalletVerifyModalProps) {
         {step !== 'signing' && step !== 'verifying' && (
           <button
             onClick={handleClose}
-            className="absolute right-4 top-4 rounded-lg p-1 text-agora-muted transition-colors hover:bg-agora-card hover:text-slate-900"
+            className="absolute right-4 top-4 rounded-lg p-1 text-agora-muted transition-colors hover:bg-agora-card hover:text-agora-text"
           >
             <X className="h-5 w-5" />
           </button>
@@ -106,11 +106,11 @@ export function WalletVerifyModal({ isOpen, onClose }: WalletVerifyModalProps) {
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-agora-accent/20">
               <ShieldCheck className="h-8 w-8 text-agora-accent" />
             </div>
-            <h2 className="mb-2 text-xl font-bold text-slate-900">{t('verifyWallet')}</h2>
+            <h2 className="mb-2 text-xl font-bold text-agora-text">{t('verifyWallet')}</h2>
             <p className="mb-6 text-sm text-agora-muted">{t('verificationRequired')}</p>
 
             <div className="mb-6 rounded-lg bg-agora-card p-4 text-left">
-              <h3 className="mb-2 text-sm font-medium text-slate-900">{t('verificationSteps')}</h3>
+              <h3 className="mb-2 text-sm font-medium text-agora-text">{t('verificationSteps')}</h3>
               <ol className="space-y-2 text-sm text-agora-muted">
                 <li className="flex items-start gap-2">
                   <span className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-agora-accent/20 text-xs font-medium text-agora-accent">
@@ -149,7 +149,7 @@ export function WalletVerifyModal({ isOpen, onClose }: WalletVerifyModalProps) {
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-agora-accent/20">
               <Loader2 className="h-8 w-8 animate-spin text-agora-accent" />
             </div>
-            <h2 className="mb-2 text-xl font-bold text-slate-900">{t('waitingForSignature')}</h2>
+            <h2 className="mb-2 text-xl font-bold text-agora-text">{t('waitingForSignature')}</h2>
             <p className="text-sm text-agora-muted">{t('checkWallet')}</p>
           </div>
         )}
@@ -159,7 +159,7 @@ export function WalletVerifyModal({ isOpen, onClose }: WalletVerifyModalProps) {
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-agora-accent/20">
               <Loader2 className="h-8 w-8 animate-spin text-agora-accent" />
             </div>
-            <h2 className="mb-2 text-xl font-bold text-slate-900">{t('verifying')}</h2>
+            <h2 className="mb-2 text-xl font-bold text-agora-text">{t('verifying')}</h2>
             <p className="text-sm text-agora-muted">{t('pleaseWait')}</p>
           </div>
         )}
@@ -169,7 +169,7 @@ export function WalletVerifyModal({ isOpen, onClose }: WalletVerifyModalProps) {
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-agora-success/20">
               <CheckCircle className="h-8 w-8 text-agora-success" />
             </div>
-            <h2 className="mb-2 text-xl font-bold text-slate-900">{t('verificationSuccess')}</h2>
+            <h2 className="mb-2 text-xl font-bold text-agora-text">{t('verificationSuccess')}</h2>
             <p className="mb-6 text-sm text-agora-muted">{t('canParticipate')}</p>
             <button
               onClick={onClose}
@@ -185,12 +185,12 @@ export function WalletVerifyModal({ isOpen, onClose }: WalletVerifyModalProps) {
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-red-500/20">
               <XCircle className="h-8 w-8 text-red-500" />
             </div>
-            <h2 className="mb-2 text-xl font-bold text-slate-900">{t('verificationFailed')}</h2>
+            <h2 className="mb-2 text-xl font-bold text-agora-text">{t('verificationFailed')}</h2>
             <p className="mb-6 text-sm text-agora-muted">{errorMessage}</p>
             <div className="flex gap-2">
               <button
                 onClick={() => setStep('intro')}
-                className="flex-1 rounded-lg bg-agora-card px-4 py-3 text-sm font-medium text-slate-900 transition-colors hover:bg-agora-border"
+                className="flex-1 rounded-lg bg-agora-card px-4 py-3 text-sm font-medium text-agora-text transition-colors hover:bg-agora-border"
               >
                 {t('tryAgain')}
               </button>

@@ -56,12 +56,12 @@ export function DelegationCard({ delegation, type, onRevoke, index = 0 }: Delega
               </span>
             </div>
             <div className="flex items-center gap-2">
-              <span className="font-mono text-sm text-slate-900">
+              <span className="font-mono text-sm text-agora-text">
                 {formatAddress(targetAddress)}
               </span>
               <button
                 onClick={() => copyToClipboard(targetAddress, 'address')}
-                className="rounded p-1 text-agora-muted transition-colors hover:bg-agora-border hover:text-slate-900"
+                className="rounded p-1 text-agora-muted transition-colors hover:bg-agora-border hover:text-agora-text"
               >
                 {copiedField === 'address' ? (
                   <Check className="h-3 w-3 text-agora-success" />
@@ -73,7 +73,7 @@ export function DelegationCard({ delegation, type, onRevoke, index = 0 }: Delega
                 href={`https://etherscan.io/address/${targetAddress}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="rounded p-1 text-agora-muted transition-colors hover:bg-agora-border hover:text-slate-900"
+                className="rounded p-1 text-agora-muted transition-colors hover:bg-agora-border hover:text-agora-text"
               >
                 <ExternalLink className="h-3 w-3" />
               </a>
