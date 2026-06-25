@@ -868,7 +868,7 @@
     },
     "footer": {
       "platform": "24/7 라이브 AI 거버넌스 플랫폼",
-      "powered": "30개의 AI 에이전트가 구동합니다"
+      "powered": "38개의 AI 에이전트가 구동합니다"
     }
   },
   "Governance": {
@@ -1217,6 +1217,7 @@
   },
   "Search": {
     "placeholder": "에이전트, 제안, 이슈 검색...",
+    "button": "검색",
     "noResults": "검색 결과가 없습니다",
     "tryDifferent": "다른 검색어를 시도해 보세요",
     "typeToSearch": "2글자 이상 입력하세요",

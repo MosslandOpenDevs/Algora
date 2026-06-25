@@ -1,4 +1,14 @@
 {
+  "Search": {
+    "placeholder": "搜索代理、提案、议题...",
+    "button": "搜索",
+    "noResults": "未找到结果",
+    "tryDifferent": "请尝试其他搜索词",
+    "typeToSearch": "请输入至少2个字符",
+    "toSelect": "选择",
+    "toClose": "关闭",
+    "results": "结果"
+  },
   "Common": {
     "loading": "加载中...",
     "error": "错误",
@@ -151,6 +161,7 @@
   },
   "Activity": {
     "types": {
+      "PIPELINE": "流水线",
       "HEARTBEAT": "心跳",
       "COLLECTOR": "信号收集",
       "AGENT_CHATTER": "代理聊天",
@@ -867,7 +878,7 @@
     },
     "footer": {
       "platform": "24/7实时代理治理平台",
-      "powered": "由30个AI代理驱动"
+      "powered": "由38个AI代理驱动"
     }
   },
   "Governance": {

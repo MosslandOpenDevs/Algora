@@ -81,6 +81,16 @@ const severityColors: Record<string, string> = {
   error: 'bg-red-500/20 text-red-400 border-red-500/30',
 };
 
+// Humanize an activity type that has no i18n label (e.g. "COLLECTOR_HEALTH" ->
+// "Collector Health") so backend-emitted types never leak as raw key paths.
+function humanizeActivityType(type: string): string {
+  return type
+    .toLowerCase()
+    .split('_')
+    .map((w) => (w ? w.charAt(0).toUpperCase() + w.slice(1) : w))
+    .join(' ');
+}
+
 export function ActivityFeed({ initialData, onActivityClick }: ActivityFeedProps) {
   const t = useTranslations('Activity.types');
   const [newIds, setNewIds] = useState<Set<string>>(new Set());
@@ -190,8 +200,10 @@ export function ActivityFeed({ initialData, onActivityClick }: ActivityFeedProps
             <div className="flex-1 min-w-0">
               {/* Header row: Type + Severity */}
               <div className="flex items-center gap-2 flex-wrap">
-                <p className="text-sm font-medium text-slate-900">
-                  {t(activity.type as keyof typeof activityIcons)}
+                <p className="text-sm font-medium text-slate-900 dark:text-agora-dark-text">
+                  {t.has(activity.type)
+                    ? t(activity.type as keyof typeof activityIcons)
+                    : humanizeActivityType(activity.type)}
                 </p>
                 {activity.severity && activity.severity !== 'info' && (
                   <span className={`px-1.5 py-0.5 text-[10px] font-medium rounded border ${severityColors[activity.severity] || severityColors.info}`}>

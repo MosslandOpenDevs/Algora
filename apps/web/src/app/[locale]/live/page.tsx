@@ -61,7 +61,7 @@ export default function LivePage() {
           <span className="mx-2">|</span>
           <span>24/7 Live Agentic Governance Platform</span>
           <span className="mx-2">|</span>
-          <span>Powered by 30 AI Agents</span>
+          <span>Powered by 38 AI Agents</span>
         </div>
       </div>
     </div>

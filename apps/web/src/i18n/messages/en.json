@@ -868,7 +868,7 @@
     },
     "footer": {
       "platform": "24/7 Live Agentic Governance Platform",
-      "powered": "Powered by 30 AI Agents"
+      "powered": "Powered by 38 AI Agents"
     }
   },
   "Governance": {
@@ -1217,6 +1217,7 @@
   },
   "Search": {
     "placeholder": "Search agents, proposals, issues...",
+    "button": "Search",
     "noResults": "No results found",
     "tryDifferent": "Try a different search term",
     "typeToSearch": "Type at least 2 characters to search",

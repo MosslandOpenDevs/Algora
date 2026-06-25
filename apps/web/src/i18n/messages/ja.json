@@ -1,4 +1,14 @@
 {
+  "Search": {
+    "placeholder": "エージェント、提案、課題を検索...",
+    "button": "検索",
+    "noResults": "結果が見つかりません",
+    "tryDifferent": "別の検索語をお試しください",
+    "typeToSearch": "2文字以上入力してください",
+    "toSelect": "選択",
+    "toClose": "閉じる",
+    "results": "件"
+  },
   "Common": {
     "loading": "読み込み中...",
     "error": "エラー",
@@ -151,6 +161,7 @@
   },
   "Activity": {
     "types": {
+      "PIPELINE": "パイプライン",
       "HEARTBEAT": "ハートビート",
       "COLLECTOR": "シグナル収集",
       "AGENT_CHATTER": "エージェントチャット",
@@ -867,7 +878,7 @@
     },
     "footer": {
       "platform": "24時間365日ライブエージェントガバナンスプラットフォーム",
-      "powered": "30のAIエージェントで駆動"
+      "powered": "38のAIエージェントで駆動"
     }
   },
   "Governance": {

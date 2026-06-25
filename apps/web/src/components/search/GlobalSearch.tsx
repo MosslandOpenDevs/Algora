@@ -125,10 +125,10 @@ export function GlobalSearch() {
       {/* Search trigger button */}
       <button
         onClick={() => setIsOpen(true)}
-        className="flex items-center gap-2 rounded-lg border border-agora-border dark:border-agora-dark-border bg-agora-darker dark:bg-agora-dark-card px-2 sm:px-3 py-1.5 text-sm text-agora-muted hover:bg-agora-card dark:hover:bg-agora-dark-border transition-colors min-h-[36px]"
+        className="flex items-center gap-2 whitespace-nowrap rounded-lg border border-agora-border dark:border-agora-dark-border bg-agora-darker dark:bg-agora-dark-card px-2 sm:px-3 py-1.5 text-sm text-agora-muted hover:bg-agora-card dark:hover:bg-agora-dark-border transition-colors min-h-[36px]"
       >
-        <Search className="h-4 w-4" />
-        <span className="hidden md:inline">{t('placeholder') || 'Search...'}</span>
+        <Search className="h-4 w-4 flex-shrink-0" />
+        <span className="hidden md:inline">{t('button')}</span>
         <kbd className="hidden md:inline-flex h-5 items-center gap-1 rounded border border-agora-border dark:border-agora-dark-border bg-agora-dark dark:bg-agora-dark-darker px-1.5 text-[10px] font-medium text-agora-muted">
           <span className="text-xs">⌘</span>K
         </kbd>
