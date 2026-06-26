@@ -222,10 +222,14 @@ export function WalletConnect() {
       <button
         onClick={() => setIsOpen(!isOpen)}
         disabled={isPending}
-        className="flex items-center gap-2 rounded-lg bg-agora-accent px-4 py-2 text-sm font-medium text-slate-900 transition-colors hover:bg-agora-accent/80 disabled:cursor-not-allowed disabled:opacity-50"
+        aria-label={t('connectWallet')}
+        className="flex h-9 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-lg bg-agora-accent px-2.5 text-sm font-medium text-slate-900 transition-colors hover:bg-agora-accent/80 disabled:cursor-not-allowed disabled:opacity-50 xl:px-3.5"
       >
-        <Wallet className="h-4 w-4" />
-        {isPending ? t('connecting') : t('connectWallet')}
+        <Wallet className="h-4 w-4 shrink-0" />
+        {/* Label only where the header has room; icon-only (with aria-label) when tight */}
+        <span className="hidden xl:inline">
+          {isPending ? t('connecting') : t('connectWallet')}
+        </span>
       </button>
 
       {isOpen && !isConnected && (
