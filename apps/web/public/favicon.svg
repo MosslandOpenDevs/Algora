@@ -1,10 +1,17 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="Algora">
   <defs>
-    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#667eea"/>
-      <stop offset="100%" style="stop-color:#764ba2"/>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0f1729"/>
+      <stop offset="100%" stop-color="#0a1120"/>
+    </linearGradient>
+    <linearGradient id="a" gradientUnits="userSpaceOnUse" x1="11" y1="23" x2="21" y2="9">
+      <stop offset="0%" stop-color="#0ad6a3"/>
+      <stop offset="100%" stop-color="#16f6ab"/>
     </linearGradient>
   </defs>
-  <rect width="32" height="32" rx="6" fill="url(#grad)"/>
-  <text x="16" y="23" font-family="Arial, sans-serif" font-size="20" font-weight="bold" fill="white" text-anchor="middle">A</text>
+  <rect width="32" height="32" rx="7" fill="url(#bg)"/>
+  <g fill="none" stroke="url(#a)" stroke-width="2.9" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M11 23.4 L16 9.1 L21 23.4"/>
+    <path d="M12.9 18.75 L19.1 18.75"/>
+  </g>
 </svg>

@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
@@ -10,33 +10,118 @@ import { Header } from '@/components/layout/Header';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { ExperimentalBanner } from '@/components/ui/ExperimentalBanner';
 import { NpcCityStrip } from '@/components/cross-link/NpcCityStrip';
+import {
+  type Locale,
+  defaultLocale,
+  isLocale,
+  locales,
+  ogLocale,
+} from '@/i18n/locales';
 
 const inter = Inter({ subsets: ['latin'] });
 
-export const metadata: Metadata = {
-  title: 'Algora - 24/7 Live Agentic Governance Platform',
-  description:
-    'A living Agora where infinitely scalable AI personas engage in continuous deliberation',
-  keywords: ['governance', 'ai', 'agents', 'mossland', 'moc', 'blockchain'],
-  manifest: '/manifest.json',
-  themeColor: '#16f6ab',
-  // Use static favicon (no dynamic generation)
-  icons: {
-    icon: '/favicon.svg',
-    shortcut: '/favicon.svg',
-    apple: '/favicon.svg',
+const siteUrl =
+  process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '') ??
+  'https://algora.moss.land';
+
+// Localized title/description per supported locale.
+const seo: Record<Locale, { title: string; description: string }> = {
+  en: {
+    title: 'Algora — 24/7 Live Agentic Governance Platform',
+    description:
+      'A living Agora where infinitely scalable AI personas engage in continuous deliberation for MOC holders.',
   },
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: 'default',
-    title: 'Algora',
+  ko: {
+    title: 'Algora — 24/7 라이브 에이전트 거버넌스 플랫폼',
+    description:
+      '무한히 확장되는 AI 페르소나가 MOC 홀더를 위해 끊임없이 토론하는 살아있는 아고라.',
   },
-  formatDetection: {
-    telephone: false,
+  ja: {
+    title: 'Algora — 24/7 ライブ・エージェント型ガバナンス・プラットフォーム',
+    description:
+      '無限にスケールするAIペルソナがMOCホルダーのために絶え間なく熟議する、生きたアゴラ。',
+  },
+  zh: {
+    title: 'Algora — 24/7 实时智能体治理平台',
+    description:
+      '可无限扩展的 AI 角色为 MOC 持有者持续审议的实时治理广场。',
   },
 };
 
-const locales = ['en', 'ko'];
+// hreflang map shared by every locale's <head>.
+const languageAlternates: Record<string, string> = {
+  ...Object.fromEntries(locales.map(l => [l, `${siteUrl}/${l}`])),
+  'x-default': `${siteUrl}/${defaultLocale}`,
+};
+
+export const viewport: Viewport = {
+  themeColor: '#16f6ab',
+  colorScheme: 'dark',
+  width: 'device-width',
+  initialScale: 1,
+};
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale: raw } = await params;
+  const locale: Locale = isLocale(raw) ? raw : defaultLocale;
+  const { title, description } = seo[locale];
+
+  return {
+    metadataBase: new URL(siteUrl),
+    title: {
+      default: title,
+      template: '%s · Algora',
+    },
+    description,
+    applicationName: 'Algora',
+    keywords: ['governance', 'ai', 'agents', 'mossland', 'moc', 'blockchain'],
+    manifest: '/manifest.json',
+    icons: {
+      icon: [
+        { url: '/favicon.ico', sizes: 'any' },
+        { url: '/favicon.svg', type: 'image/svg+xml' },
+      ],
+      shortcut: '/favicon.ico',
+      apple: '/apple-touch-icon.png',
+    },
+    alternates: {
+      canonical: `${siteUrl}/${locale}`,
+      languages: languageAlternates,
+    },
+    openGraph: {
+      type: 'website',
+      siteName: 'Algora',
+      url: `${siteUrl}/${locale}`,
+      title,
+      description,
+      locale: ogLocale[locale],
+      alternateLocale: locales
+        .filter(l => l !== locale)
+        .map(l => ogLocale[l]),
+      images: [
+        { url: '/og.png', width: 1200, height: 630, alt: title },
+      ],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      images: ['/og.png'],
+    },
+    appleWebApp: {
+      capable: true,
+      statusBarStyle: 'default',
+      title: 'Algora',
+    },
+    formatDetection: {
+      telephone: false,
+    },
+  };
+}
 
 export function generateStaticParams() {
   return locales.map(locale => ({ locale }));
@@ -53,7 +138,7 @@ export default async function RootLayout({
 }: RootLayoutProps) {
   const { locale } = await params;
 
-  if (!locales.includes(locale)) {
+  if (!isLocale(locale)) {
     notFound();
   }
 

@@ -1,8 +1,10 @@
 import createMiddleware from 'next-intl/middleware';
 
+import { locales, defaultLocale } from './i18n/locales';
+
 export default createMiddleware({
-  locales: ['en', 'ko', 'ja', 'zh'],
-  defaultLocale: 'en',
+  locales,
+  defaultLocale,
   localePrefix: 'always',
 });
 
@@ -17,8 +19,9 @@ export const config = {
      * - api (API routes)
      * - favicon.ico, favicon.svg, icon.*, apple-icon.* (favicons)
      * - manifest.json, sw.js, workbox-*.js (PWA files)
+     * - robots.txt, sitemap.xml (SEO files)
      * - Any file with an extension (e.g., .js, .css, .png, .jpg, etc.)
      */
-    '/((?!_next/static|_next/image|api|favicon|icon|apple-icon|manifest|sw\\.js|workbox|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|css|js|woff|woff2|ttf|eot|json|xml|txt)$).*)',
+    '/((?!_next/static|_next/image|api|favicon|icon|apple-icon|manifest|robots|sitemap|sw\\.js|workbox|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|css|js|woff|woff2|ttf|eot|json|xml|txt)$).*)',
   ],
 };
