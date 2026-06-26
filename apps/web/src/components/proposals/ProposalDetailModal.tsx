@@ -291,11 +291,11 @@ export function ProposalDetailModal({ proposal, onClose }: ProposalDetailModalPr
               <div className="rounded-lg border border-agora-border bg-agora-card p-4">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
-                    <FileText className="h-5 w-5 text-blue-400" />
+                    <FileText className="h-5 w-5 text-blue-700 dark:text-blue-400" />
                     <h3 className="font-semibold text-agora-text">{tDetail('header.title')}</h3>
                   </div>
                   {proposal.proposalType && (
-                    <span className="px-3 py-1 rounded-full text-xs font-medium bg-blue-500/20 text-blue-400">
+                    <span className="px-3 py-1 rounded-full text-xs font-medium bg-blue-500/20 text-blue-700 dark:text-blue-400">
                       {tDetail(`types.${proposal.proposalType}`)}
                     </span>
                   )}
@@ -338,7 +338,7 @@ export function ProposalDetailModal({ proposal, onClose }: ProposalDetailModalPr
               {proposal.content?.abstract && (
                 <div className="rounded-lg border border-green-500/30 bg-green-500/5 p-4">
                   <div className="flex items-center gap-2 mb-3">
-                    <BookOpen className="h-5 w-5 text-green-400" />
+                    <BookOpen className="h-5 w-5 text-green-700 dark:text-green-400" />
                     <h3 className="font-semibold text-agora-text">{tDetail('content.abstract')}</h3>
                   </div>
                   <p className="text-agora-text leading-relaxed">{proposal.content.abstract.summary}</p>
@@ -347,7 +347,7 @@ export function ProposalDetailModal({ proposal, onClose }: ProposalDetailModalPr
                       <p className="text-xs text-agora-muted mb-2">{tDetail('content.decisionPoints')}</p>
                       <div className="flex flex-wrap gap-2">
                         {proposal.content.abstract.decisionPoints.map((point, i) => (
-                          <span key={i} className="px-2 py-1 rounded bg-green-500/20 text-green-400 text-xs">
+                          <span key={i} className="px-2 py-1 rounded bg-green-500/20 text-green-700 dark:text-green-400 text-xs">
                             {point}
                           </span>
                         ))}
@@ -361,7 +361,7 @@ export function ProposalDetailModal({ proposal, onClose }: ProposalDetailModalPr
               {proposal.content?.background && (
                 <div className="rounded-lg border border-agora-border bg-agora-card p-4">
                   <div className="flex items-center gap-2 mb-3">
-                    <Flag className="h-5 w-5 text-orange-400" />
+                    <Flag className="h-5 w-5 text-orange-700 dark:text-orange-400" />
                     <h3 className="font-semibold text-agora-text">{tDetail('content.background')}</h3>
                   </div>
                   <div className="space-y-3">
@@ -377,7 +377,7 @@ export function ProposalDetailModal({ proposal, onClose }: ProposalDetailModalPr
                     )}
                     {proposal.content.background.risks && (
                       <div className="rounded bg-red-500/10 p-2">
-                        <p className="text-xs text-red-400 mb-1">{tDetail('content.risks')}</p>
+                        <p className="text-xs text-red-700 dark:text-red-400 mb-1">{tDetail('content.risks')}</p>
                         <p className="text-sm text-red-300">{proposal.content.background.risks}</p>
                       </div>
                     )}
@@ -389,7 +389,7 @@ export function ProposalDetailModal({ proposal, onClose }: ProposalDetailModalPr
               {proposal.content?.objectives && (
                 <div className="rounded-lg border border-agora-border bg-agora-card p-4">
                   <div className="flex items-center gap-2 mb-3">
-                    <Target className="h-5 w-5 text-purple-400" />
+                    <Target className="h-5 w-5 text-purple-700 dark:text-purple-400" />
                     <h3 className="font-semibold text-agora-text">{tDetail('content.objectives')}</h3>
                   </div>
                   <div className="space-y-3">
@@ -398,7 +398,7 @@ export function ProposalDetailModal({ proposal, onClose }: ProposalDetailModalPr
                       <ul className="space-y-1">
                         {proposal.content.objectives.goals.map((goal, i) => (
                           <li key={i} className="flex items-start gap-2 text-sm text-agora-text">
-                            <CheckCircle className="h-4 w-4 text-purple-400 flex-shrink-0 mt-0.5" />
+                            <CheckCircle className="h-4 w-4 text-purple-700 dark:text-purple-400 flex-shrink-0 mt-0.5" />
                             {goal}
                           </li>
                         ))}
@@ -415,7 +415,7 @@ export function ProposalDetailModal({ proposal, onClose }: ProposalDetailModalPr
                                 {kpi.current && (
                                   <span className="text-xs text-agora-muted">{kpi.current} →</span>
                                 )}
-                                <span className="text-sm font-medium text-purple-400">{kpi.target}</span>
+                                <span className="text-sm font-medium text-purple-700 dark:text-purple-400">{kpi.target}</span>
                               </div>
                             </div>
                           ))}
@@ -430,7 +430,7 @@ export function ProposalDetailModal({ proposal, onClose }: ProposalDetailModalPr
               {proposal.content?.details && (
                 <div className="rounded-lg border border-agora-border bg-agora-card p-4">
                   <div className="flex items-center gap-2 mb-3">
-                    <ClipboardList className="h-5 w-5 text-cyan-400" />
+                    <ClipboardList className="h-5 w-5 text-cyan-700 dark:text-cyan-400" />
                     <h3 className="font-semibold text-agora-text">{tDetail('content.details')}</h3>
                   </div>
                   <div className="space-y-3">
@@ -445,7 +445,7 @@ export function ProposalDetailModal({ proposal, onClose }: ProposalDetailModalPr
                           <ul className="space-y-1">
                             {proposal.content.details.scope.inScope.map((item, i) => (
                               <li key={i} className="flex items-start gap-2 text-xs text-agora-text">
-                                <CheckCircle className="h-3 w-3 text-green-400 flex-shrink-0 mt-0.5" />
+                                <CheckCircle className="h-3 w-3 text-green-700 dark:text-green-400 flex-shrink-0 mt-0.5" />
                                 {item}
                               </li>
                             ))}
@@ -457,7 +457,7 @@ export function ProposalDetailModal({ proposal, onClose }: ProposalDetailModalPr
                             <ul className="space-y-1">
                               {proposal.content.details.scope.outOfScope.map((item, i) => (
                                 <li key={i} className="flex items-start gap-2 text-xs text-agora-text">
-                                  <XCircle className="h-3 w-3 text-red-400 flex-shrink-0 mt-0.5" />
+                                  <XCircle className="h-3 w-3 text-red-700 dark:text-red-400 flex-shrink-0 mt-0.5" />
                                   {item}
                                 </li>
                               ))}
@@ -496,11 +496,11 @@ export function ProposalDetailModal({ proposal, onClose }: ProposalDetailModalPr
                 <div className="rounded-lg border border-yellow-500/30 bg-yellow-500/5 p-4">
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3">
                     <div className="flex items-center gap-2">
-                      <Banknote className="h-5 w-5 text-yellow-400 flex-shrink-0" />
+                      <Banknote className="h-5 w-5 text-yellow-700 dark:text-yellow-400 flex-shrink-0" />
                       <h3 className="font-semibold text-agora-text">{tDetail('content.budget')}</h3>
                     </div>
                     {proposal.budget.total && (
-                      <span className="text-base sm:text-lg font-bold text-yellow-400 whitespace-nowrap">
+                      <span className="text-base sm:text-lg font-bold text-yellow-700 dark:text-yellow-400 whitespace-nowrap">
                         {proposal.budget.total.toLocaleString()} {proposal.budget.currency || 'MOC'}
                       </span>
                     )}
@@ -557,7 +557,7 @@ export function ProposalDetailModal({ proposal, onClose }: ProposalDetailModalPr
               {proposal.relatedLinks && proposal.relatedLinks.length > 0 && (
                 <div className="rounded-lg border border-agora-border bg-agora-card p-4">
                   <div className="flex items-center gap-2 mb-3">
-                    <Link2 className="h-5 w-5 text-blue-400" />
+                    <Link2 className="h-5 w-5 text-blue-700 dark:text-blue-400" />
                     <h3 className="font-semibold text-agora-text">{tDetail('content.relatedLinks')}</h3>
                   </div>
                   <div className="space-y-2">
@@ -567,7 +567,7 @@ export function ProposalDetailModal({ proposal, onClose }: ProposalDetailModalPr
                         href={link.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center gap-2 text-sm text-blue-400 hover:text-blue-300 transition-colors"
+                        className="flex items-center gap-2 text-sm text-blue-700 dark:text-blue-400 hover:text-blue-300 transition-colors"
                       >
                         <ExternalLink className="h-4 w-4" />
                         <span>{link.title}</span>
@@ -805,7 +805,7 @@ export function ProposalDetailModal({ proposal, onClose }: ProposalDetailModalPr
                   {/* Governance Process Flow */}
                   <div className="rounded-lg border border-agora-border bg-agora-card p-4">
                     <div className="flex items-center gap-2 mb-3">
-                      <GitBranch className="h-5 w-5 text-blue-400" />
+                      <GitBranch className="h-5 w-5 text-blue-700 dark:text-blue-400" />
                       <h3 className="font-semibold text-agora-text">{tDetail('timeline.processFlow')}</h3>
                     </div>
                     <p className="text-sm text-agora-muted mb-4">{tDetail('timeline.processFlowDesc')}</p>
@@ -852,7 +852,7 @@ export function ProposalDetailModal({ proposal, onClose }: ProposalDetailModalPr
                   {/* Timeline Events */}
                   <div className="rounded-lg border border-agora-border bg-agora-card p-4">
                     <div className="flex items-center gap-2 mb-3">
-                      <History className="h-5 w-5 text-purple-400" />
+                      <History className="h-5 w-5 text-purple-700 dark:text-purple-400" />
                       <h3 className="font-semibold text-agora-text">{tDetail('timeline.title')}</h3>
                     </div>
 
@@ -864,7 +864,7 @@ export function ProposalDetailModal({ proposal, onClose }: ProposalDetailModalPr
                         <div className="ml-4">
                           <div className="flex items-center gap-2 mb-1">
                             <span className="font-medium text-agora-text">{tDetail('timeline.created')}</span>
-                            <span className="px-2 py-0.5 rounded text-xs bg-blue-500/20 text-blue-400">
+                            <span className="px-2 py-0.5 rounded text-xs bg-blue-500/20 text-blue-700 dark:text-blue-400">
                               draft
                             </span>
                           </div>
@@ -884,12 +884,12 @@ export function ProposalDetailModal({ proposal, onClose }: ProposalDetailModalPr
                       {proposalHistory && proposalHistory.map((event) => {
                         const statusColors: Record<string, string> = {
                           draft: 'bg-gray-500/20 text-gray-400',
-                          pending_review: 'bg-yellow-500/20 text-yellow-400',
-                          discussion: 'bg-blue-500/20 text-blue-400',
-                          voting: 'bg-purple-500/20 text-purple-400',
-                          passed: 'bg-green-500/20 text-green-400',
-                          rejected: 'bg-red-500/20 text-red-400',
-                          executed: 'bg-cyan-500/20 text-cyan-400',
+                          pending_review: 'bg-yellow-500/20 text-yellow-700 dark:text-yellow-400',
+                          discussion: 'bg-blue-500/20 text-blue-700 dark:text-blue-400',
+                          voting: 'bg-purple-500/20 text-purple-700 dark:text-purple-400',
+                          passed: 'bg-green-500/20 text-green-700 dark:text-green-400',
+                          rejected: 'bg-red-500/20 text-red-700 dark:text-red-400',
+                          executed: 'bg-cyan-500/20 text-cyan-700 dark:text-cyan-400',
                           cancelled: 'bg-gray-500/20 text-gray-400',
                         };
                         const dotColors: Record<string, string> = {
@@ -971,7 +971,7 @@ export function ProposalDetailModal({ proposal, onClose }: ProposalDetailModalPr
                   {proposal.issueId && (
                     <div className="rounded-lg border border-blue-500/30 bg-blue-500/5 p-4">
                       <div className="flex items-center gap-2 mb-3">
-                        <AlertTriangle className="h-5 w-5 text-blue-400" />
+                        <AlertTriangle className="h-5 w-5 text-blue-700 dark:text-blue-400" />
                         <h3 className="font-semibold text-agora-text">{tDetail('timeline.originIssue')}</h3>
                       </div>
                       <p className="text-sm text-agora-muted mb-3">
@@ -984,7 +984,7 @@ export function ProposalDetailModal({ proposal, onClose }: ProposalDetailModalPr
                         </div>
                         <button
                           onClick={() => setActiveTab('issue')}
-                          className="w-full flex items-center justify-center gap-2 rounded bg-blue-500/20 px-3 py-2 text-sm font-medium text-blue-400 hover:bg-blue-500/30 transition-colors"
+                          className="w-full flex items-center justify-center gap-2 rounded bg-blue-500/20 px-3 py-2 text-sm font-medium text-blue-700 dark:text-blue-400 hover:bg-blue-500/30 transition-colors"
                         >
                           <ExternalLink className="h-4 w-4" />
                           {tDetail('timeline.viewIssueDetails')}
@@ -996,7 +996,7 @@ export function ProposalDetailModal({ proposal, onClose }: ProposalDetailModalPr
                   {/* Decision Making Info */}
                   <div className="rounded-lg border border-purple-500/30 bg-purple-500/5 p-4">
                     <div className="flex items-center gap-2 mb-3">
-                      <Brain className="h-5 w-5 text-purple-400" />
+                      <Brain className="h-5 w-5 text-purple-700 dark:text-purple-400" />
                       <h3 className="font-semibold text-agora-text">{tDetail('timeline.aiAnalysisStatus')}</h3>
                     </div>
                     {decisionPacket ? (
@@ -1010,7 +1010,7 @@ export function ProposalDetailModal({ proposal, onClose }: ProposalDetailModalPr
                         </p>
                         <button
                           onClick={() => setActiveTab('decision')}
-                          className="w-full flex items-center justify-center gap-2 rounded bg-purple-500/20 px-3 py-2 text-sm font-medium text-purple-400 hover:bg-purple-500/30 transition-colors mt-2"
+                          className="w-full flex items-center justify-center gap-2 rounded bg-purple-500/20 px-3 py-2 text-sm font-medium text-purple-700 dark:text-purple-400 hover:bg-purple-500/30 transition-colors mt-2"
                         >
                           <Brain className="h-4 w-4" />
                           {tDetail('timeline.viewAiAnalysis')}
@@ -1024,7 +1024,7 @@ export function ProposalDetailModal({ proposal, onClose }: ProposalDetailModalPr
                         </p>
                         <button
                           onClick={() => setActiveTab('decision')}
-                          className="w-full flex items-center justify-center gap-2 rounded bg-purple-500/20 px-3 py-2 text-sm font-medium text-purple-400 hover:bg-purple-500/30 transition-colors mt-2"
+                          className="w-full flex items-center justify-center gap-2 rounded bg-purple-500/20 px-3 py-2 text-sm font-medium text-purple-700 dark:text-purple-400 hover:bg-purple-500/30 transition-colors mt-2"
                         >
                           <Brain className="h-4 w-4" />
                           {tDetail('timeline.generateAiAnalysis')}
@@ -1049,7 +1049,7 @@ export function ProposalDetailModal({ proposal, onClose }: ProposalDetailModalPr
                   {/* Summary */}
                   <div className="rounded-lg border border-agora-border bg-agora-card p-4">
                     <div className="flex items-center gap-2 mb-3">
-                      <Brain className="h-5 w-5 text-purple-400" />
+                      <Brain className="h-5 w-5 text-purple-700 dark:text-purple-400" />
                       <h3 className="font-semibold text-agora-text">{tDetail('aiSummary')}</h3>
                     </div>
                     <p className="text-agora-text leading-relaxed">{decisionPacket.summary}</p>
@@ -1064,13 +1064,13 @@ export function ProposalDetailModal({ proposal, onClose }: ProposalDetailModalPr
                   {decisionPacket.content?.riskAssessment && (
                     <div className="rounded-lg border border-agora-border bg-agora-card p-4">
                       <div className="flex items-center gap-2 mb-3">
-                        <Shield className="h-5 w-5 text-orange-400" />
+                        <Shield className="h-5 w-5 text-orange-700 dark:text-orange-400" />
                         <h3 className="font-semibold text-agora-text">{tDetail('riskAssessment')}</h3>
                         <span className={`ml-auto px-2 py-0.5 rounded text-xs font-medium ${
-                          decisionPacket.content.riskAssessment.level === 'low' ? 'bg-green-500/20 text-green-400' :
-                          decisionPacket.content.riskAssessment.level === 'medium' ? 'bg-yellow-500/20 text-yellow-400' :
-                          decisionPacket.content.riskAssessment.level === 'high' ? 'bg-orange-500/20 text-orange-400' :
-                          'bg-red-500/20 text-red-400'
+                          decisionPacket.content.riskAssessment.level === 'low' ? 'bg-green-500/20 text-green-700 dark:text-green-400' :
+                          decisionPacket.content.riskAssessment.level === 'medium' ? 'bg-yellow-500/20 text-yellow-700 dark:text-yellow-400' :
+                          decisionPacket.content.riskAssessment.level === 'high' ? 'bg-orange-500/20 text-orange-700 dark:text-orange-400' :
+                          'bg-red-500/20 text-red-700 dark:text-red-400'
                         }`}>
                           {decisionPacket.content.riskAssessment.level.toUpperCase()}
                         </span>
@@ -1081,7 +1081,7 @@ export function ProposalDetailModal({ proposal, onClose }: ProposalDetailModalPr
                           <ul className="space-y-1">
                             {decisionPacket.content.riskAssessment.factors.map((factor, i) => (
                               <li key={i} className="flex items-start gap-2 text-sm text-agora-text">
-                                <AlertTriangle className="h-4 w-4 text-orange-400 flex-shrink-0 mt-0.5" />
+                                <AlertTriangle className="h-4 w-4 text-orange-700 dark:text-orange-400 flex-shrink-0 mt-0.5" />
                                 {factor}
                               </li>
                             ))}
@@ -1094,7 +1094,7 @@ export function ProposalDetailModal({ proposal, onClose }: ProposalDetailModalPr
                           <ul className="space-y-1">
                             {decisionPacket.content.riskAssessment.mitigations.map((mitigation, i) => (
                               <li key={i} className="flex items-start gap-2 text-sm text-agora-text">
-                                <CheckCircle className="h-4 w-4 text-green-400 flex-shrink-0 mt-0.5" />
+                                <CheckCircle className="h-4 w-4 text-green-700 dark:text-green-400 flex-shrink-0 mt-0.5" />
                                 {mitigation}
                               </li>
                             ))}
@@ -1108,7 +1108,7 @@ export function ProposalDetailModal({ proposal, onClose }: ProposalDetailModalPr
                   {decisionPacket.content?.options?.length > 0 && (
                     <div className="rounded-lg border border-agora-border bg-agora-card p-4">
                       <div className="flex items-center gap-2 mb-3">
-                        <Lightbulb className="h-5 w-5 text-yellow-400" />
+                        <Lightbulb className="h-5 w-5 text-yellow-700 dark:text-yellow-400" />
                         <h3 className="font-semibold text-agora-text">{tDetail('options')}</h3>
                       </div>
                       <div className="space-y-3">
@@ -1127,13 +1127,13 @@ export function ProposalDetailModal({ proposal, onClose }: ProposalDetailModalPr
                             <p className="text-sm text-agora-muted mb-2">{option.description}</p>
                             {option.pros?.length > 0 && (
                               <div className="text-xs">
-                                <span className="text-green-400">+</span>
+                                <span className="text-green-700 dark:text-green-400">+</span>
                                 <span className="text-agora-muted ml-1">{option.pros.join(', ')}</span>
                               </div>
                             )}
                             {option.cons?.length > 0 && (
                               <div className="text-xs">
-                                <span className="text-red-400">-</span>
+                                <span className="text-red-700 dark:text-red-400">-</span>
                                 <span className="text-agora-muted ml-1">{option.cons.join(', ')}</span>
                               </div>
                             )}
@@ -1147,7 +1147,7 @@ export function ProposalDetailModal({ proposal, onClose }: ProposalDetailModalPr
                   {decisionPacket.content?.stakeholderImpact?.length > 0 && (
                     <div className="rounded-lg border border-agora-border bg-agora-card p-4">
                       <div className="flex items-center gap-2 mb-3">
-                        <Users className="h-5 w-5 text-blue-400" />
+                        <Users className="h-5 w-5 text-blue-700 dark:text-blue-400" />
                         <h3 className="font-semibold text-agora-text">{tDetail('stakeholderImpact')}</h3>
                       </div>
                       <div className="space-y-2">
@@ -1170,7 +1170,7 @@ export function ProposalDetailModal({ proposal, onClose }: ProposalDetailModalPr
                   {decisionPacket.content?.recommendation && (
                     <div className="rounded-lg border border-purple-500/30 bg-purple-500/5 p-4">
                       <div className="flex items-center gap-2 mb-3">
-                        <Bot className="h-5 w-5 text-purple-400" />
+                        <Bot className="h-5 w-5 text-purple-700 dark:text-purple-400" />
                         <h3 className="font-semibold text-agora-text">{tDetail('aiRecommendation')}</h3>
                         <span className="ml-auto text-xs text-agora-muted">
                           {tDetail('confidence')}: {(decisionPacket.content.recommendation.confidence * 100).toFixed(0)}%
@@ -1189,7 +1189,7 @@ export function ProposalDetailModal({ proposal, onClose }: ProposalDetailModalPr
                   {(decisionPacket.content?.agentContributions?.length ?? 0) > 0 && (
                     <div className="rounded-lg border border-agora-border bg-agora-card p-4">
                       <div className="flex items-center gap-2 mb-3">
-                        <Bot className="h-5 w-5 text-cyan-400" />
+                        <Bot className="h-5 w-5 text-cyan-700 dark:text-cyan-400" />
                         <h3 className="font-semibold text-agora-text">{tDetail('agentPerspectives')}</h3>
                       </div>
                       <div className="space-y-3">
@@ -1199,8 +1199,8 @@ export function ProposalDetailModal({ proposal, onClose }: ProposalDetailModalPr
                               <span className="font-medium text-agora-text">{contrib.agentName}</span>
                               {contrib.vote && (
                                 <span className={`px-2 py-0.5 rounded text-xs ${
-                                  contrib.vote === 'for' ? 'bg-green-500/20 text-green-400' :
-                                  contrib.vote === 'against' ? 'bg-red-500/20 text-red-400' :
+                                  contrib.vote === 'for' ? 'bg-green-500/20 text-green-700 dark:text-green-400' :
+                                  contrib.vote === 'against' ? 'bg-red-500/20 text-red-700 dark:text-red-400' :
                                   'bg-gray-500/20 text-gray-400'
                                 }`}>
                                   {t(contrib.vote)}
@@ -1222,7 +1222,7 @@ export function ProposalDetailModal({ proposal, onClose }: ProposalDetailModalPr
                   <button
                     onClick={() => generateMutation.mutate()}
                     disabled={generateMutation.isPending}
-                    className="flex items-center gap-2 rounded-lg bg-purple-500/20 px-4 py-2 text-sm font-medium text-purple-400 transition-colors hover:bg-purple-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex items-center gap-2 rounded-lg bg-purple-500/20 px-4 py-2 text-sm font-medium text-purple-700 dark:text-purple-400 transition-colors hover:bg-purple-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {generateMutation.isPending ? (
                       <>
@@ -1237,7 +1237,7 @@ export function ProposalDetailModal({ proposal, onClose }: ProposalDetailModalPr
                     )}
                   </button>
                   {generateMutation.isError && (
-                    <p className="text-sm text-red-400 mt-2">{tDetail('generateError')}</p>
+                    <p className="text-sm text-red-700 dark:text-red-400 mt-2">{tDetail('generateError')}</p>
                   )}
                 </div>
               )}
@@ -1260,13 +1260,13 @@ export function ProposalDetailModal({ proposal, onClose }: ProposalDetailModalPr
                       <p className="text-xs text-agora-muted">{tDetail('totalVoters')}</p>
                     </div>
                     <div className="rounded-lg bg-green-500/10 p-3 text-center">
-                      <p className="text-2xl font-bold text-green-400">
+                      <p className="text-2xl font-bold text-green-700 dark:text-green-400">
                         {voteHistory.filter(v => v.choice === 'for').length}
                       </p>
                       <p className="text-xs text-agora-muted">{t('for')}</p>
                     </div>
                     <div className="rounded-lg bg-red-500/10 p-3 text-center">
-                      <p className="text-2xl font-bold text-red-400">
+                      <p className="text-2xl font-bold text-red-700 dark:text-red-400">
                         {voteHistory.filter(v => v.choice === 'against').length}
                       </p>
                       <p className="text-xs text-agora-muted">{t('against')}</p>
@@ -1293,8 +1293,8 @@ export function ProposalDetailModal({ proposal, onClose }: ProposalDetailModalPr
                               vote.choice === 'against' ? 'bg-red-500/20' :
                               'bg-gray-500/20'
                             }`}>
-                              {vote.choice === 'for' && <ThumbsUp className="h-4 w-4 text-green-400" />}
-                              {vote.choice === 'against' && <ThumbsDown className="h-4 w-4 text-red-400" />}
+                              {vote.choice === 'for' && <ThumbsUp className="h-4 w-4 text-green-700 dark:text-green-400" />}
+                              {vote.choice === 'against' && <ThumbsDown className="h-4 w-4 text-red-700 dark:text-red-400" />}
                               {vote.choice === 'abstain' && <MinusCircle className="h-4 w-4 text-gray-400" />}
                             </div>
                             <div className="flex-1 min-w-0">
@@ -1303,7 +1303,7 @@ export function ProposalDetailModal({ proposal, onClose }: ProposalDetailModalPr
                                   {formatAddress(vote.voter)}
                                 </span>
                                 {vote.voterType === 'agent' && (
-                                  <span className="px-1.5 py-0.5 rounded text-xs bg-purple-500/20 text-purple-400">
+                                  <span className="px-1.5 py-0.5 rounded text-xs bg-purple-500/20 text-purple-700 dark:text-purple-400">
                                     Agent
                                   </span>
                                 )}
@@ -1346,7 +1346,7 @@ export function ProposalDetailModal({ proposal, onClose }: ProposalDetailModalPr
               ) : relatedIssue ? (
                 <div className="rounded-lg border border-agora-border bg-agora-card p-4">
                   <div className="flex items-center gap-2 mb-3">
-                    <ExternalLink className="h-5 w-5 text-blue-400" />
+                    <ExternalLink className="h-5 w-5 text-blue-700 dark:text-blue-400" />
                     <h3 className="font-semibold text-agora-text">{tDetail('relatedIssue')}</h3>
                   </div>
                   <div className="space-y-3">

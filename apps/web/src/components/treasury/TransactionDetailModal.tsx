@@ -34,16 +34,16 @@ const typeIcons: Record<string, React.ComponentType<{ className?: string }>> = {
 };
 
 const typeColors: Record<string, { bg: string; icon: string; text: string }> = {
-  deposit: { bg: 'bg-green-500/20', icon: 'text-green-400', text: 'text-green-400' },
-  withdrawal: { bg: 'bg-red-500/20', icon: 'text-red-400', text: 'text-red-400' },
-  transfer: { bg: 'bg-blue-500/20', icon: 'text-blue-400', text: 'text-blue-400' },
-  allocation: { bg: 'bg-purple-500/20', icon: 'text-purple-400', text: 'text-purple-400' },
+  deposit: { bg: 'bg-green-500/20', icon: 'text-green-700 dark:text-green-400', text: 'text-green-700 dark:text-green-400' },
+  withdrawal: { bg: 'bg-red-500/20', icon: 'text-red-700 dark:text-red-400', text: 'text-red-700 dark:text-red-400' },
+  transfer: { bg: 'bg-blue-500/20', icon: 'text-blue-700 dark:text-blue-400', text: 'text-blue-700 dark:text-blue-400' },
+  allocation: { bg: 'bg-purple-500/20', icon: 'text-purple-700 dark:text-purple-400', text: 'text-purple-700 dark:text-purple-400' },
 };
 
 const statusConfig = {
-  pending: { icon: Clock, color: 'text-yellow-500', bgColor: 'bg-yellow-500/20' },
-  confirmed: { icon: CheckCircle, color: 'text-green-500', bgColor: 'bg-green-500/20' },
-  failed: { icon: XCircle, color: 'text-red-500', bgColor: 'bg-red-500/20' },
+  pending: { icon: Clock, color: 'text-yellow-700 dark:text-yellow-400', bgColor: 'bg-yellow-500/20' },
+  confirmed: { icon: CheckCircle, color: 'text-green-700 dark:text-green-400', bgColor: 'bg-green-500/20' },
+  failed: { icon: XCircle, color: 'text-red-700 dark:text-red-400', bgColor: 'bg-red-500/20' },
 };
 
 export function TransactionDetailModal({

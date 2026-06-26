@@ -179,8 +179,8 @@ export function TokenVoting({ proposalId, onVoteSuccess }: TokenVotingProps) {
         <div className="text-center">
           <p className="text-sm text-agora-muted mb-2">{tVoting('alreadyVoted')}</p>
           <div className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium ${
-            existingVote.choice === 'for' ? 'bg-green-500/20 text-green-400' :
-            existingVote.choice === 'against' ? 'bg-red-500/20 text-red-400' :
+            existingVote.choice === 'for' ? 'bg-green-500/20 text-green-700 dark:text-green-400' :
+            existingVote.choice === 'against' ? 'bg-red-500/20 text-red-700 dark:text-red-400' :
             'bg-gray-500/20 text-gray-400'
           }`}>
             {existingVote.choice === 'for' && <ThumbsUp className="h-4 w-4" />}
@@ -232,8 +232,8 @@ export function TokenVoting({ proposalId, onVoteSuccess }: TokenVotingProps) {
       <div className="flex items-center justify-between mb-4">
         <h4 className="font-medium text-agora-text">{tVoting('castYourVote')}</h4>
         <div className="flex items-center gap-1.5 text-xs">
-          <Radio className={`h-3 w-3 ${isSocketConnected ? 'text-green-400 animate-pulse' : 'text-agora-muted'}`} />
-          <span className={isSocketConnected ? 'text-green-400' : 'text-agora-muted'}>
+          <Radio className={`h-3 w-3 ${isSocketConnected ? 'text-green-700 dark:text-green-400 animate-pulse' : 'text-agora-muted'}`} />
+          <span className={isSocketConnected ? 'text-green-700 dark:text-green-400' : 'text-agora-muted'}>
             {isSocketConnected ? 'Live' : 'Offline'}
           </span>
         </div>
@@ -247,8 +247,8 @@ export function TokenVoting({ proposalId, onVoteSuccess }: TokenVotingProps) {
             <span className="text-agora-muted">
               {recentVote.voter.slice(0, 6)}...{recentVote.voter.slice(-4)} voted{' '}
               <span className={
-                recentVote.choice === 'for' ? 'text-green-400' :
-                recentVote.choice === 'against' ? 'text-red-400' :
+                recentVote.choice === 'for' ? 'text-green-700 dark:text-green-400' :
+                recentVote.choice === 'against' ? 'text-red-700 dark:text-red-400' :
                 'text-gray-400'
               }>
                 {recentVote.choice}
@@ -271,7 +271,7 @@ export function TokenVoting({ proposalId, onVoteSuccess }: TokenVotingProps) {
               <Users className="h-3 w-3" />
               {tVoting('delegatedPower')} ({receivedDelegations.length}):
             </span>
-            <span className="text-pink-400 font-medium">+{delegatedVotingPower.toLocaleString()}</span>
+            <span className="text-pink-700 dark:text-pink-400 font-medium">+{delegatedVotingPower.toLocaleString()}</span>
           </div>
         )}
         <div className="flex items-center justify-between text-sm mt-2 pt-2 border-t border-agora-border">
@@ -282,7 +282,7 @@ export function TokenVoting({ proposalId, onVoteSuccess }: TokenVotingProps) {
 
       {/* Delegation Info */}
       {delegatedVotingPower > 0 && (
-        <div className="mb-4 flex items-start gap-2 rounded-lg bg-pink-500/10 p-3 text-xs text-pink-400">
+        <div className="mb-4 flex items-start gap-2 rounded-lg bg-pink-500/10 p-3 text-xs text-pink-700 dark:text-pink-400">
           <Info className="h-4 w-4 flex-shrink-0 mt-0.5" />
           <span>{tVoting('delegationNote')}</span>
         </div>
@@ -294,8 +294,8 @@ export function TokenVoting({ proposalId, onVoteSuccess }: TokenVotingProps) {
           onClick={() => setSelectedChoice('for')}
           className={`flex flex-col items-center gap-2 rounded-lg border p-4 transition-colors ${
             selectedChoice === 'for'
-              ? 'border-green-500 bg-green-500/10 text-green-400'
-              : 'border-agora-border hover:border-green-500/50 text-agora-muted hover:text-green-400'
+              ? 'border-green-500 bg-green-500/10 text-green-700 dark:text-green-400'
+              : 'border-agora-border hover:border-green-500/50 text-agora-muted hover:text-green-700 dark:hover:text-green-400'
           }`}
         >
           <ThumbsUp className="h-6 w-6" />
@@ -306,8 +306,8 @@ export function TokenVoting({ proposalId, onVoteSuccess }: TokenVotingProps) {
           onClick={() => setSelectedChoice('against')}
           className={`flex flex-col items-center gap-2 rounded-lg border p-4 transition-colors ${
             selectedChoice === 'against'
-              ? 'border-red-500 bg-red-500/10 text-red-400'
-              : 'border-agora-border hover:border-red-500/50 text-agora-muted hover:text-red-400'
+              ? 'border-red-500 bg-red-500/10 text-red-700 dark:text-red-400'
+              : 'border-agora-border hover:border-red-500/50 text-agora-muted hover:text-red-700 dark:hover:text-red-400'
           }`}
         >
           <ThumbsDown className="h-6 w-6" />
@@ -356,7 +356,7 @@ export function TokenVoting({ proposalId, onVoteSuccess }: TokenVotingProps) {
       </button>
 
       {voteMutation.isError && (
-        <p className="mt-2 text-xs text-red-400">{voteMutation.error.message}</p>
+        <p className="mt-2 text-xs text-red-700 dark:text-red-400">{voteMutation.error.message}</p>
       )}
     </div>
   );

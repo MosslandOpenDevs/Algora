@@ -201,7 +201,7 @@ export function WalletConnect() {
                     disconnect();
                     setIsOpen(false);
                   }}
-                  className="flex w-full items-center justify-center gap-2 rounded-lg bg-red-500/10 px-4 py-2 text-sm font-medium text-red-400 transition-colors hover:bg-red-500/20"
+                  className="flex w-full items-center justify-center gap-2 rounded-lg bg-red-500/10 px-4 py-2 text-sm font-medium text-red-700 dark:text-red-400 transition-colors hover:bg-red-500/20"
                 >
                   <LogOut className="h-4 w-4" />
                   {t('disconnect')}

@@ -153,7 +153,7 @@ export default function TreasuryPage() {
         <div className="rounded-xl border border-agora-border bg-agora-card p-6">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-500/20">
-              <Coins className="h-5 w-5 text-blue-400" />
+              <Coins className="h-5 w-5 text-blue-700 dark:text-blue-400" />
             </div>
             <div>
               <p className="text-sm text-agora-muted">{t('stats.ethBalance')}</p>
@@ -167,7 +167,7 @@ export default function TreasuryPage() {
         <div className="rounded-xl border border-agora-border bg-agora-card p-6">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-500/20">
-              <Users className="h-5 w-5 text-green-400" />
+              <Users className="h-5 w-5 text-green-700 dark:text-green-400" />
             </div>
             <div>
               <p className="text-sm text-agora-muted">{t('stats.holders')}</p>
@@ -181,7 +181,7 @@ export default function TreasuryPage() {
         <div className="rounded-xl border border-agora-border bg-agora-card p-6">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-500/20">
-              <Vote className="h-5 w-5 text-purple-400" />
+              <Vote className="h-5 w-5 text-purple-700 dark:text-purple-400" />
             </div>
             <div>
               <p className="text-sm text-agora-muted">{t('stats.activeVoting')}</p>
@@ -251,8 +251,8 @@ export default function TreasuryPage() {
                     <span
                       className={`rounded px-2 py-0.5 text-xs ${
                         dashboard?.tokenInfo?.mockMode
-                          ? 'bg-yellow-500/20 text-yellow-400'
-                          : 'bg-green-500/20 text-green-400'
+                          ? 'bg-yellow-500/20 text-yellow-700 dark:text-yellow-400'
+                          : 'bg-green-500/20 text-green-700 dark:text-green-400'
                       }`}
                     >
                       {dashboard?.tokenInfo?.mockMode ? 'Mock' : 'Live'}

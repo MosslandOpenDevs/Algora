@@ -71,19 +71,27 @@ const sourceIcons: Record<string, React.ReactNode> = {
 };
 
 const sourceColors: Record<string, string> = {
-  rss: 'text-orange-500 bg-orange-500/10',
+  rss: 'text-orange-700 dark:text-orange-400 bg-orange-500/10',
   github: 'text-gray-400 bg-gray-500/10',
-  blockchain: 'text-blue-500 bg-blue-500/10',
-  social: 'text-pink-500 bg-pink-500/10',
-  api: 'text-purple-500 bg-purple-500/10',
-  manual: 'text-green-500 bg-green-500/10',
+  blockchain: 'text-blue-700 dark:text-blue-400 bg-blue-500/10',
+  social: 'text-pink-700 dark:text-pink-400 bg-pink-500/10',
+  api: 'text-purple-700 dark:text-purple-400 bg-purple-500/10',
+  manual: 'text-green-700 dark:text-green-400 bg-green-500/10',
 };
+
+// Extract the text color utilities (everything before the bg- token) from a sourceColors entry
+function getSourceTextColor(entry: string): string {
+  return entry
+    .split(' ')
+    .filter((cls) => !cls.startsWith('bg-'))
+    .join(' ');
+}
 
 const severityConfig: Record<string, { color: string; bg: string; icon: typeof Clock | null }> = {
   low: { color: 'text-gray-400', bg: 'bg-gray-500/10', icon: null },
   medium: { color: 'text-agora-warning', bg: 'bg-agora-warning/10', icon: Clock },
   high: { color: 'text-agora-error', bg: 'bg-agora-error/10', icon: AlertTriangle },
-  critical: { color: 'text-red-500', bg: 'bg-red-500/10', icon: AlertTriangle },
+  critical: { color: 'text-red-700 dark:text-red-400', bg: 'bg-red-500/10', icon: AlertTriangle },
 };
 
 export function SignalCard({ signal, index = 0, onClick }: SignalCardProps) {
@@ -167,7 +175,7 @@ export function SignalCard({ signal, index = 0, onClick }: SignalCardProps) {
           {/* Footer */}
           <div className="mt-3 flex flex-wrap items-center gap-4 text-xs">
             {/* Source */}
-            <span className={`flex items-center gap-1 ${(sourceColors[sourceType] || sourceColors.api).split(' ')[0]}`}>
+            <span className={`flex items-center gap-1 ${getSourceTextColor(sourceColors[sourceType] || sourceColors.api)}`}>
               {sourceIcons[sourceType] || sourceIcons.api}
               {signal.source.split(':')[1] || t(`sources.${sourceType}`)}
             </span>

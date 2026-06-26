@@ -66,10 +66,10 @@ const activityIcons: Record<string, { icon: React.ReactNode; color: string; bg: 
 };
 
 const severityConfig: Record<string, { color: string; bg: string }> = {
-  info: { color: 'text-blue-400', bg: 'bg-blue-500/10' },
+  info: { color: 'text-blue-700 dark:text-blue-400', bg: 'bg-blue-500/10' },
   low: { color: 'text-gray-400', bg: 'bg-gray-500/10' },
   medium: { color: 'text-agora-warning', bg: 'bg-agora-warning/10' },
-  high: { color: 'text-orange-400', bg: 'bg-orange-500/10' },
+  high: { color: 'text-orange-700 dark:text-orange-400', bg: 'bg-orange-500/10' },
   critical: { color: 'text-agora-error', bg: 'bg-agora-error/10' },
 };
 

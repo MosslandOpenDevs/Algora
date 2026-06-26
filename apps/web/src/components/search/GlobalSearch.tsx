@@ -43,19 +43,19 @@ const typeIcons = {
 };
 
 const typeColors = {
-  agent: 'text-purple-500',
-  proposal: 'text-blue-500',
-  issue: 'text-orange-500',
-  signal: 'text-green-500',
-  session: 'text-pink-500',
+  agent: 'text-purple-700 dark:text-purple-400',
+  proposal: 'text-blue-700 dark:text-blue-400',
+  issue: 'text-orange-700 dark:text-orange-400',
+  signal: 'text-green-700 dark:text-green-400',
+  session: 'text-pink-700 dark:text-pink-400',
 };
 
 const typeBadgeVariants = {
-  agent: 'bg-purple-500/10 text-purple-500 border-purple-500/20',
-  proposal: 'bg-blue-500/10 text-blue-500 border-blue-500/20',
-  issue: 'bg-orange-500/10 text-orange-500 border-orange-500/20',
-  signal: 'bg-green-500/10 text-green-500 border-green-500/20',
-  session: 'bg-pink-500/10 text-pink-500 border-pink-500/20',
+  agent: 'bg-purple-500/10 text-purple-700 dark:text-purple-400 border-purple-500/20',
+  proposal: 'bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20',
+  issue: 'bg-orange-500/10 text-orange-700 dark:text-orange-400 border-orange-500/20',
+  signal: 'bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20',
+  session: 'bg-pink-500/10 text-pink-700 dark:text-pink-400 border-pink-500/20',
 };
 
 const typeLabels = {
@@ -193,11 +193,11 @@ export function GlobalSearch() {
             <div className="py-8 text-center text-muted-foreground">
               <p className="text-sm">{t('typeToSearch') || 'Type at least 2 characters to search'}</p>
               <div className="mt-4 flex flex-wrap justify-center gap-2 text-xs">
-                <Badge variant="outline" className="bg-purple-500/10 text-purple-500 border-purple-500/20">Agents</Badge>
-                <Badge variant="outline" className="bg-blue-500/10 text-blue-500 border-blue-500/20">Proposals</Badge>
-                <Badge variant="outline" className="bg-orange-500/10 text-orange-500 border-orange-500/20">Issues</Badge>
-                <Badge variant="outline" className="bg-green-500/10 text-green-500 border-green-500/20">Signals</Badge>
-                <Badge variant="outline" className="bg-pink-500/10 text-pink-500 border-pink-500/20">Sessions</Badge>
+                <Badge variant="outline" className="bg-purple-500/10 text-purple-700 dark:text-purple-400 border-purple-500/20">Agents</Badge>
+                <Badge variant="outline" className="bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20">Proposals</Badge>
+                <Badge variant="outline" className="bg-orange-500/10 text-orange-700 dark:text-orange-400 border-orange-500/20">Issues</Badge>
+                <Badge variant="outline" className="bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20">Signals</Badge>
+                <Badge variant="outline" className="bg-pink-500/10 text-pink-700 dark:text-pink-400 border-pink-500/20">Sessions</Badge>
               </div>
             </div>
           )}

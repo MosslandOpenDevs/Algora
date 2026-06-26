@@ -50,19 +50,19 @@ const typeConfig: Record<StatsType, {
     icon: Cpu,
     title: 'Pipeline Status',
     gradient: 'from-emerald-500 to-green-500',
-    color: 'text-emerald-500',
+    color: 'text-emerald-700 dark:text-emerald-400',
   },
   documents: {
     icon: FileText,
     title: 'Document Registry',
     gradient: 'from-blue-500 to-indigo-500',
-    color: 'text-blue-500',
+    color: 'text-blue-700 dark:text-blue-400',
   },
   locked: {
     icon: Lock,
     title: 'Safe Autonomy Locks',
     gradient: 'from-amber-500 to-orange-500',
-    color: 'text-amber-500',
+    color: 'text-amber-700 dark:text-amber-400',
   },
 };
 
@@ -328,7 +328,7 @@ function LockedContent({ stats }: { stats: GovernanceOSStats }) {
       {/* Total Locked */}
       <div className="text-center py-6">
         <div className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-gradient-to-br from-amber-500/20 to-orange-500/20 mb-4">
-          <Lock className="h-10 w-10 text-amber-500" />
+          <Lock className="h-10 w-10 text-amber-700 dark:text-amber-400" />
         </div>
         <p className="text-4xl font-bold text-agora-text">{stats.lockedActions}</p>
         <p className="text-lg font-medium text-agora-text">Locked Actions</p>

@@ -27,10 +27,10 @@ interface AllocationDetailModalProps {
 const statusSteps = ['pending', 'approved', 'disbursed'] as const;
 
 const statusConfig = {
-  pending: { icon: Clock, color: 'text-yellow-500', bgColor: 'bg-yellow-500/20' },
-  approved: { icon: CheckCircle, color: 'text-blue-500', bgColor: 'bg-blue-500/20' },
-  disbursed: { icon: CheckCircle, color: 'text-green-500', bgColor: 'bg-green-500/20' },
-  cancelled: { icon: XCircle, color: 'text-red-500', bgColor: 'bg-red-500/20' },
+  pending: { icon: Clock, color: 'text-yellow-700 dark:text-yellow-400', bgColor: 'bg-yellow-500/20' },
+  approved: { icon: CheckCircle, color: 'text-blue-700 dark:text-blue-400', bgColor: 'bg-blue-500/20' },
+  disbursed: { icon: CheckCircle, color: 'text-green-700 dark:text-green-400', bgColor: 'bg-green-500/20' },
+  cancelled: { icon: XCircle, color: 'text-red-700 dark:text-red-400', bgColor: 'bg-red-500/20' },
 };
 
 export function AllocationDetailModal({
@@ -158,8 +158,8 @@ export function AllocationDetailModal({
         {allocation.status === 'cancelled' && (
           <div className="mb-4 sm:mb-6 rounded-lg bg-red-500/10 p-4">
             <div className="flex items-center gap-2">
-              <XCircle className="h-5 w-5 text-red-500" />
-              <span className="font-medium text-red-400">{t('allocation.cancelled')}</span>
+              <XCircle className="h-5 w-5 text-red-700 dark:text-red-400" />
+              <span className="font-medium text-red-700 dark:text-red-400">{t('allocation.cancelled')}</span>
             </div>
           </div>
         )}

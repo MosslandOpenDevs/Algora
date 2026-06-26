@@ -58,7 +58,7 @@ const statusConfig = {
 const priorityConfig = {
   low: { color: 'text-gray-400', bg: 'bg-gray-500/10' },
   medium: { color: 'text-agora-warning', bg: 'bg-agora-warning/10' },
-  high: { color: 'text-orange-500', bg: 'bg-orange-500/10' },
+  high: { color: 'text-orange-700 dark:text-orange-400', bg: 'bg-orange-500/10' },
   critical: { color: 'text-agora-error', bg: 'bg-agora-error/10' },
 };
 

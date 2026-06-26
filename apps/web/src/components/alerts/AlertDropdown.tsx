@@ -114,11 +114,11 @@ export function AlertDropdown() {
   const getSeverityIcon = (severity: string) => {
     switch (severity) {
       case 'critical':
-        return <XCircle className="h-4 w-4 text-red-500" />;
+        return <XCircle className="h-4 w-4 text-red-700 dark:text-red-400" />;
       case 'error':
-        return <AlertCircle className="h-4 w-4 text-orange-500" />;
+        return <AlertCircle className="h-4 w-4 text-orange-700 dark:text-orange-400" />;
       case 'warning':
-        return <AlertTriangle className="h-4 w-4 text-yellow-500" />;
+        return <AlertTriangle className="h-4 w-4 text-yellow-700 dark:text-yellow-400" />;
       default:
         return <Bell className="h-4 w-4 text-agora-muted" />;
     }
@@ -212,7 +212,7 @@ export function AlertDropdown() {
                       <p className="text-xs text-agora-muted mt-0.5 line-clamp-2">
                         {alert.message}
                       </p>
-                      <p className="text-xs text-agora-muted/70 mt-1">
+                      <p className="text-xs text-agora-muted mt-1">
                         {formatTime(alert.timestamp)}
                       </p>
                     </div>

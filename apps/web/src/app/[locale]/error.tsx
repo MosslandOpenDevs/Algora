@@ -33,7 +33,7 @@ export default function Error({
           This view failed to load. The rest of the platform is still running — try again.
         </p>
         {error?.digest && (
-          <p className="mt-2 font-mono text-xs text-agora-muted/70 dark:text-agora-dark-muted/70">
+          <p className="mt-2 font-mono text-xs text-agora-muted dark:text-agora-dark-muted/70">
             ref: {error.digest}
           </p>
         )}

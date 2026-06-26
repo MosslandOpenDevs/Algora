@@ -77,7 +77,7 @@ export function SpendingLimitsCard({ limits }: SpendingLimitsCardProps) {
                       {limit.category}
                     </span>
                     {isNearLimit && (
-                      <AlertTriangle className="h-4 w-4 text-yellow-500" />
+                      <AlertTriangle className="h-4 w-4 text-yellow-700 dark:text-yellow-400" />
                     )}
                   </div>
                   <div className="flex items-center gap-2">

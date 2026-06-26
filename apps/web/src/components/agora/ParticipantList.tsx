@@ -18,13 +18,13 @@ const statusColors: Record<string, string> = {
 };
 
 const groupColors: Record<string, string> = {
-  visionaries: 'text-purple-400',
-  builders: 'text-blue-400',
-  investors: 'text-green-400',
-  guardians: 'text-red-400',
-  operatives: 'text-yellow-400',
-  moderators: 'text-pink-400',
-  advisors: 'text-cyan-400',
+  visionaries: 'text-purple-700 dark:text-purple-400',
+  builders: 'text-blue-700 dark:text-blue-400',
+  investors: 'text-green-700 dark:text-green-400',
+  guardians: 'text-red-700 dark:text-red-400',
+  operatives: 'text-yellow-700 dark:text-yellow-400',
+  moderators: 'text-pink-700 dark:text-pink-400',
+  advisors: 'text-cyan-700 dark:text-cyan-400',
 };
 
 const statusAnimations: Record<string, string> = {

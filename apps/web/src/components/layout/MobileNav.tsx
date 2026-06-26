@@ -88,7 +88,7 @@ export function MobileNav({ isOpen, onOpenChange }: MobileNavProps) {
                   isActive
                     ? 'bg-agora-primary/10 text-agora-primary'
                     : isLive
-                      ? 'text-red-600 hover:bg-red-50 hover:text-red-700 dark:hover:bg-red-500/10'
+                      ? 'text-red-700 dark:text-red-400 hover:bg-red-50 hover:text-red-700 dark:hover:bg-red-500/10 dark:hover:text-red-400'
                       : isNew
                         ? 'text-agora-accent hover:bg-agora-accent/10 hover:text-agora-accent'
                         : 'text-agora-muted hover:bg-agora-card dark:hover:bg-agora-dark-card hover:text-slate-900 dark:hover:text-white'

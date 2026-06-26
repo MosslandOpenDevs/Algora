@@ -175,7 +175,7 @@ export function Header() {
           {/* LIVE Badge */}
           <Link
             href={`/${currentLocale}/live`}
-            className="flex items-center gap-1.5 rounded-md bg-red-500/10 px-2 md:px-3 py-1.5 text-xs md:text-sm font-medium text-red-600 transition-all hover:bg-red-500/20 hover:scale-105 min-h-[36px]"
+            className="flex items-center gap-1.5 rounded-md bg-red-500/10 px-2 md:px-3 py-1.5 text-xs md:text-sm font-medium text-red-700 dark:text-red-400 transition-all hover:bg-red-500/20 hover:scale-105 min-h-[36px]"
             aria-label={t('viewLiveDashboard')}
           >
             <span className="relative flex h-2 w-2" aria-hidden="true">

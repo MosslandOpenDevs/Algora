@@ -105,7 +105,7 @@ export function ChatMessage({ message, index = 0, onAgentClick, showTranslation 
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="font-semibold text-emerald-700">{message.agentName}</span>
-            <span className="text-xs font-medium px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-600">
+            <span className="text-xs font-medium px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700 dark:text-emerald-400">
               Human
             </span>
             <span className="text-xs text-agora-muted">

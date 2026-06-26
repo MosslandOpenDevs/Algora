@@ -209,7 +209,7 @@ export default function ProfilePage() {
                   aria-label="Copy address"
                   className="rounded p-1 text-agora-muted hover:bg-agora-border dark:hover:bg-agora-dark-border hover:text-slate-900 dark:hover:text-white"
                 >
-                  {copied ? <CheckCircle className="h-4 w-4 text-green-400" /> : <Copy className="h-4 w-4" />}
+                  {copied ? <CheckCircle className="h-4 w-4 text-green-700 dark:text-green-400" /> : <Copy className="h-4 w-4" />}
                 </button>
                 <a
                   href={`https://etherscan.io/address/${address}`}
@@ -225,7 +225,7 @@ export default function ProfilePage() {
           </div>
 
           {profile?.holder ? (
-            <div className="flex items-center gap-2 rounded-full bg-green-500/20 px-3 py-1 text-sm text-green-400">
+            <div className="flex items-center gap-2 rounded-full bg-green-500/20 px-3 py-1 text-sm text-green-700 dark:text-green-400">
               <Shield className="h-4 w-4" />
               Verified
             </div>
@@ -251,7 +251,7 @@ export default function ProfilePage() {
         </div>
 
         {verifyMutation.isError && (
-          <div className="mt-4 flex items-center gap-2 rounded-lg bg-red-500/10 px-4 py-2 text-sm text-red-400">
+          <div className="mt-4 flex items-center gap-2 rounded-lg bg-red-500/10 px-4 py-2 text-sm text-red-700 dark:text-red-400">
             <AlertCircle className="h-4 w-4" />
             {verifyMutation.error.message}
           </div>
@@ -278,7 +278,7 @@ export default function ProfilePage() {
           <div className="rounded-xl border border-agora-border dark:border-agora-dark-border bg-agora-card dark:bg-agora-dark-card p-4">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-500/20">
-                <Vote className="h-5 w-5 text-purple-400" />
+                <Vote className="h-5 w-5 text-purple-700 dark:text-purple-400" />
               </div>
               <div>
                 <p className="text-xs text-agora-muted">{t('votingPower')}</p>
@@ -292,7 +292,7 @@ export default function ProfilePage() {
           <div className="rounded-xl border border-agora-border dark:border-agora-dark-border bg-agora-card dark:bg-agora-dark-card p-4">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-500/20">
-                <History className="h-5 w-5 text-blue-400" />
+                <History className="h-5 w-5 text-blue-700 dark:text-blue-400" />
               </div>
               <div>
                 <p className="text-xs text-agora-muted">Votes Cast</p>
@@ -306,7 +306,7 @@ export default function ProfilePage() {
           <div className="rounded-xl border border-agora-border dark:border-agora-dark-border bg-agora-card dark:bg-agora-dark-card p-4">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-pink-500/20">
-                <Users className="h-5 w-5 text-pink-400" />
+                <Users className="h-5 w-5 text-pink-700 dark:text-pink-400" />
               </div>
               <div>
                 <p className="text-xs text-agora-muted">Delegations</p>
@@ -362,11 +362,11 @@ export default function ProfilePage() {
                     <p className="text-sm text-agora-muted mt-1">Total Votes</p>
                   </div>
                   <div className="text-center p-4 rounded-lg bg-agora-darker dark:bg-agora-dark-darker">
-                    <p className="text-3xl font-bold text-purple-400">{delegationsReceived}</p>
+                    <p className="text-3xl font-bold text-purple-700 dark:text-purple-400">{delegationsReceived}</p>
                     <p className="text-sm text-agora-muted mt-1">Delegations Received</p>
                   </div>
                   <div className="text-center p-4 rounded-lg bg-agora-darker dark:bg-agora-dark-darker">
-                    <p className="text-3xl font-bold text-blue-400">{delegatedIn.toLocaleString()}</p>
+                    <p className="text-3xl font-bold text-blue-700 dark:text-blue-400">{delegatedIn.toLocaleString()}</p>
                     <p className="text-sm text-agora-muted mt-1">Delegated Power</p>
                   </div>
                 </div>
@@ -375,7 +375,7 @@ export default function ProfilePage() {
               {/* Recent Activity */}
               <div className="rounded-xl border border-agora-border dark:border-agora-dark-border bg-agora-card dark:bg-agora-dark-card p-6">
                 <h3 className="text-lg font-semibold text-slate-900 dark:text-white flex items-center gap-2 mb-4">
-                  <TrendingUp className="h-5 w-5 text-green-400" />
+                  <TrendingUp className="h-5 w-5 text-green-700 dark:text-green-400" />
                   Recent Voting Activity
                 </h3>
                 <VoteHistoryList
@@ -408,7 +408,7 @@ export default function ProfilePage() {
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-semibold text-slate-900 dark:text-white flex items-center gap-2">
-                  <FileText className="h-5 w-5 text-blue-400" />
+                  <FileText className="h-5 w-5 text-blue-700 dark:text-blue-400" />
                   My Proposals
                 </h3>
                 <Link
@@ -435,17 +435,17 @@ export default function ProfilePage() {
                           </p>
                         </div>
                         <span className={`text-xs px-2 py-1 rounded ${
-                          proposal.status === 'active' ? 'bg-green-500/10 text-green-400' :
-                          proposal.status === 'passed' ? 'bg-blue-500/10 text-blue-400' :
-                          proposal.status === 'rejected' ? 'bg-red-500/10 text-red-400' :
+                          proposal.status === 'active' ? 'bg-green-500/10 text-green-700 dark:text-green-400' :
+                          proposal.status === 'passed' ? 'bg-blue-500/10 text-blue-700 dark:text-blue-400' :
+                          proposal.status === 'rejected' ? 'bg-red-500/10 text-red-700 dark:text-red-400' :
                           'bg-gray-500/10 text-gray-400'
                         }`}>
                           {proposal.status}
                         </span>
                       </div>
                       <div className="mt-3 flex items-center gap-4 text-xs text-agora-muted">
-                        <span className="text-green-400">{proposal.votes_for} For</span>
-                        <span className="text-red-400">{proposal.votes_against} Against</span>
+                        <span className="text-green-700 dark:text-green-400">{proposal.votes_for} For</span>
+                        <span className="text-red-700 dark:text-red-400">{proposal.votes_against} Against</span>
                       </div>
                     </Link>
                   ))}
@@ -466,7 +466,7 @@ export default function ProfilePage() {
           {activeTab === 'voting' && (
             <div className="space-y-4">
               <div className="flex items-center gap-2">
-                <History className="h-5 w-5 text-blue-400" />
+                <History className="h-5 w-5 text-blue-700 dark:text-blue-400" />
                 <h3 className="text-lg font-semibold text-slate-900 dark:text-white">{tVoting('voteHistory')}</h3>
               </div>
               <VoteHistoryList

@@ -135,9 +135,9 @@ export function StatsDetailModal({ stat, onClose }: StatsDetailModalProps) {
                 <div
                   className={`flex items-center gap-2 rounded-lg px-3 py-2 ${
                     stat.trend > 0
-                      ? 'bg-green-500/20 text-green-400'
+                      ? 'bg-green-500/20 text-green-700 dark:text-green-400'
                       : stat.trend < 0
-                        ? 'bg-red-500/20 text-red-400'
+                        ? 'bg-red-500/20 text-red-700 dark:text-red-400'
                         : 'bg-gray-500/20 text-gray-400'
                   }`}
                 >

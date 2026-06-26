@@ -369,7 +369,7 @@ export default function AgoraPage() {
             </>
           ) : (
             <div className="flex flex-1 flex-col items-center justify-center text-center p-4">
-              <MessageSquare className="h-12 md:h-16 w-12 md:w-16 text-agora-muted/50" />
+              <MessageSquare className="h-12 md:h-16 w-12 md:w-16 text-agora-muted" />
               <h3 className="mt-4 text-base md:text-lg font-semibold text-slate-900 dark:text-white">
                 {t('noActiveSession')}
               </h3>

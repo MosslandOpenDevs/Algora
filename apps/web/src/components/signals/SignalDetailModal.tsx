@@ -94,7 +94,7 @@ const severityConfig: Record<string, { color: string; bg: string; border: string
   low: { color: 'text-gray-400', bg: 'bg-gray-500/10', border: 'border-gray-500/30', icon: null },
   medium: { color: 'text-agora-warning', bg: 'bg-agora-warning/10', border: 'border-agora-warning/30', icon: Clock },
   high: { color: 'text-agora-error', bg: 'bg-agora-error/10', border: 'border-agora-error/30', icon: AlertTriangle },
-  critical: { color: 'text-red-500', bg: 'bg-red-500/10', border: 'border-red-500/30', icon: AlertTriangle },
+  critical: { color: 'text-red-700 dark:text-red-400', bg: 'bg-red-500/10', border: 'border-red-500/30', icon: AlertTriangle },
 };
 
 export function SignalDetailModal({ signal, onClose }: SignalDetailModalProps) {

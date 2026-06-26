@@ -26,9 +26,9 @@ export function VoteHistoryList({ votes, isLoading }: VoteHistoryListProps) {
   if (votes.length === 0) {
     return (
       <div className="rounded-lg border border-dashed border-agora-border bg-agora-card/50 p-8 text-center">
-        <Vote className="mx-auto h-10 w-10 text-agora-muted/50" />
+        <Vote className="mx-auto h-10 w-10 text-agora-muted" />
         <p className="mt-3 text-sm text-agora-muted">{t('noVoteHistory')}</p>
-        <p className="mt-1 text-xs text-agora-muted/70">{t('noVoteHistoryDesc')}</p>
+        <p className="mt-1 text-xs text-agora-muted">{t('noVoteHistoryDesc')}</p>
       </div>
     );
   }
@@ -56,12 +56,12 @@ export function VoteHistoryList({ votes, isLoading }: VoteHistoryListProps) {
           <p className="text-xs text-agora-muted">{t('totalVotes')}</p>
         </div>
         <div className="rounded-lg border border-green-500/30 bg-green-500/10 p-3 text-center">
-          <p className="text-2xl font-bold text-green-400">{stats.for}</p>
-          <p className="text-xs text-green-400/80">{t('votedFor')}</p>
+          <p className="text-2xl font-bold text-green-700 dark:text-green-400">{stats.for}</p>
+          <p className="text-xs text-green-700/80 dark:text-green-400/80">{t('votedFor')}</p>
         </div>
         <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-center">
-          <p className="text-2xl font-bold text-red-400">{stats.against}</p>
-          <p className="text-xs text-red-400/80">{t('votedAgainst')}</p>
+          <p className="text-2xl font-bold text-red-700 dark:text-red-400">{stats.against}</p>
+          <p className="text-xs text-red-700/80 dark:text-red-400/80">{t('votedAgainst')}</p>
         </div>
         <div className="rounded-lg border border-gray-500/30 bg-gray-500/10 p-3 text-center">
           <p className="text-2xl font-bold text-gray-400">{stats.abstain}</p>

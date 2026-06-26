@@ -330,14 +330,14 @@ export function GovernanceTimeline({
       {showStats && stats && (
         <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
           <div className="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
-            <Radio className="h-5 w-5 text-blue-500" />
+            <Radio className="h-5 w-5 text-blue-700 dark:text-blue-400" />
             <p className="mt-2 text-2xl font-bold text-gray-900 dark:text-white">
               {stats.totals.signals}
             </p>
             <p className="text-sm text-gray-500 dark:text-gray-400">{t('signals')}</p>
           </div>
           <div className="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
-            <AlertTriangle className="h-5 w-5 text-amber-500" />
+            <AlertTriangle className="h-5 w-5 text-amber-700 dark:text-amber-400" />
             <p className="mt-2 text-2xl font-bold text-gray-900 dark:text-white">
               {stats.totals.issues}
             </p>
@@ -351,7 +351,7 @@ export function GovernanceTimeline({
             <p className="text-sm text-gray-500 dark:text-gray-400">{t('proposals')}</p>
           </div>
           <div className="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
-            <Vote className="h-5 w-5 text-cyan-500" />
+            <Vote className="h-5 w-5 text-cyan-700 dark:text-cyan-400" />
             <p className="mt-2 text-2xl font-bold text-gray-900 dark:text-white">
               {stats.totals.votes}
             </p>

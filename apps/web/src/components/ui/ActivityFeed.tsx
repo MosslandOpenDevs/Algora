@@ -49,36 +49,36 @@ interface ActivityFeedProps {
 }
 
 const activityIcons: Record<string, React.ReactNode> = {
-  HEARTBEAT: <Heart className="h-4 w-4 text-blue-400" />,
-  COLLECTOR: <Radio className="h-4 w-4 text-green-400" />,
-  AGENT_CHATTER: <MessageCircle className="h-4 w-4 text-purple-400" />,
-  AGENT_SUMMONED: <UserPlus className="h-4 w-4 text-yellow-400" />,
-  AGORA_SESSION_START: <Play className="h-4 w-4 text-blue-400" />,
-  AGORA_SESSION_AUTO_CREATED: <Zap className="h-4 w-4 text-yellow-400" />,
-  DECISION_PACKET: <FileText className="h-4 w-4 text-green-400" />,
-  ISSUE_DETECTED: <AlertTriangle className="h-4 w-4 text-orange-400" />,
-  VOTE_CAST: <Vote className="h-4 w-4 text-purple-400" />,
-  VOTING_FINALIZED: <CheckCircle className="h-4 w-4 text-green-400" />,
-  DELEGATION_CREATED: <Users className="h-4 w-4 text-blue-400" />,
-  PROPOSAL_CREATED: <Lightbulb className="h-4 w-4 text-yellow-400" />,
-  VOTING_STARTED: <Play className="h-4 w-4 text-purple-400" />,
-  DECISION_PACKET_GENERATED: <FileText className="h-4 w-4 text-blue-400" />,
+  HEARTBEAT: <Heart className="h-4 w-4 text-blue-700 dark:text-blue-400" />,
+  COLLECTOR: <Radio className="h-4 w-4 text-green-700 dark:text-green-400" />,
+  AGENT_CHATTER: <MessageCircle className="h-4 w-4 text-purple-700 dark:text-purple-400" />,
+  AGENT_SUMMONED: <UserPlus className="h-4 w-4 text-yellow-700 dark:text-yellow-400" />,
+  AGORA_SESSION_START: <Play className="h-4 w-4 text-blue-700 dark:text-blue-400" />,
+  AGORA_SESSION_AUTO_CREATED: <Zap className="h-4 w-4 text-yellow-700 dark:text-yellow-400" />,
+  DECISION_PACKET: <FileText className="h-4 w-4 text-green-700 dark:text-green-400" />,
+  ISSUE_DETECTED: <AlertTriangle className="h-4 w-4 text-orange-700 dark:text-orange-400" />,
+  VOTE_CAST: <Vote className="h-4 w-4 text-purple-700 dark:text-purple-400" />,
+  VOTING_FINALIZED: <CheckCircle className="h-4 w-4 text-green-700 dark:text-green-400" />,
+  DELEGATION_CREATED: <Users className="h-4 w-4 text-blue-700 dark:text-blue-400" />,
+  PROPOSAL_CREATED: <Lightbulb className="h-4 w-4 text-yellow-700 dark:text-yellow-400" />,
+  VOTING_STARTED: <Play className="h-4 w-4 text-purple-700 dark:text-purple-400" />,
+  DECISION_PACKET_GENERATED: <FileText className="h-4 w-4 text-blue-700 dark:text-blue-400" />,
   SYSTEM_STATUS: <ActivityIcon className="h-4 w-4 text-gray-400" />,
-  PROPOSAL_OUTCOME_PROCESSED: <Target className="h-4 w-4 text-green-400" />,
-  OUTCOME_CREATED: <Target className="h-4 w-4 text-blue-400" />,
-  EXECUTION_STARTED: <Loader className="h-4 w-4 text-yellow-400 animate-spin" />,
-  EXECUTION_COMPLETED: <CheckCircle className="h-4 w-4 text-green-400" />,
-  OUTCOME_COMPLETED: <Trophy className="h-4 w-4 text-green-400" />,
+  PROPOSAL_OUTCOME_PROCESSED: <Target className="h-4 w-4 text-green-700 dark:text-green-400" />,
+  OUTCOME_CREATED: <Target className="h-4 w-4 text-blue-700 dark:text-blue-400" />,
+  EXECUTION_STARTED: <Loader className="h-4 w-4 text-yellow-700 dark:text-yellow-400 animate-spin" />,
+  EXECUTION_COMPLETED: <CheckCircle className="h-4 w-4 text-green-700 dark:text-green-400" />,
+  OUTCOME_COMPLETED: <Trophy className="h-4 w-4 text-green-700 dark:text-green-400" />,
 };
 
 const severityColors: Record<string, string> = {
-  info: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
-  low: 'bg-green-500/20 text-green-400 border-green-500/30',
-  medium: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
-  high: 'bg-orange-500/20 text-orange-400 border-orange-500/30',
-  critical: 'bg-red-500/20 text-red-400 border-red-500/30',
-  warning: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
-  error: 'bg-red-500/20 text-red-400 border-red-500/30',
+  info: 'bg-blue-500/20 text-blue-700 dark:text-blue-400 border-blue-500/30',
+  low: 'bg-green-500/20 text-green-700 dark:text-green-400 border-green-500/30',
+  medium: 'bg-yellow-500/20 text-yellow-700 dark:text-yellow-400 border-yellow-500/30',
+  high: 'bg-orange-500/20 text-orange-700 dark:text-orange-400 border-orange-500/30',
+  critical: 'bg-red-500/20 text-red-700 dark:text-red-400 border-red-500/30',
+  warning: 'bg-yellow-500/20 text-yellow-700 dark:text-yellow-400 border-yellow-500/30',
+  error: 'bg-red-500/20 text-red-700 dark:text-red-400 border-red-500/30',
 };
 
 // Humanize an activity type that has no i18n label (e.g. "COLLECTOR_HEALTH" ->
@@ -219,7 +219,7 @@ export function ActivityFeed({ initialData, onActivityClick }: ActivityFeedProps
 
               {/* Agent info if available */}
               {activity.agent_id && (
-                <p className="text-[10px] text-purple-400 mt-1">
+                <p className="text-[10px] text-purple-700 dark:text-purple-400 mt-1">
                   Agent: {activity.agent_id}
                 </p>
               )}

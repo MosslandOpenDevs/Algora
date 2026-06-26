@@ -97,7 +97,7 @@ export function DelegationCard({ delegation, type, onRevoke, index = 0 }: Delega
           {type === 'given' && onRevoke && (
             <button
               onClick={onRevoke}
-              className="flex items-center gap-1 rounded-lg bg-red-500/20 px-3 py-1.5 text-xs font-medium text-red-400 transition-colors hover:bg-red-500/30"
+              className="flex items-center gap-1 rounded-lg bg-red-500/20 px-3 py-1.5 text-xs font-medium text-red-700 dark:text-red-400 transition-colors hover:bg-red-500/30"
             >
               <X className="h-3 w-3" />
               {t('revoke')}

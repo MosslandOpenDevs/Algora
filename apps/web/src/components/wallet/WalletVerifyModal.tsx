@@ -196,7 +196,7 @@ export function WalletVerifyModal({ isOpen, onClose }: WalletVerifyModalProps) {
         {step === 'error' && (
           <div className="py-8 text-center">
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-red-500/20">
-              <XCircle className="h-8 w-8 text-red-500" />
+              <XCircle className="h-8 w-8 text-red-700 dark:text-red-400" />
             </div>
             <h2 {...titleProps} className="mb-2 text-xl font-bold text-agora-text">{t('verificationFailed')}</h2>
             <p className="mb-6 text-sm text-agora-muted">{errorMessage}</p>

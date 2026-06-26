@@ -141,8 +141,8 @@ function StatCard({
           <p className="mt-2 text-2xl font-bold text-slate-900 dark:text-white">{value}</p>
           {trend !== undefined && (
             <div className="mt-2 flex items-center gap-1 text-xs">
-              <TrendingUp className={`h-3 w-3 ${trend >= 0 ? 'text-green-500' : 'text-red-500 rotate-180'}`} />
-              <span className={trend >= 0 ? 'text-green-500' : 'text-red-500'}>
+              <TrendingUp className={`h-3 w-3 ${trend >= 0 ? 'text-green-700 dark:text-green-400' : 'text-red-700 dark:text-red-400 rotate-180'}`} />
+              <span className={trend >= 0 ? 'text-green-700 dark:text-green-400' : 'text-red-700 dark:text-red-400'}>
                 {trend >= 0 ? '+' : ''}{trend}%
               </span>
               {trendLabel && <span className="text-agora-muted">{trendLabel}</span>}
@@ -276,15 +276,15 @@ export default function AdminPage() {
               <p className="text-sm text-agora-muted mt-1">Health Score</p>
             </div>
             <div className="text-center p-4 rounded-lg bg-agora-darker dark:bg-agora-dark-darker">
-              <p className="text-3xl font-bold text-red-500">{health.errors.today}</p>
+              <p className="text-3xl font-bold text-red-700 dark:text-red-400">{health.errors.today}</p>
               <p className="text-sm text-agora-muted mt-1">Errors Today</p>
             </div>
             <div className="text-center p-4 rounded-lg bg-agora-darker dark:bg-agora-dark-darker">
-              <p className="text-3xl font-bold text-yellow-500">{health.errors.warnings}</p>
+              <p className="text-3xl font-bold text-yellow-700 dark:text-yellow-400">{health.errors.warnings}</p>
               <p className="text-sm text-agora-muted mt-1">Warnings</p>
             </div>
             <div className="text-center p-4 rounded-lg bg-agora-darker dark:bg-agora-dark-darker">
-              <p className="text-3xl font-bold text-orange-500">{health.errors.llmTimeouts}</p>
+              <p className="text-3xl font-bold text-orange-700 dark:text-orange-400">{health.errors.llmTimeouts}</p>
               <p className="text-sm text-agora-muted mt-1">LLM Timeouts</p>
             </div>
           </div>
@@ -431,7 +431,7 @@ export default function AdminPage() {
         {health?.dataRetention && (
           <div className="rounded-xl border border-agora-border dark:border-agora-dark-border bg-agora-card dark:bg-agora-dark-card p-6">
             <h2 className="text-lg font-semibold text-slate-900 dark:text-white flex items-center gap-2 mb-4">
-              <Trash2 className="h-5 w-5 text-red-500" />
+              <Trash2 className="h-5 w-5 text-red-700 dark:text-red-400" />
               Data Retention Policy
             </h2>
 
@@ -505,9 +505,9 @@ export default function AdminPage() {
                     {trend.metric.replace(/_/g, ' ')}
                   </span>
                   <span className={`text-xs px-1.5 py-0.5 rounded ${
-                    trend.status === 'good' ? 'bg-green-500/20 text-green-500' :
-                    trend.status === 'warning' ? 'bg-yellow-500/20 text-yellow-500' :
-                    'bg-red-500/20 text-red-500'
+                    trend.status === 'good' ? 'bg-green-500/20 text-green-700 dark:text-green-400' :
+                    trend.status === 'warning' ? 'bg-yellow-500/20 text-yellow-700 dark:text-yellow-400' :
+                    'bg-red-500/20 text-red-700 dark:text-red-400'
                   }`}>
                     {trend.status}
                   </span>
@@ -523,14 +523,14 @@ export default function AdminPage() {
                 <div className="flex items-center gap-2 mt-1">
                   <TrendingUp
                     className={`h-3 w-3 ${
-                      trend.trend === 'up' ? 'text-green-500' :
-                      trend.trend === 'down' ? 'text-red-500 rotate-180' :
+                      trend.trend === 'up' ? 'text-green-700 dark:text-green-400' :
+                      trend.trend === 'down' ? 'text-red-700 dark:text-red-400 rotate-180' :
                       'text-agora-muted'
                     }`}
                   />
                   <span className={`text-xs ${
-                    trend.changePercent > 0 ? 'text-green-500' :
-                    trend.changePercent < 0 ? 'text-red-500' :
+                    trend.changePercent > 0 ? 'text-green-700 dark:text-green-400' :
+                    trend.changePercent < 0 ? 'text-red-700 dark:text-red-400' :
                     'text-agora-muted'
                   }`}>
                     {trend.changePercent > 0 ? '+' : ''}{trend.changePercent.toFixed(1)}%

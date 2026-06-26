@@ -82,9 +82,9 @@ const PIPELINE_STAGES = [
 
 function HealthBadge({ status }: { status: 'healthy' | 'degraded' | 'critical' }) {
   const config = {
-    healthy: { bg: 'bg-green-500/10', text: 'text-green-500', icon: CheckCircle },
-    degraded: { bg: 'bg-yellow-500/10', text: 'text-yellow-500', icon: AlertTriangle },
-    critical: { bg: 'bg-red-500/10', text: 'text-red-500', icon: XCircle },
+    healthy: { bg: 'bg-green-500/10', text: 'text-green-700 dark:text-green-400', icon: CheckCircle },
+    degraded: { bg: 'bg-yellow-500/10', text: 'text-yellow-700 dark:text-yellow-400', icon: AlertTriangle },
+    critical: { bg: 'bg-red-500/10', text: 'text-red-700 dark:text-red-400', icon: XCircle },
   };
   const { bg, text, icon: Icon } = config[status];
 
@@ -143,9 +143,9 @@ function StageCard({
 
 function AlertItem({ alert }: { alert: PipelineAlertsData['alerts'][0] }) {
   const severityConfig = {
-    critical: { bg: 'bg-red-500/10', border: 'border-red-500/30', icon: XCircle, iconColor: 'text-red-500' },
-    warning: { bg: 'bg-yellow-500/10', border: 'border-yellow-500/30', icon: AlertTriangle, iconColor: 'text-yellow-500' },
-    info: { bg: 'bg-blue-500/10', border: 'border-blue-500/30', icon: AlertCircle, iconColor: 'text-blue-500' },
+    critical: { bg: 'bg-red-500/10', border: 'border-red-500/30', icon: XCircle, iconColor: 'text-red-700 dark:text-red-400' },
+    warning: { bg: 'bg-yellow-500/10', border: 'border-yellow-500/30', icon: AlertTriangle, iconColor: 'text-yellow-700 dark:text-yellow-400' },
+    info: { bg: 'bg-blue-500/10', border: 'border-blue-500/30', icon: AlertCircle, iconColor: 'text-blue-700 dark:text-blue-400' },
   };
   const config = severityConfig[alert.severity];
   const Icon = config.icon;
@@ -296,7 +296,7 @@ export function PipelineHealthDashboard() {
             <div className="grid grid-cols-2 gap-4">
               <div className="p-3 rounded-lg bg-agora-darker dark:bg-agora-dark-darker">
                 <div className="flex items-center gap-2 mb-1">
-                  <Zap className="h-4 w-4 text-purple-500" />
+                  <Zap className="h-4 w-4 text-purple-700 dark:text-purple-400" />
                   <span className="text-xs text-agora-muted">Signals</span>
                 </div>
                 <p className="text-xl font-bold text-slate-900 dark:text-white">
@@ -309,7 +309,7 @@ export function PipelineHealthDashboard() {
 
               <div className="p-3 rounded-lg bg-agora-darker dark:bg-agora-dark-darker">
                 <div className="flex items-center gap-2 mb-1">
-                  <AlertCircle className="h-4 w-4 text-orange-500" />
+                  <AlertCircle className="h-4 w-4 text-orange-700 dark:text-orange-400" />
                   <span className="text-xs text-agora-muted">Issues</span>
                 </div>
                 <p className="text-xl font-bold text-slate-900 dark:text-white">
@@ -322,7 +322,7 @@ export function PipelineHealthDashboard() {
 
               <div className="p-3 rounded-lg bg-agora-darker dark:bg-agora-dark-darker">
                 <div className="flex items-center gap-2 mb-1">
-                  <MessageSquare className="h-4 w-4 text-blue-500" />
+                  <MessageSquare className="h-4 w-4 text-blue-700 dark:text-blue-400" />
                   <span className="text-xs text-agora-muted">Sessions</span>
                 </div>
                 <p className="text-xl font-bold text-slate-900 dark:text-white">
@@ -337,7 +337,7 @@ export function PipelineHealthDashboard() {
 
               <div className="p-3 rounded-lg bg-agora-darker dark:bg-agora-dark-darker">
                 <div className="flex items-center gap-2 mb-1">
-                  <FileText className="h-4 w-4 text-green-500" />
+                  <FileText className="h-4 w-4 text-green-700 dark:text-green-400" />
                   <span className="text-xs text-agora-muted">Proposals</span>
                 </div>
                 <p className="text-xl font-bold text-slate-900 dark:text-white">
@@ -365,7 +365,7 @@ export function PipelineHealthDashboard() {
                   Active: <span className="text-slate-900 dark:text-white font-medium">{metrics.retryQueue.active}</span>
                 </span>
                 {metrics.retryQueue.needsManualReview > 0 && (
-                  <span className="text-yellow-500">
+                  <span className="text-yellow-700 dark:text-yellow-400">
                     Manual Review: {metrics.retryQueue.needsManualReview}
                   </span>
                 )}
@@ -393,18 +393,18 @@ export function PipelineHealthDashboard() {
         <div className="rounded-xl border border-agora-border dark:border-agora-dark-border bg-agora-card dark:bg-agora-dark-card p-6">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-medium text-slate-900 dark:text-white flex items-center gap-2">
-              <AlertTriangle className="h-4 w-4 text-yellow-500" />
+              <AlertTriangle className="h-4 w-4 text-yellow-700 dark:text-yellow-400" />
               Active Alerts
             </h3>
             {alerts && (
               <div className="flex items-center gap-2 text-xs">
                 {alerts.summary.critical > 0 && (
-                  <span className="px-2 py-0.5 rounded-full bg-red-500/10 text-red-500">
+                  <span className="px-2 py-0.5 rounded-full bg-red-500/10 text-red-700 dark:text-red-400">
                     {alerts.summary.critical} critical
                   </span>
                 )}
                 {alerts.summary.warning > 0 && (
-                  <span className="px-2 py-0.5 rounded-full bg-yellow-500/10 text-yellow-500">
+                  <span className="px-2 py-0.5 rounded-full bg-yellow-500/10 text-yellow-700 dark:text-yellow-400">
                     {alerts.summary.warning} warning
                   </span>
                 )}
@@ -419,7 +419,7 @@ export function PipelineHealthDashboard() {
               ))
             ) : (
               <div className="text-center py-8">
-                <CheckCircle className="h-8 w-8 text-green-500 mx-auto mb-2" />
+                <CheckCircle className="h-8 w-8 text-green-700 dark:text-green-400 mx-auto mb-2" />
                 <p className="text-sm text-agora-muted">No active alerts</p>
               </div>
             )}

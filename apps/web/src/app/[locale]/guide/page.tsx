@@ -100,37 +100,37 @@ const v2Features = [
     icon: GitBranch,
     title: '5 Workflows',
     description: 'Academic Research, Free Debate, Developer Support, Ecosystem Expansion, Working Groups',
-    color: 'text-blue-500',
+    color: 'text-blue-700 dark:text-blue-400',
   },
   {
     icon: Vote,
     title: 'Dual-House Voting',
     description: 'MossCoin House (token holders) + OpenSource House (contributors) for balanced decisions',
-    color: 'text-purple-500',
+    color: 'text-purple-700 dark:text-purple-400',
   },
   {
     icon: Lock,
     title: 'Safe Autonomy',
     description: 'High-risk actions are LOCKED until explicit human approval. AI recommends, humans decide.',
-    color: 'text-emerald-500',
+    color: 'text-emerald-700 dark:text-emerald-400',
   },
   {
     icon: FileText,
     title: 'Document Registry',
     description: 'Official documents with versioning, provenance tracking, and immutable audit trails',
-    color: 'text-amber-500',
+    color: 'text-amber-700 dark:text-amber-400',
   },
   {
     icon: PiggyBank,
     title: 'Treasury Dashboard',
     description: 'Visual balance distribution, allocation tracking, transaction history, and token holder management',
-    color: 'text-cyan-500',
+    color: 'text-cyan-700 dark:text-cyan-400',
   },
   {
     icon: UserPlus,
     title: 'Voting Delegation',
     description: 'Delegate voting power to trusted addresses with category filters and expiration options',
-    color: 'text-pink-500',
+    color: 'text-pink-700 dark:text-pink-400',
   },
 ];
 
@@ -245,7 +245,7 @@ export default function GuidePage() {
       {/* Safe Autonomy Principles */}
       <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-6">
         <div className="mb-6 flex items-center gap-3">
-          <ShieldCheck className="h-8 w-8 text-emerald-500" />
+          <ShieldCheck className="h-8 w-8 text-emerald-700 dark:text-emerald-400" />
           <div>
             <h2 className="text-xl font-semibold text-agora-text">Safe Autonomy Guarantee</h2>
             <p className="text-sm text-agora-muted">Your assets are safe. AI recommends, humans decide.</p>
@@ -257,7 +257,7 @@ export default function GuidePage() {
             const Icon = principle.icon;
             return (
               <div key={index} className="flex items-start gap-3 rounded-lg bg-white/50 p-4">
-                <Icon className="h-5 w-5 text-emerald-600 flex-shrink-0 mt-0.5" />
+                <Icon className="h-5 w-5 text-emerald-700 dark:text-emerald-400 flex-shrink-0 mt-0.5" />
                 <div>
                   <h3 className="font-medium text-agora-text">{principle.title}</h3>
                   <p className="mt-1 text-xs text-agora-muted">{principle.description}</p>
@@ -353,7 +353,7 @@ export default function GuidePage() {
             href={`/${locale}/live`}
             className="flex items-center gap-3 rounded-lg bg-agora-darker p-4 transition-colors hover:bg-agora-border"
           >
-            <Zap className="h-6 w-6 text-red-500" />
+            <Zap className="h-6 w-6 text-red-700 dark:text-red-400" />
             <div>
               <h3 className="font-medium text-agora-text">{t('otherMenus.live.title')}</h3>
               <p className="text-xs text-agora-muted">
@@ -365,7 +365,7 @@ export default function GuidePage() {
             href={`/${locale}/governance`}
             className="flex items-center gap-3 rounded-lg bg-agora-darker p-4 transition-colors hover:bg-agora-border"
           >
-            <Shield className="h-6 w-6 text-emerald-500" />
+            <Shield className="h-6 w-6 text-emerald-700 dark:text-emerald-400" />
             <div>
               <h3 className="font-medium text-agora-text">{t('otherMenus.governance.title')}</h3>
               <p className="text-xs text-agora-muted">
@@ -377,7 +377,7 @@ export default function GuidePage() {
             href={`/${locale}/treasury`}
             className="flex items-center gap-3 rounded-lg bg-agora-darker p-4 transition-colors hover:bg-agora-border"
           >
-            <PiggyBank className="h-6 w-6 text-cyan-500" />
+            <PiggyBank className="h-6 w-6 text-cyan-700 dark:text-cyan-400" />
             <div>
               <h3 className="font-medium text-agora-text">{t('otherMenus.treasury.title')}</h3>
               <p className="text-xs text-agora-muted">
@@ -389,7 +389,7 @@ export default function GuidePage() {
             href={`/${locale}/profile`}
             className="flex items-center gap-3 rounded-lg bg-agora-darker p-4 transition-colors hover:bg-agora-border"
           >
-            <Wallet className="h-6 w-6 text-pink-500" />
+            <Wallet className="h-6 w-6 text-pink-700 dark:text-pink-400" />
             <div>
               <h3 className="font-medium text-agora-text">{t('otherMenus.profile.title')}</h3>
               <p className="text-xs text-agora-muted">

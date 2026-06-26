@@ -33,13 +33,13 @@ const CLUSTERS = [
 ] as const;
 
 const clusterConfig: Record<string, { icon: typeof Users; color: string; bg: string; border: string }> = {
-  visionaries: { icon: Lightbulb, color: 'text-purple-400', bg: 'bg-purple-500/10', border: 'border-purple-500/30' },
-  builders: { icon: Wrench, color: 'text-blue-400', bg: 'bg-blue-500/10', border: 'border-blue-500/30' },
-  investors: { icon: TrendingUp, color: 'text-green-400', bg: 'bg-green-500/10', border: 'border-green-500/30' },
-  guardians: { icon: Shield, color: 'text-red-400', bg: 'bg-red-500/10', border: 'border-red-500/30' },
-  operatives: { icon: Zap, color: 'text-yellow-400', bg: 'bg-yellow-500/10', border: 'border-yellow-500/30' },
-  moderators: { icon: Scale, color: 'text-pink-400', bg: 'bg-pink-500/10', border: 'border-pink-500/30' },
-  advisors: { icon: Brain, color: 'text-cyan-400', bg: 'bg-cyan-500/10', border: 'border-cyan-500/30' },
+  visionaries: { icon: Lightbulb, color: 'text-purple-700 dark:text-purple-400', bg: 'bg-purple-500/10', border: 'border-purple-500/30' },
+  builders: { icon: Wrench, color: 'text-blue-700 dark:text-blue-400', bg: 'bg-blue-500/10', border: 'border-blue-500/30' },
+  investors: { icon: TrendingUp, color: 'text-green-700 dark:text-green-400', bg: 'bg-green-500/10', border: 'border-green-500/30' },
+  guardians: { icon: Shield, color: 'text-red-700 dark:text-red-400', bg: 'bg-red-500/10', border: 'border-red-500/30' },
+  operatives: { icon: Zap, color: 'text-yellow-700 dark:text-yellow-400', bg: 'bg-yellow-500/10', border: 'border-yellow-500/30' },
+  moderators: { icon: Scale, color: 'text-pink-700 dark:text-pink-400', bg: 'bg-pink-500/10', border: 'border-pink-500/30' },
+  advisors: { icon: Brain, color: 'text-cyan-700 dark:text-cyan-400', bg: 'bg-cyan-500/10', border: 'border-cyan-500/30' },
 };
 
 export default function AgentsPage() {

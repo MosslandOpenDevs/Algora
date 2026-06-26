@@ -24,22 +24,22 @@ const variantStyles = {
   warning: {
     border: 'border-orange-500/30',
     bg: 'bg-orange-500/5',
-    icon: 'text-orange-400',
-    value: 'text-orange-400',
+    icon: 'text-orange-700 dark:text-orange-400',
+    value: 'text-orange-700 dark:text-orange-400',
     hover: 'hover:border-orange-500/50 hover:shadow-lg hover:shadow-orange-500/5',
   },
   success: {
     border: 'border-green-500/30',
     bg: 'bg-green-500/5',
-    icon: 'text-green-400',
-    value: 'text-green-400',
+    icon: 'text-green-700 dark:text-green-400',
+    value: 'text-green-700 dark:text-green-400',
     hover: 'hover:border-green-500/50 hover:shadow-lg hover:shadow-green-500/5',
   },
   primary: {
     border: 'border-blue-500/30',
     bg: 'bg-blue-500/5',
-    icon: 'text-blue-400',
-    value: 'text-blue-400',
+    icon: 'text-blue-700 dark:text-blue-400',
+    value: 'text-blue-700 dark:text-blue-400',
     hover: 'hover:border-blue-500/50 hover:shadow-lg hover:shadow-blue-500/5',
   },
 };
@@ -67,7 +67,7 @@ export function StatsCard({
             <div
               className={cn(
                 'flex items-center gap-1 text-xs font-medium',
-                trend > 0 ? 'text-green-400' : trend < 0 ? 'text-red-400' : 'text-gray-400'
+                trend > 0 ? 'text-green-700 dark:text-green-400' : trend < 0 ? 'text-red-700 dark:text-red-400' : 'text-gray-400'
               )}
             >
               {trend > 0 ? (
@@ -92,7 +92,7 @@ export function StatsCard({
         </p>
         <p className="mt-1 text-xs md:text-sm text-agora-muted dark:text-agora-dark-muted truncate">{title}</p>
         {subtitle && (
-          <p className="mt-0.5 text-xs text-agora-muted/70 dark:text-agora-dark-muted/70 truncate">{subtitle}</p>
+          <p className="mt-0.5 text-xs text-agora-muted dark:text-agora-dark-muted/70 truncate">{subtitle}</p>
         )}
       </div>
     </>

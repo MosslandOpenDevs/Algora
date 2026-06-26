@@ -72,7 +72,7 @@ export function Sidebar() {
                 isActive
                   ? 'bg-agora-primary/10 text-agora-primary'
                   : isLive
-                    ? 'text-red-600 hover:bg-red-50 hover:text-red-700'
+                    ? 'text-red-700 dark:text-red-400 hover:bg-red-50 hover:text-red-700'
                     : isNew
                       ? 'text-agora-accent hover:bg-agora-accent/10 hover:text-agora-accent'
                       : 'text-agora-muted hover:bg-agora-card hover:text-agora-text'

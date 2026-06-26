@@ -25,13 +25,13 @@ const statusAnimations: Record<string, string> = {
 };
 
 const groupColors: Record<string, { bg: string; text: string; border: string }> = {
-  visionaries: { bg: 'bg-purple-500/10', text: 'text-purple-400', border: 'border-purple-500/30' },
-  builders: { bg: 'bg-blue-500/10', text: 'text-blue-400', border: 'border-blue-500/30' },
-  investors: { bg: 'bg-green-500/10', text: 'text-green-400', border: 'border-green-500/30' },
-  guardians: { bg: 'bg-red-500/10', text: 'text-red-400', border: 'border-red-500/30' },
-  operatives: { bg: 'bg-yellow-500/10', text: 'text-yellow-400', border: 'border-yellow-500/30' },
-  moderators: { bg: 'bg-pink-500/10', text: 'text-pink-400', border: 'border-pink-500/30' },
-  advisors: { bg: 'bg-cyan-500/10', text: 'text-cyan-400', border: 'border-cyan-500/30' },
+  visionaries: { bg: 'bg-purple-500/10', text: 'text-purple-700 dark:text-purple-400', border: 'border-purple-500/30' },
+  builders: { bg: 'bg-blue-500/10', text: 'text-blue-700 dark:text-blue-400', border: 'border-blue-500/30' },
+  investors: { bg: 'bg-green-500/10', text: 'text-green-700 dark:text-green-400', border: 'border-green-500/30' },
+  guardians: { bg: 'bg-red-500/10', text: 'text-red-700 dark:text-red-400', border: 'border-red-500/30' },
+  operatives: { bg: 'bg-yellow-500/10', text: 'text-yellow-700 dark:text-yellow-400', border: 'border-yellow-500/30' },
+  moderators: { bg: 'bg-pink-500/10', text: 'text-pink-700 dark:text-pink-400', border: 'border-pink-500/30' },
+  advisors: { bg: 'bg-cyan-500/10', text: 'text-cyan-700 dark:text-cyan-400', border: 'border-cyan-500/30' },
 };
 
 export function AgentCard({ agent, index = 0, onClick }: AgentCardProps) {

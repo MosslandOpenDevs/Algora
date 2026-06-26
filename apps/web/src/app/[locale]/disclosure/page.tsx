@@ -250,7 +250,7 @@ Report ID: ${report.id}
         </div>
       ) : filteredReports?.length === 0 ? (
         <div className="rounded-lg border border-dashed border-agora-border p-8 text-center">
-          <FileText className="mx-auto h-12 w-12 text-agora-muted/50" />
+          <FileText className="mx-auto h-12 w-12 text-agora-muted" />
           <h3 className="mt-4 text-lg font-semibold text-agora-text">No Reports</h3>
           <p className="mt-2 text-sm text-agora-muted">
             {searchQuery || selectedType !== 'all' || selectedStatus !== 'all'

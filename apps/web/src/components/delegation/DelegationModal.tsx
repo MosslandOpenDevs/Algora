@@ -197,10 +197,10 @@ export function DelegationModal({
                 className="w-full rounded-lg border border-agora-border bg-agora-card px-4 py-3 text-sm text-agora-text placeholder-agora-muted focus:border-agora-accent focus:outline-none"
               />
               {delegateAddress && !isValidAddress(delegateAddress) && (
-                <p className="mt-1 text-xs text-red-400">{t('invalidAddress')}</p>
+                <p className="mt-1 text-xs text-red-700 dark:text-red-400">{t('invalidAddress')}</p>
               )}
               {delegateAddress.toLowerCase() === walletAddress.toLowerCase() && (
-                <p className="mt-1 text-xs text-red-400">{t('cannotDelegateToSelf')}</p>
+                <p className="mt-1 text-xs text-red-700 dark:text-red-400">{t('cannotDelegateToSelf')}</p>
               )}
             </div>
 
@@ -351,7 +351,7 @@ export function DelegationModal({
         {step === 'success' && (
           <div className="text-center">
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-500/20">
-              <CheckCircle className="h-8 w-8 text-green-400" />
+              <CheckCircle className="h-8 w-8 text-green-700 dark:text-green-400" />
             </div>
             <h2 {...titleProps} className="mb-2 text-xl font-bold text-agora-text">{t('delegationSuccess')}</h2>
             <p className="mb-6 text-agora-muted">
@@ -373,7 +373,7 @@ export function DelegationModal({
         {step === 'error' && (
           <div className="text-center">
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-red-500/20">
-              <AlertCircle className="h-8 w-8 text-red-400" />
+              <AlertCircle className="h-8 w-8 text-red-700 dark:text-red-400" />
             </div>
             <h2 {...titleProps} className="mb-2 text-xl font-bold text-agora-text">{t('delegationFailed')}</h2>
             <p className="mb-6 text-agora-muted">{errorMessage || t('delegationFailedDesc')}</p>

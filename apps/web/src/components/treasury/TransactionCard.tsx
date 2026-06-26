@@ -32,16 +32,16 @@ const typeIcons: Record<string, React.ComponentType<{ className?: string }>> = {
 };
 
 const typeColors: Record<string, { bg: string; icon: string; text: string }> = {
-  deposit: { bg: 'bg-green-500/20', icon: 'text-green-400', text: 'text-green-400' },
-  withdrawal: { bg: 'bg-red-500/20', icon: 'text-red-400', text: 'text-red-400' },
-  transfer: { bg: 'bg-blue-500/20', icon: 'text-blue-400', text: 'text-blue-400' },
-  allocation: { bg: 'bg-purple-500/20', icon: 'text-purple-400', text: 'text-purple-400' },
+  deposit: { bg: 'bg-green-500/20', icon: 'text-green-700 dark:text-green-400', text: 'text-green-700 dark:text-green-400' },
+  withdrawal: { bg: 'bg-red-500/20', icon: 'text-red-700 dark:text-red-400', text: 'text-red-700 dark:text-red-400' },
+  transfer: { bg: 'bg-blue-500/20', icon: 'text-blue-700 dark:text-blue-400', text: 'text-blue-700 dark:text-blue-400' },
+  allocation: { bg: 'bg-purple-500/20', icon: 'text-purple-700 dark:text-purple-400', text: 'text-purple-700 dark:text-purple-400' },
 };
 
 const statusColors: Record<string, string> = {
-  pending: 'bg-yellow-500/20 text-yellow-400',
-  confirmed: 'bg-green-500/20 text-green-400',
-  failed: 'bg-red-500/20 text-red-400',
+  pending: 'bg-yellow-500/20 text-yellow-700 dark:text-yellow-400',
+  confirmed: 'bg-green-500/20 text-green-700 dark:text-green-400',
+  failed: 'bg-red-500/20 text-red-700 dark:text-red-400',
 };
 
 export function TransactionCard({ transaction, onClick, index = 0 }: TransactionCardProps) {

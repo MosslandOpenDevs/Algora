@@ -47,7 +47,7 @@ const tourSteps: TourStep[] = [
   {
     key: 'problem',
     icon: Lightbulb,
-    color: 'text-amber-500',
+    color: 'text-amber-700 dark:text-amber-400',
     bgColor: 'bg-amber-500/10',
     hasPoints: true,
   },
@@ -86,7 +86,7 @@ const tourSteps: TourStep[] = [
   {
     key: 'treasury',
     icon: PiggyBank,
-    color: 'text-cyan-500',
+    color: 'text-cyan-700 dark:text-cyan-400',
     bgColor: 'bg-cyan-500/10',
     href: '/treasury',
     hasScenario: true,
@@ -94,7 +94,7 @@ const tourSteps: TourStep[] = [
   {
     key: 'profile',
     icon: Wallet,
-    color: 'text-pink-500',
+    color: 'text-pink-700 dark:text-pink-400',
     bgColor: 'bg-pink-500/10',
     href: '/profile',
     hasScenario: true,
@@ -102,7 +102,7 @@ const tourSteps: TourStep[] = [
   {
     key: 'safeAutonomy',
     icon: ShieldCheck,
-    color: 'text-emerald-500',
+    color: 'text-emerald-700 dark:text-emerald-400',
     bgColor: 'bg-emerald-500/10',
     href: '/governance',
     hasGuarantee: true,
@@ -277,8 +277,8 @@ export function WelcomeTour({ forceShow = false, onComplete }: WelcomeTourProps)
           {/* Guarantee for safe autonomy step */}
           {step.hasGuarantee && (
             <div className="mt-4 rounded-lg bg-emerald-500/10 p-3 text-center">
-              <ShieldCheck className="mx-auto mb-2 h-6 w-6 text-emerald-500" />
-              <p className="text-sm font-semibold text-emerald-600">
+              <ShieldCheck className="mx-auto mb-2 h-6 w-6 text-emerald-700 dark:text-emerald-400" />
+              <p className="text-sm font-semibold text-emerald-700 dark:text-emerald-400">
                 {t(`${step.key}.guarantee`)}
               </p>
             </div>

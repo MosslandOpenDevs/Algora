@@ -30,13 +30,13 @@ export function VoteHistoryCard({ vote, index = 0 }: VoteHistoryCardProps) {
   const choiceConfig = {
     for: {
       icon: ThumbsUp,
-      color: 'text-green-400',
+      color: 'text-green-700 dark:text-green-400',
       bg: 'bg-green-500/10',
       border: 'border-green-500/30',
     },
     against: {
       icon: ThumbsDown,
-      color: 'text-red-400',
+      color: 'text-red-700 dark:text-red-400',
       bg: 'bg-red-500/10',
       border: 'border-red-500/30',
     },
