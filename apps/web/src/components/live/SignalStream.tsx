@@ -6,6 +6,7 @@ import clsx from 'clsx';
 import { formatDistanceToNow, isValid } from 'date-fns';
 import { TerminalBox, StatusGlyph } from './TerminalBox';
 import { useSocket } from '@/hooks/useSocket';
+import { decodeHtmlEntities } from '@/lib/text';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3201';
 
@@ -152,7 +153,7 @@ export function SignalStream({ className, maxItems = 20 }: SignalStreamProps) {
                       </span>
                     </div>
                     <p className="text-[var(--text-muted)] truncate mt-0.5">
-                      {signal.description}
+                      {decodeHtmlEntities(signal.description)}
                     </p>
                     <span className="text-[var(--text-dim)] text-[10px]">
                       {formatTimestamp(signal.timestamp)}

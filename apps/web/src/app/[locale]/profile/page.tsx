@@ -156,7 +156,7 @@ export default function ProfilePage() {
 
   if (!isConnected) {
     return (
-      <div className="flex min-h-[60vh] items-center justify-center">
+      <div className="flex items-center justify-center py-20 sm:py-28">
         <div className="text-center">
           <Wallet className="mx-auto h-16 w-16 text-agora-muted" />
           <h2 className="mt-4 text-xl font-semibold text-slate-900 dark:text-white">Connect Your Wallet</h2>

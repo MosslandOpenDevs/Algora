@@ -132,8 +132,8 @@ export default function IssuesPage() {
         </div>
 
         {/* Status Filter */}
-        <div className="flex items-center gap-2">
-          <Filter className="h-4 w-4 text-agora-muted" />
+        <div className="flex items-start gap-2">
+          <Filter className="mt-1.5 h-4 w-4 shrink-0 text-agora-muted" />
           <div className="flex flex-wrap gap-2">
             {STATUSES.map((status) => (
               <button
