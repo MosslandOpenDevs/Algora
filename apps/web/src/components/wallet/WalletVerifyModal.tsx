@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom';
 import { useSignMessage } from 'wagmi';
 import { X, ShieldCheck, Loader2, CheckCircle, XCircle, FileSignature } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { toast } from 'sonner';
 import { useWalletContext } from '@/contexts/WalletContext';
 import { useDialogA11y } from '@/hooks/useDialogA11y';
 
@@ -30,14 +31,17 @@ export function WalletVerifyModal({ isOpen, onClose }: WalletVerifyModalProps) {
         try {
           await completeVerification(signature);
           setStep('success');
+          toast.success('Wallet verified');
         } catch (err) {
           setErrorMessage(err instanceof Error ? err.message : 'Verification failed');
           setStep('error');
+          toast.error(err instanceof Error ? err.message : 'Verification failed');
         }
       },
       onError: (err) => {
         setErrorMessage(err.message || 'Signature rejected');
         setStep('error');
+        toast.error(err.message || 'Signature rejected');
       },
     },
   });
@@ -70,6 +74,7 @@ export function WalletVerifyModal({ isOpen, onClose }: WalletVerifyModalProps) {
     } catch (err) {
       setErrorMessage(err instanceof Error ? err.message : 'Failed to start verification');
       setStep('error');
+      toast.error(err instanceof Error ? err.message : 'Failed to start verification');
     }
   };
 

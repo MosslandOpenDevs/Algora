@@ -54,6 +54,7 @@ import {
   type ProposalLink,
 } from '@/lib/api';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import { safeFormatDate } from '@/lib/utils';
 import { useDialogA11y } from '@/hooks/useDialogA11y';
 
@@ -191,6 +192,10 @@ export function ProposalDetailModal({ proposal, onClose }: ProposalDetailModalPr
     mutationFn: () => generateDecisionPacket(proposal.id, 'user'),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['decision-packet', proposal.id] });
+      toast.success('AI analysis generated');
+    },
+    onError: (error) => {
+      toast.error(error instanceof Error ? error.message : 'Something went wrong');
     },
   });
 

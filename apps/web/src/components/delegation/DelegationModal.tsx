@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import { createDelegation } from '@/lib/api';
 import { useDialogA11y } from '@/hooks/useDialogA11y';
 
@@ -68,10 +69,12 @@ export function DelegationModal({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['delegations', walletAddress] });
       setStep('success');
+      toast.success('Delegation created');
     },
     onError: (error: Error) => {
       setErrorMessage(error.message);
       setStep('error');
+      toast.error(error instanceof Error ? error.message : 'Something went wrong');
     },
   });
 

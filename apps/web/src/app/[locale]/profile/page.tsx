@@ -7,6 +7,7 @@ import { Wallet, Vote, History, Shield, Loader2, RefreshCw, CheckCircle, Copy, E
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { toast } from 'sonner';
 
 import { HelpTooltip } from '@/components/guide/HelpTooltip';
 import { DelegationStats, DelegationList, DelegationModal } from '@/components/delegation';
@@ -91,6 +92,10 @@ export default function ProfilePage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['holder-profile', address] });
+      toast.success('Wallet verified');
+    },
+    onError: (err) => {
+      toast.error(err instanceof Error ? err.message : 'Verification failed');
     },
   });
 
@@ -105,6 +110,10 @@ export default function ProfilePage() {
     mutationFn: revokeDelegation,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['delegations', address] });
+      toast.success('Delegation revoked');
+    },
+    onError: (err) => {
+      toast.error(err instanceof Error ? err.message : "Couldn't revoke delegation");
     },
   });
 

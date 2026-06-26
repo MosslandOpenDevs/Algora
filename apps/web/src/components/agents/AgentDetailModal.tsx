@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslations } from 'next-intl';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import {
   X,
   Zap,
@@ -117,6 +118,10 @@ export function AgentDetailModal({ agent, onClose }: AgentDetailModalProps) {
       queryClient.invalidateQueries({ queryKey: ['agents'] });
       setActionSuccess('summon');
       setTimeout(() => setActionSuccess(null), 2000);
+      toast.success('Agent summoned');
+    },
+    onError: (err) => {
+      toast.error(err instanceof Error ? err.message : "Couldn't summon agent");
     },
   });
 
@@ -126,6 +131,10 @@ export function AgentDetailModal({ agent, onClose }: AgentDetailModalProps) {
       queryClient.invalidateQueries({ queryKey: ['agents'] });
       setActionSuccess('dismiss');
       setTimeout(() => setActionSuccess(null), 2000);
+      toast.success('Agent dismissed');
+    },
+    onError: (err) => {
+      toast.error(err instanceof Error ? err.message : "Couldn't dismiss agent");
     },
   });
 

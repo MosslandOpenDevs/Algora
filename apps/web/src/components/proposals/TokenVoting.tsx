@@ -4,6 +4,7 @@ import { useState, useCallback } from 'react';
 import { useAccount } from 'wagmi';
 import { useTranslations } from 'next-intl';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import { ThumbsUp, ThumbsDown, MinusCircle, Wallet, Loader2, Users, Info, Radio } from 'lucide-react';
 import { useVoteEvents, type VoteCastEvent, type VoteTallyUpdatedEvent } from '@/hooks/useSocket';
 
@@ -143,6 +144,10 @@ export function TokenVoting({ proposalId, onVoteSuccess }: TokenVotingProps) {
       queryClient.invalidateQueries({ queryKey: ['token-vote', proposalId] });
       queryClient.invalidateQueries({ queryKey: ['token-voting-info', proposalId] });
       onVoteSuccess?.();
+      toast.success('Vote cast');
+    },
+    onError: (err) => {
+      toast.error(err instanceof Error ? err.message : "Couldn't cast vote");
     },
   });
 
