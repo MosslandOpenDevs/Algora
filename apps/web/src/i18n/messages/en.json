@@ -76,6 +76,7 @@
     "queue": "Queue",
     "mainNavigation": "Main navigation",
     "viewLiveDashboard": "View live dashboard",
+    "selectLanguage": "Select language",
     "switchLanguage": "Switch language to {language}"
   },
   "Agents": {

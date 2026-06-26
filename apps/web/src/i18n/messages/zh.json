@@ -86,6 +86,7 @@
     "queue": "队列",
     "mainNavigation": "主导航",
     "viewLiveDashboard": "查看实时仪表板",
+    "selectLanguage": "选择语言",
     "switchLanguage": "切换语言至{language}"
   },
   "Agents": {

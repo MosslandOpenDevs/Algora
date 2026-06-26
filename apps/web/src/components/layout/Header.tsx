@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { useQuery } from '@tanstack/react-query';
-import { Globe, Activity, Clock, Wallet, Menu, Sun, Moon } from 'lucide-react';
+import { Globe, Activity, Clock, Wallet, Menu, Sun, Moon, Check } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { WalletConnect } from '@/components/wallet/WalletConnect';
@@ -15,6 +15,12 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { GlobalSearch } from '@/components/search';
 import { AlertDropdown } from '@/components/alerts';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { defaultLocale, isLocale, locales, localeNames } from '@/i18n/locales';
 
 export function Header() {
@@ -27,7 +33,9 @@ export function Header() {
 
   const localeSegment = pathname.split('/')[1] ?? '';
   const currentLocale = isLocale(localeSegment) ? localeSegment : defaultLocale;
-  const pathWithoutLocale = pathname.replace(/^\/[a-z]{2}(?=\/|$)/, '') || '/';
+  // Strip only the leading locale segment; '' for the home route so the
+  // switcher emits `/ko` (not `/ko/`, which would 308-redirect).
+  const pathWithoutLocale = pathname.replace(/^\/[a-z]{2}(?=\/|$)/, '');
 
   const { data: health } = useQuery({
     queryKey: ['health'],
@@ -72,7 +80,7 @@ export function Header() {
 
           {/* System Status - Desktop only */}
           <div
-            className="hidden md:flex items-center gap-2"
+            className="hidden lg:flex items-center gap-2"
             role="status"
             aria-live="polite"
             aria-label={`${t('systemStatus')}: ${isHealthy ? t('running') : isDegraded ? t('degraded') : t('maintenance')}`}
@@ -108,7 +116,7 @@ export function Header() {
           </div>
 
           {/* Budget - Desktop only */}
-          <div className="hidden lg:flex items-center gap-2">
+          <div className="hidden xl:flex items-center gap-2">
             <Wallet className="h-4 w-4 text-agora-muted" />
             <span className="text-sm text-agora-muted">{t('budget')}:</span>
             <span className="text-sm font-medium text-slate-900 dark:text-white">
@@ -118,7 +126,7 @@ export function Header() {
           </div>
 
           {/* Next Tier2 - Desktop only */}
-          <div className="hidden xl:flex items-center gap-2">
+          <div className="hidden 2xl:flex items-center gap-2">
             <Clock className="h-4 w-4 text-agora-muted" />
             <span className="text-sm text-agora-muted">{t('nextTier2')}:</span>
             <span className="text-sm font-medium text-agora-accent">
@@ -130,7 +138,7 @@ export function Header() {
           </div>
 
           {/* Queue - Desktop only */}
-          <div className="hidden xl:flex items-center gap-2">
+          <div className="hidden 2xl:flex items-center gap-2">
             <span className="text-sm text-agora-muted">{t('queue')}:</span>
             <span className="text-sm font-medium text-slate-900 dark:text-white">
               {health?.scheduler?.queueLength || 0}
@@ -140,7 +148,7 @@ export function Header() {
         </div>
 
         {/* Right section */}
-        <div className="flex items-center gap-1.5 md:gap-3">
+        <div className="flex items-center gap-1.5 md:gap-2 lg:gap-3">
           {/* Global Search */}
           <GlobalSearch />
 
@@ -182,8 +190,8 @@ export function Header() {
             <WalletConnect />
           </div>
 
-          {/* Help Menu - Desktop only */}
-          <div className="hidden md:block">
+          {/* Help Menu - Desktop only (lg+ to keep the tablet header uncrowded) */}
+          <div className="hidden lg:block">
             <HelpMenu onStartTour={() => setShowTour(true)} />
           </div>
 
@@ -210,39 +218,51 @@ export function Header() {
             </TooltipContent>
           </Tooltip>
 
-          {/* Language Switcher — one link per supported locale */}
-          <div
-            className="flex items-center gap-0.5 rounded-md px-1.5 py-1 text-agora-muted"
-            role="group"
-            aria-label="Language"
-          >
-            <Globe className="mr-0.5 h-4 w-4" aria-hidden="true" />
-            {locales.map(locale => {
-              const active = locale === currentLocale;
-              return (
-                <Tooltip key={locale}>
-                  <TooltipTrigger asChild>
+          {/* Language Switcher — compact dropdown (1-icon footprint on mobile,
+              scales to N locales without crowding the header) */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                aria-label={t('selectLanguage')}
+                className="flex min-h-[36px] items-center gap-1 rounded-md px-2 py-1.5 text-sm text-agora-muted transition-colors hover:bg-agora-card hover:text-slate-900 dark:hover:text-white"
+              >
+                <Globe className="h-4 w-4" aria-hidden="true" />
+                <span className="hidden text-xs font-medium uppercase sm:inline">
+                  {currentLocale}
+                </span>
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="min-w-[9rem]">
+              {locales.map(locale => {
+                const active = locale === currentLocale;
+                return (
+                  <DropdownMenuItem key={locale} asChild>
                     <Link
                       href={`/${locale}${pathWithoutLocale}`}
                       hrefLang={locale}
+                      lang={locale}
                       aria-current={active ? 'true' : undefined}
-                      aria-label={t('switchLanguage', { language: localeNames[locale] })}
-                      className={`rounded px-1.5 py-0.5 text-xs font-medium uppercase transition-colors ${
-                        active
-                          ? 'bg-agora-card text-slate-900 dark:text-white'
-                          : 'hover:bg-agora-card hover:text-slate-900 dark:hover:text-white'
+                      className={`flex min-h-[44px] w-full cursor-pointer items-center justify-between gap-3 ${
+                        active ? 'font-semibold text-slate-900 dark:text-white' : ''
                       }`}
                     >
-                      {locale}
+                      <span>
+                        {localeNames[locale]}
+                        {active && <span className="sr-only"> (current)</span>}
+                      </span>
+                      {active && (
+                        <Check
+                          className="h-4 w-4 text-agora-success"
+                          aria-hidden="true"
+                        />
+                      )}
                     </Link>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>{localeNames[locale]}</p>
-                  </TooltipContent>
-                </Tooltip>
-              );
-            })}
-          </div>
+                  </DropdownMenuItem>
+                );
+              })}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </header>
 

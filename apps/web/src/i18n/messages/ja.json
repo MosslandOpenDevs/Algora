@@ -86,6 +86,7 @@
     "queue": "キュー",
     "mainNavigation": "メインナビゲーション",
     "viewLiveDashboard": "ライブダッシュボードを表示",
+    "selectLanguage": "言語を選択",
     "switchLanguage": "{language}に言語を切り替え"
   },
   "Agents": {
