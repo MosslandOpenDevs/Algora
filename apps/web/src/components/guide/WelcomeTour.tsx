@@ -201,7 +201,7 @@ export function WelcomeTour({ forceShow = false, onComplete }: WelcomeTourProps)
         <button
           onClick={handleClose}
           aria-label="Close"
-          className="absolute right-4 top-4 z-10 rounded-full p-1 text-agora-muted transition-colors hover:bg-agora-card hover:text-slate-900"
+          className="absolute right-4 top-4 z-10 rounded-full p-1 text-agora-muted transition-colors hover:bg-agora-card hover:text-agora-text"
         >
           <X className="h-5 w-5" />
         </button>
@@ -306,7 +306,7 @@ export function WelcomeTour({ forceShow = false, onComplete }: WelcomeTourProps)
         <div className="flex items-center justify-between border-t border-agora-border bg-agora-card px-6 py-4">
           <button
             onClick={handleClose}
-            className="text-sm text-agora-muted transition-colors hover:text-slate-900"
+            className="text-sm text-agora-muted transition-colors hover:text-agora-text"
           >
             {t('skip')}
           </button>

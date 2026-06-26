@@ -61,7 +61,7 @@ export function CopyableHash({
           {copied ? (
             <Check className="h-3 w-3 text-agora-success" />
           ) : (
-            <Copy className="h-3 w-3 text-agora-muted hover:text-slate-900" />
+            <Copy className="h-3 w-3 text-agora-muted hover:text-agora-text" />
           )}
         </button>
       )}

@@ -163,7 +163,7 @@ export function AgentDetailModal({ agent, onClose }: AgentDetailModalProps) {
         <button
           onClick={onClose}
           aria-label="Close"
-          className="absolute right-4 top-4 z-10 rounded-lg p-1.5 text-agora-muted transition-colors hover:bg-agora-card hover:text-slate-900"
+          className="absolute right-4 top-4 z-10 rounded-lg p-1.5 text-agora-muted transition-colors hover:bg-agora-card hover:text-agora-text"
         >
           <X className="h-5 w-5" />
         </button>
@@ -369,7 +369,7 @@ export function AgentDetailModal({ agent, onClose }: AgentDetailModalProps) {
             )}
             <button
               onClick={onClose}
-              className="rounded-lg bg-agora-card px-4 py-3 font-medium text-agora-muted transition-all duration-300 hover:bg-agora-border hover:text-slate-900 hover:scale-[1.02]"
+              className="rounded-lg bg-agora-card px-4 py-3 font-medium text-agora-muted transition-all duration-300 hover:bg-agora-border hover:text-agora-text hover:scale-[1.02]"
             >
               Close
             </button>

@@ -83,11 +83,11 @@ const sourceIcons: Record<string, React.ReactNode> = {
 };
 
 const sourceColors: Record<string, string> = {
-  rss: 'text-orange-500 bg-orange-500/10 border-orange-500/30',
+  rss: 'text-orange-700 dark:text-orange-400 bg-orange-500/10 border-orange-500/30',
   github: 'text-gray-400 bg-gray-500/10 border-gray-500/30',
-  blockchain: 'text-blue-500 bg-blue-500/10 border-blue-500/30',
-  api: 'text-purple-500 bg-purple-500/10 border-purple-500/30',
-  manual: 'text-green-500 bg-green-500/10 border-green-500/30',
+  blockchain: 'text-blue-700 dark:text-blue-400 bg-blue-500/10 border-blue-500/30',
+  api: 'text-purple-700 dark:text-purple-400 bg-purple-500/10 border-purple-500/30',
+  manual: 'text-green-700 dark:text-green-400 bg-green-500/10 border-green-500/30',
 };
 
 const severityConfig: Record<string, { color: string; bg: string; border: string; icon: typeof Clock | null }> = {
