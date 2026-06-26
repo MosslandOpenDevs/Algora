@@ -17,3 +17,11 @@ export const ogLocale: Record<Locale, string> = {
   ja: 'ja_JP',
   zh: 'zh_CN',
 };
+
+// Native display names for the in-app language switcher.
+export const localeNames: Record<Locale, string> = {
+  en: 'English',
+  ko: '한국어',
+  ja: '日本語',
+  zh: '中文',
+};

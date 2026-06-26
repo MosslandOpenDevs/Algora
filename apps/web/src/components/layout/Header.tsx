@@ -15,6 +15,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { GlobalSearch } from '@/components/search';
 import { AlertDropdown } from '@/components/alerts';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { defaultLocale, isLocale, locales, localeNames } from '@/i18n/locales';
 
 export function Header() {
   const t = useTranslations('Header');
@@ -24,9 +25,9 @@ export function Header() {
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const { theme, toggleTheme } = useTheme();
 
-  const currentLocale = pathname.split('/')[1] || 'en';
-  const pathWithoutLocale = pathname.replace(/^\/[a-z]{2}/, '') || '/';
-  const otherLocale = currentLocale === 'en' ? 'ko' : 'en';
+  const localeSegment = pathname.split('/')[1] ?? '';
+  const currentLocale = isLocale(localeSegment) ? localeSegment : defaultLocale;
+  const pathWithoutLocale = pathname.replace(/^\/[a-z]{2}(?=\/|$)/, '') || '/';
 
   const { data: health } = useQuery({
     queryKey: ['health'],
@@ -209,22 +210,39 @@ export function Header() {
             </TooltipContent>
           </Tooltip>
 
-          {/* Language Toggle */}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Link
-                href={`/${otherLocale}${pathWithoutLocale}`}
-                className="flex items-center gap-1 md:gap-2 rounded-md px-2 md:px-3 py-1.5 text-sm text-agora-muted transition-colors hover:bg-agora-card hover:text-slate-900 dark:hover:text-white min-h-[36px]"
-                aria-label={t('switchLanguage', { language: otherLocale === 'en' ? 'English' : '한국어' })}
-              >
-                <Globe className="h-4 w-4" aria-hidden="true" />
-                <span className="hidden sm:inline">{otherLocale === 'en' ? 'EN' : '한국어'}</span>
-              </Link>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>{otherLocale === 'en' ? 'Switch to English' : '한국어로 전환'}</p>
-            </TooltipContent>
-          </Tooltip>
+          {/* Language Switcher — one link per supported locale */}
+          <div
+            className="flex items-center gap-0.5 rounded-md px-1.5 py-1 text-agora-muted"
+            role="group"
+            aria-label="Language"
+          >
+            <Globe className="mr-0.5 h-4 w-4" aria-hidden="true" />
+            {locales.map(locale => {
+              const active = locale === currentLocale;
+              return (
+                <Tooltip key={locale}>
+                  <TooltipTrigger asChild>
+                    <Link
+                      href={`/${locale}${pathWithoutLocale}`}
+                      hrefLang={locale}
+                      aria-current={active ? 'true' : undefined}
+                      aria-label={t('switchLanguage', { language: localeNames[locale] })}
+                      className={`rounded px-1.5 py-0.5 text-xs font-medium uppercase transition-colors ${
+                        active
+                          ? 'bg-agora-card text-slate-900 dark:text-white'
+                          : 'hover:bg-agora-card hover:text-slate-900 dark:hover:text-white'
+                      }`}
+                    >
+                      {locale}
+                    </Link>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>{localeNames[locale]}</p>
+                  </TooltipContent>
+                </Tooltip>
+              );
+            })}
+          </div>
         </div>
       </header>
 

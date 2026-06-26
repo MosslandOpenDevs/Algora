@@ -9,8 +9,9 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: '*',
       allow: '/',
-      // Admin console is locale-prefixed (e.g. /en/admin); keep it out of the index.
-      disallow: ['/*/admin'],
+      // Auth-gated / private surfaces are locale-prefixed (e.g. /en/admin,
+      // /en/profile); keep them out of the index. Mirrors sitemap exclusions.
+      disallow: ['/*/admin', '/*/profile'],
     },
     sitemap: `${siteUrl}/sitemap.xml`,
     host: siteUrl,

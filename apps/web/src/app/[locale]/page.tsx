@@ -1,5 +1,37 @@
+import type { Metadata } from 'next';
+
 import { getDashboardData } from '@/lib/server-api';
 import { DashboardClient } from '@/components/dashboard';
+import { defaultLocale, isLocale, locales } from '@/i18n/locales';
+
+const siteUrl =
+  process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '') ??
+  'https://algora.moss.land';
+
+// Home is a Server Component, so it can emit a path-correct, self-referential
+// canonical + reciprocal hreflang for the locale root. Sub-pages are Client
+// Components (no generateMetadata); they self-canonicalize and rely on
+// sitemap.xml for per-path hreflang.
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale: raw } = await params;
+  const locale = isLocale(raw) ? raw : defaultLocale;
+
+  return {
+    // Only `alternates` here — do NOT set openGraph, or it would replace
+    // (not deep-merge) the layout's og:image/title/etc. on the home page.
+    alternates: {
+      canonical: `${siteUrl}/${locale}`,
+      languages: {
+        ...Object.fromEntries(locales.map(l => [l, `${siteUrl}/${l}`])),
+        'x-default': `${siteUrl}/${defaultLocale}`,
+      },
+    },
+  };
+}
 
 /**
  * Dashboard Page - Server Component

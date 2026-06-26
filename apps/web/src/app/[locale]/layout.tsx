@@ -48,15 +48,11 @@ const seo: Record<Locale, { title: string; description: string }> = {
   },
 };
 
-// hreflang map shared by every locale's <head>.
-const languageAlternates: Record<string, string> = {
-  ...Object.fromEntries(locales.map(l => [l, `${siteUrl}/${l}`])),
-  'x-default': `${siteUrl}/${defaultLocale}`,
-};
-
 export const viewport: Viewport = {
   themeColor: '#16f6ab',
-  colorScheme: 'dark',
+  // App defaults to light and supports a dark toggle (ThemeContext) — advertise
+  // both so UA form controls / scrollbars follow the active theme.
+  colorScheme: 'light dark',
   width: 'device-width',
   initialScale: 1,
 };
@@ -88,14 +84,14 @@ export async function generateMetadata({
       shortcut: '/favicon.ico',
       apple: '/apple-touch-icon.png',
     },
-    alternates: {
-      canonical: `${siteUrl}/${locale}`,
-      languages: languageAlternates,
-    },
+    // NOTE: canonical + hreflang are path-dependent, but this layout cannot
+    // know the child route during static metadata generation. They are set
+    // correctly per-path in the (server) home page and in sitemap.xml; here we
+    // omit them so sub-pages self-canonicalize instead of all pointing at the
+    // locale home.
     openGraph: {
       type: 'website',
       siteName: 'Algora',
-      url: `${siteUrl}/${locale}`,
       title,
       description,
       locale: ogLocale[locale],
