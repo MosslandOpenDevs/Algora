@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Users, Loader2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { DelegationCard } from './DelegationCard';
+import { ListSkeleton } from '@/components/ui/Skeleton';
 import type { DelegationResponse } from '@/lib/api';
 
 type TabKey = 'given' | 'received';
@@ -78,10 +79,7 @@ export function DelegationList({
       {/* Content */}
       <div className="p-4">
         {isLoading ? (
-          <div className="flex flex-col items-center justify-center py-12">
-            <Loader2 className="h-8 w-8 animate-spin text-agora-muted" />
-            <p className="mt-4 text-agora-muted">{t('loading')}</p>
-          </div>
+          <ListSkeleton count={3} />
         ) : currentList.length > 0 ? (
           <div className="space-y-3">
             {currentList.map((delegation, index) => (

@@ -1,7 +1,8 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { Vote, Loader2 } from 'lucide-react';
+import { Vote } from 'lucide-react';
+import { Skeleton, ListSkeleton } from '@/components/ui/Skeleton';
 import { VoteHistoryCard, type VoteHistoryItem } from './VoteHistoryCard';
 
 interface VoteHistoryListProps {
@@ -14,11 +15,19 @@ export function VoteHistoryList({ votes, isLoading }: VoteHistoryListProps) {
 
   if (isLoading) {
     return (
-      <div className="rounded-lg border border-agora-border bg-agora-card p-8">
-        <div className="flex items-center justify-center gap-2 text-agora-muted">
-          <Loader2 className="h-5 w-5 animate-spin" />
-          <span>{t('loading')}</span>
+      <div className="space-y-4">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div
+              key={i}
+              className="rounded-lg border border-agora-border bg-agora-card p-3"
+            >
+              <Skeleton className="mx-auto h-7 w-10" />
+              <Skeleton className="mx-auto mt-2 h-3 w-16" />
+            </div>
+          ))}
         </div>
+        <ListSkeleton count={3} />
       </div>
     );
   }

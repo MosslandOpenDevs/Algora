@@ -16,6 +16,7 @@ import {
   ArrowRight,
 } from 'lucide-react';
 import { cn, safeFormatDate } from '@/lib/utils';
+import { ListSkeleton } from '@/components/ui/Skeleton';
 import Link from 'next/link';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3201';
@@ -275,11 +276,7 @@ export function GovernanceTimeline({
   });
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-8">
-        <Clock className="h-6 w-6 animate-spin text-gray-400" />
-      </div>
-    );
+    return <ListSkeleton count={4} />;
   }
 
   if (error || !data) {

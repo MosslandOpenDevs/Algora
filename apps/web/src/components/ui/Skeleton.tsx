@@ -21,6 +21,37 @@ export function Skeleton({ className }: SkeletonProps) {
 }
 
 /**
+ * Generic list-row skeleton: avatar/icon + two text lines + trailing badge.
+ * Matches the common "icon + title + subtitle" card row used across lists.
+ */
+export function ListRowSkeleton() {
+  return (
+    <div className="flex items-center gap-3 rounded-lg border border-agora-border bg-agora-card p-4">
+      <Skeleton className="h-10 w-10 flex-shrink-0 rounded-full" />
+      <div className="flex-1 space-y-2">
+        <Skeleton className="h-4 w-1/2" />
+        <Skeleton className="h-3 w-1/3" />
+      </div>
+      <Skeleton className="h-6 w-16 flex-shrink-0 rounded-full" />
+    </div>
+  );
+}
+
+/**
+ * Consistent list loading placeholder: N ListRowSkeleton rows.
+ * Use instead of a centered spinner for any list of cards/rows.
+ */
+export function ListSkeleton({ count = 3, className }: { count?: number; className?: string }) {
+  return (
+    <div className={cn('space-y-3', className)}>
+      {Array.from({ length: count }).map((_, i) => (
+        <ListRowSkeleton key={i} />
+      ))}
+    </div>
+  );
+}
+
+/**
  * Card skeleton for dashboard cards
  */
 export function CardSkeleton({ className }: SkeletonProps) {
