@@ -26,6 +26,19 @@ type Headline = {
 
 const NPC_BASE = 'https://npc.moss.land';
 
+// Pick a readable ink color for text laid over an arbitrary (API-supplied)
+// accent background, so the avatar initial stays legible on light accents.
+function readableInk(hex: string): string {
+  const h = (hex || '').replace('#', '');
+  const full = h.length === 3 ? h.split('').map(c => c + c).join('') : h;
+  if (full.length < 6) return '#fafafa';
+  const ch = (i: number) => parseInt(full.slice(i, i + 2), 16) / 255;
+  const lin = (c: number) =>
+    c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+  const L = 0.2126 * lin(ch(0)) + 0.7152 * lin(ch(2)) + 0.0722 * lin(ch(4));
+  return L > 0.45 ? '#18181b' : '#fafafa';
+}
+
 async function fetchHeadlines(): Promise<Headline[]> {
   try {
     const res = await fetch(`${NPC_BASE}/api/headlines/today`, {
@@ -50,10 +63,10 @@ export async function NpcCityStrip() {
       <div className="max-w-[1280px] mx-auto px-4 md:px-8 py-8">
         <div className="mb-4 flex items-end justify-between gap-4">
           <div>
-            <p className="text-[10.5px] uppercase tracking-[0.22em] text-zinc-400">
+            <p className="text-[10.5px] uppercase tracking-[0.22em] text-zinc-600 dark:text-zinc-400">
               모스랜드 NPC · 오늘의 도시
             </p>
-            <h2 className="mt-1 text-[15px] font-semibold text-zinc-200">
+            <h2 className="mt-1 text-[15px] font-semibold text-zinc-800 dark:text-zinc-200">
               주민들이 오늘 들은 신호로 한 마디씩.
             </h2>
           </div>
@@ -61,7 +74,7 @@ export async function NpcCityStrip() {
             href={NPC_BASE}
             target="_blank"
             rel="noopener"
-            className="text-[12px] text-zinc-400 hover:text-zinc-100 shrink-0"
+            className="text-[12px] text-zinc-600 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-100 shrink-0"
           >
             도시 가기 ↗
           </Link>
@@ -86,25 +99,22 @@ export async function NpcCityStrip() {
                     />
                   ) : (
                     <div
-                      className="grid h-10 w-10 shrink-0 place-items-center rounded-lg text-sm font-bold text-white"
-                      style={{ backgroundColor: accent }}
+                      className="grid h-10 w-10 shrink-0 place-items-center rounded-lg text-sm font-bold"
+                      style={{ backgroundColor: accent, color: readableInk(accent) }}
                     >
                       {h.npc.name.charAt(0)}
                     </div>
                   )}
                   <div className="min-w-0 flex-1">
                     <div className="flex items-baseline gap-1.5">
-                      <span
-                        className="text-[10.5px] font-semibold tracking-wide"
-                        style={{ color: accent }}
-                      >
+                      <span className="text-[10.5px] font-semibold tracking-wide text-zinc-800 dark:text-zinc-200">
                         {h.npc.name}
                       </span>
-                      <span className="truncate text-[10px] text-zinc-400">
+                      <span className="truncate text-[10px] text-zinc-600 dark:text-zinc-400">
                         {h.npc.role}
                       </span>
                     </div>
-                    <p className="mt-0.5 line-clamp-3 text-[12px] leading-snug text-zinc-200">
+                    <p className="mt-0.5 line-clamp-3 text-[12px] leading-snug text-zinc-700 dark:text-zinc-200">
                       {h.text}
                     </p>
                   </div>

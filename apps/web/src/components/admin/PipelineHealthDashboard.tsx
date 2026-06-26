@@ -115,24 +115,26 @@ function StageCard({
 
   return (
     <div className={`p-4 rounded-lg border ${statusColors[status]}`}>
-      <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-2">
-          <Icon className="h-4 w-4 text-agora-muted" />
+      <div className="mb-2 flex items-start justify-between gap-2">
+        <div className="flex min-w-0 items-center gap-2">
+          <Icon className="h-4 w-4 shrink-0 text-agora-muted" />
           <span className="text-sm font-medium text-slate-900 dark:text-white">{stage.name}</span>
         </div>
-        <HealthBadge status={status} />
+        <div className="shrink-0">
+          <HealthBadge status={status} />
+        </div>
       </div>
       <p className="text-xs text-agora-muted mb-2">{stage.description}</p>
-      <div className="flex items-center justify-between">
+      <div>
         <span className="text-lg font-bold text-slate-900 dark:text-white">{score}%</span>
         {data?.details && Object.keys(data.details).length > 0 && (
-          <span className="text-xs text-agora-muted">
+          <p className="mt-1 break-words text-xs text-agora-muted">
             {Object.entries(data.details)
               .filter(([k]) => !['collectors', 'byType', 'retryQueue'].includes(k))
               .slice(0, 2)
               .map(([k, v]) => `${k}: ${typeof v === 'number' ? v : '...'}`)
               .join(', ')}
-          </span>
+          </p>
         )}
       </div>
     </div>
@@ -269,7 +271,7 @@ export function PipelineHealthDashboard() {
         </div>
 
         {/* Stage Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {PIPELINE_STAGES.map(stage => (
             <StageCard
               key={stage.key}
