@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslations } from 'next-intl';
 import { X, MessageSquare, Loader2 } from 'lucide-react';
+import { useDialogA11y } from '@/hooks/useDialogA11y';
 
 interface NewSessionModalProps {
   onClose: () => void;
@@ -15,6 +16,7 @@ export function NewSessionModal({ onClose, onCreated }: NewSessionModalProps) {
   const [topic, setTopic] = useState('');
   const [isCreating, setIsCreating] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const { dialogProps, titleProps } = useDialogA11y({ onClose });
 
   useEffect(() => {
     setMounted(true);
@@ -62,7 +64,10 @@ export function NewSessionModal({ onClose, onCreated }: NewSessionModalProps) {
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
 
       {/* Modal */}
-      <div className="relative w-full max-w-md rounded-xl border border-agora-border bg-agora-dark p-6 shadow-2xl animate-slide-up">
+      <div
+        {...dialogProps}
+        className="relative w-full max-w-md rounded-xl border border-agora-border bg-agora-dark p-6 shadow-2xl animate-slide-up"
+      >
         {/* Close button */}
         <button
           onClick={onClose}
@@ -77,7 +82,7 @@ export function NewSessionModal({ onClose, onCreated }: NewSessionModalProps) {
             <MessageSquare className="h-5 w-5 text-agora-primary" />
           </div>
           <div>
-            <h2 className="text-lg font-bold text-agora-text">{t('startSession')}</h2>
+            <h2 {...titleProps} className="text-lg font-bold text-agora-text">{t('startSession')}</h2>
             <p className="text-sm text-agora-muted">Create a new deliberation session</p>
           </div>
         </div>

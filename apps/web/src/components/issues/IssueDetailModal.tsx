@@ -23,6 +23,7 @@ import {
 
 import type { Issue } from '@/lib/api';
 import { safeFormatDate } from '@/lib/utils';
+import { useDialogA11y } from '@/hooks/useDialogA11y';
 
 interface IssueDetailModalProps {
   issue: Issue;
@@ -82,6 +83,7 @@ function getSignalCount(signalIds: string | null): number {
 export function IssueDetailModal({ issue, onClose }: IssueDetailModalProps) {
   const t = useTranslations('Issues');
   const [mounted, setMounted] = useState(false);
+  const { dialogProps, titleProps } = useDialogA11y({ onClose });
   const StatusIcon = statusConfig[issue.status].icon;
 
   useEffect(() => {
@@ -99,7 +101,10 @@ export function IssueDetailModal({ issue, onClose }: IssueDetailModalProps) {
       />
 
       {/* Modal */}
-      <div className="relative w-full max-w-2xl max-h-[85vh] flex flex-col rounded-xl border border-agora-border bg-agora-dark shadow-2xl animate-slide-up">
+      <div
+        {...dialogProps}
+        className="relative w-full max-w-2xl max-h-[85vh] flex flex-col rounded-xl border border-agora-border bg-agora-dark shadow-2xl animate-slide-up"
+      >
           {/* Header */}
           <div
             className="animate-slide-up flex items-start justify-between border-b border-agora-border p-4 sm:p-6 flex-shrink-0"
@@ -115,7 +120,7 @@ export function IssueDetailModal({ issue, onClose }: IssueDetailModalProps) {
                 <StatusIcon className={`h-5 w-5 ${statusConfig[issue.status].color}`} />
               </div>
               <div className="min-w-0 flex-1">
-                <h2 className="text-lg sm:text-xl font-bold text-agora-text pr-8 line-clamp-2 break-words">{issue.title}</h2>
+                <h2 {...titleProps} className="text-lg sm:text-xl font-bold text-agora-text pr-8 line-clamp-2 break-words">{issue.title}</h2>
                 <div className="mt-2 flex flex-wrap items-center gap-3">
                   {/* Status Badge */}
                   <span

@@ -6,6 +6,7 @@ import { useSignMessage } from 'wagmi';
 import { X, ShieldCheck, Loader2, CheckCircle, XCircle, FileSignature } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useWalletContext } from '@/contexts/WalletContext';
+import { useDialogA11y } from '@/hooks/useDialogA11y';
 
 interface WalletVerifyModalProps {
   isOpen: boolean;
@@ -78,6 +79,9 @@ export function WalletVerifyModal({ isOpen, onClose }: WalletVerifyModalProps) {
     }
   };
 
+  // Escape routes through handleClose, so it is ignored during signing/verifying.
+  const { dialogProps, titleProps } = useDialogA11y({ isOpen, onClose: handleClose });
+
   if (!isOpen || !mounted) return null;
 
   return createPortal(
@@ -89,7 +93,10 @@ export function WalletVerifyModal({ isOpen, onClose }: WalletVerifyModalProps) {
       />
 
       {/* Modal */}
-      <div className="relative w-full max-w-md rounded-xl border border-agora-border bg-agora-dark p-6 shadow-2xl">
+      <div
+        {...dialogProps}
+        className="relative w-full max-w-md rounded-xl border border-agora-border bg-agora-dark p-6 shadow-2xl"
+      >
         {/* Close Button */}
         {step !== 'signing' && step !== 'verifying' && (
           <button
@@ -106,7 +113,7 @@ export function WalletVerifyModal({ isOpen, onClose }: WalletVerifyModalProps) {
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-agora-accent/20">
               <ShieldCheck className="h-8 w-8 text-agora-accent" />
             </div>
-            <h2 className="mb-2 text-xl font-bold text-agora-text">{t('verifyWallet')}</h2>
+            <h2 {...titleProps} className="mb-2 text-xl font-bold text-agora-text">{t('verifyWallet')}</h2>
             <p className="mb-6 text-sm text-agora-muted">{t('verificationRequired')}</p>
 
             <div className="mb-6 rounded-lg bg-agora-card p-4 text-left">
@@ -149,7 +156,7 @@ export function WalletVerifyModal({ isOpen, onClose }: WalletVerifyModalProps) {
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-agora-accent/20">
               <Loader2 className="h-8 w-8 animate-spin text-agora-accent" />
             </div>
-            <h2 className="mb-2 text-xl font-bold text-agora-text">{t('waitingForSignature')}</h2>
+            <h2 {...titleProps} className="mb-2 text-xl font-bold text-agora-text">{t('waitingForSignature')}</h2>
             <p className="text-sm text-agora-muted">{t('checkWallet')}</p>
           </div>
         )}
@@ -159,7 +166,7 @@ export function WalletVerifyModal({ isOpen, onClose }: WalletVerifyModalProps) {
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-agora-accent/20">
               <Loader2 className="h-8 w-8 animate-spin text-agora-accent" />
             </div>
-            <h2 className="mb-2 text-xl font-bold text-agora-text">{t('verifying')}</h2>
+            <h2 {...titleProps} className="mb-2 text-xl font-bold text-agora-text">{t('verifying')}</h2>
             <p className="text-sm text-agora-muted">{t('pleaseWait')}</p>
           </div>
         )}
@@ -169,7 +176,7 @@ export function WalletVerifyModal({ isOpen, onClose }: WalletVerifyModalProps) {
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-agora-success/20">
               <CheckCircle className="h-8 w-8 text-agora-success" />
             </div>
-            <h2 className="mb-2 text-xl font-bold text-agora-text">{t('verificationSuccess')}</h2>
+            <h2 {...titleProps} className="mb-2 text-xl font-bold text-agora-text">{t('verificationSuccess')}</h2>
             <p className="mb-6 text-sm text-agora-muted">{t('canParticipate')}</p>
             <button
               onClick={onClose}
@@ -185,7 +192,7 @@ export function WalletVerifyModal({ isOpen, onClose }: WalletVerifyModalProps) {
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-red-500/20">
               <XCircle className="h-8 w-8 text-red-500" />
             </div>
-            <h2 className="mb-2 text-xl font-bold text-agora-text">{t('verificationFailed')}</h2>
+            <h2 {...titleProps} className="mb-2 text-xl font-bold text-agora-text">{t('verificationFailed')}</h2>
             <p className="mb-6 text-sm text-agora-muted">{errorMessage}</p>
             <div className="flex gap-2">
               <button

@@ -22,6 +22,7 @@ import {
   Minus,
 } from 'lucide-react';
 import { type DualHouseVote } from '@/lib/api';
+import { useDialogA11y } from '@/hooks/useDialogA11y';
 
 interface VoteDetailModalProps {
   vote: DualHouseVote;
@@ -157,6 +158,7 @@ function HouseDetailCard({
 export function VoteDetailModal({ vote, isOpen, onClose }: VoteDetailModalProps) {
   const t = useTranslations('Governance.voting');
   const [mounted, setMounted] = useState(false);
+  const { dialogProps, titleProps } = useDialogA11y({ isOpen, onClose });
   const StatusIcon = statusIcons[vote.status] || Clock;
   const statusColor = statusColors[vote.status] || 'text-agora-muted bg-agora-muted/10';
 
@@ -179,7 +181,10 @@ export function VoteDetailModal({ vote, isOpen, onClose }: VoteDetailModalProps)
       />
 
       {/* Modal */}
-      <div className="relative w-full max-w-4xl max-h-[85vh] overflow-hidden rounded-xl border border-agora-border bg-agora-card shadow-2xl animate-slide-up">
+      <div
+        {...dialogProps}
+        className="relative w-full max-w-4xl max-h-[85vh] overflow-hidden rounded-xl border border-agora-border bg-agora-card shadow-2xl animate-slide-up"
+      >
         {/* Header */}
         <div className="sticky top-0 border-b border-agora-border bg-agora-card p-6">
           <div className="flex items-start justify-between gap-4">
@@ -200,7 +205,7 @@ export function VoteDetailModal({ vote, isOpen, onClose }: VoteDetailModalProps)
                   </div>
                 )}
               </div>
-              <h2 className="text-xl font-bold text-agora-text">{vote.title}</h2>
+              <h2 {...titleProps} className="text-xl font-bold text-agora-text">{vote.title}</h2>
               {vote.summary && (
                 <p className="text-sm text-agora-muted mt-2">{vote.summary}</p>
               )}

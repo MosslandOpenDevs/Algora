@@ -7,6 +7,7 @@ import { X, TrendingUp, TrendingDown, Activity, Clock, BarChart3 } from 'lucide-
 import { useQuery } from '@tanstack/react-query';
 import { fetchActivities, type Activity as ActivityType } from '@/lib/api';
 import { formatDistanceToNow } from 'date-fns';
+import { useDialogA11y } from '@/hooks/useDialogA11y';
 
 export interface StatInfo {
   key: string;
@@ -26,6 +27,7 @@ interface StatsDetailModalProps {
 export function StatsDetailModal({ stat, onClose }: StatsDetailModalProps) {
   const t = useTranslations('Dashboard');
   const [mounted, setMounted] = useState(false);
+  const { dialogProps, titleProps } = useDialogA11y({ onClose });
 
   useEffect(() => {
     setMounted(true);
@@ -92,7 +94,10 @@ export function StatsDetailModal({ stat, onClose }: StatsDetailModalProps) {
       className="animate-fade-in fixed inset-0 z-[99999] flex items-center justify-center bg-black/60 backdrop-blur-sm"
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
-      <div className="animate-scale-in relative w-full max-w-lg mx-4 rounded-xl border border-agora-border bg-agora-dark shadow-2xl">
+      <div
+        {...dialogProps}
+        className="animate-scale-in relative w-full max-w-lg mx-4 rounded-xl border border-agora-border bg-agora-dark shadow-2xl"
+      >
         {/* Header */}
         <div className="flex items-center justify-between border-b border-agora-border p-4">
           <div className="flex items-center gap-3">
@@ -100,7 +105,9 @@ export function StatsDetailModal({ stat, onClose }: StatsDetailModalProps) {
               {stat.icon}
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-agora-text">{stat.title}</h2>
+              <h2 {...titleProps} className="text-lg font-semibold text-agora-text">
+                {stat.title}
+              </h2>
               <p className="text-sm text-agora-muted">{t('statDetails.title')}</p>
             </div>
           </div>

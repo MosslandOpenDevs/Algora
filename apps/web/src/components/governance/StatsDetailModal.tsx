@@ -22,6 +22,7 @@ import {
   Activity,
 } from 'lucide-react';
 import { type GovernanceOSStats, type GovernanceOSHealth } from '@/lib/api';
+import { useDialogA11y } from '@/hooks/useDialogA11y';
 
 type StatsType = 'uptime' | 'pipelines' | 'documents' | 'locked';
 
@@ -378,6 +379,7 @@ export function StatsDetailModal({ type, stats, health, isOpen, onClose }: Stats
   const [mounted, setMounted] = useState(false);
   const config = typeConfig[type];
   const Icon = config.icon;
+  const { dialogProps, titleProps } = useDialogA11y({ isOpen, onClose });
 
   useEffect(() => {
     setMounted(true);
@@ -394,7 +396,10 @@ export function StatsDetailModal({ type, stats, health, isOpen, onClose }: Stats
       />
 
       {/* Modal */}
-      <div className="relative w-full max-w-lg max-h-[85vh] overflow-hidden rounded-xl border border-agora-border bg-agora-card shadow-2xl animate-scale-in">
+      <div
+        {...dialogProps}
+        className="relative w-full max-w-lg max-h-[85vh] overflow-hidden rounded-xl border border-agora-border bg-agora-card shadow-2xl animate-scale-in"
+      >
         {/* Header with gradient */}
         <div className={`bg-gradient-to-br ${config.gradient} p-6 text-white`}>
           <div className="flex items-center justify-between">
@@ -403,7 +408,7 @@ export function StatsDetailModal({ type, stats, health, isOpen, onClose }: Stats
                 <Icon className="h-7 w-7" />
               </div>
               <div>
-                <h2 className="text-xl font-bold">{config.title}</h2>
+                <h2 {...titleProps} className="text-xl font-bold">{config.title}</h2>
                 <p className="text-sm opacity-80">Detailed Statistics</p>
               </div>
             </div>

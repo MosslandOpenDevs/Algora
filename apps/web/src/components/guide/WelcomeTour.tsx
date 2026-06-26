@@ -19,6 +19,7 @@ import {
   PiggyBank,
   Wallet,
 } from 'lucide-react';
+import { useDialogA11y } from '@/hooks/useDialogA11y';
 
 const TOUR_STORAGE_KEY = 'algora-tour-completed';
 
@@ -155,6 +156,8 @@ export function WelcomeTour({ forceShow = false, onComplete }: WelcomeTourProps)
     onComplete?.();
   };
 
+  const { dialogProps, titleProps } = useDialogA11y({ isOpen, onClose: handleClose });
+
   const handleNext = () => {
     if (currentStep < tourSteps.length - 1) {
       setCurrentStep(currentStep + 1);
@@ -190,7 +193,10 @@ export function WelcomeTour({ forceShow = false, onComplete }: WelcomeTourProps)
       <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" />
 
       {/* Modal */}
-      <div className="relative w-full max-w-lg overflow-hidden rounded-2xl border border-agora-border bg-agora-dark shadow-2xl animate-slide-up">
+      <div
+        {...dialogProps}
+        className="relative w-full max-w-lg overflow-hidden rounded-2xl border border-agora-border bg-agora-dark shadow-2xl animate-slide-up"
+      >
         {/* Close button */}
         <button
           onClick={handleClose}
@@ -229,7 +235,7 @@ export function WelcomeTour({ forceShow = false, onComplete }: WelcomeTourProps)
             <Icon className={`h-10 w-10 ${step.color}`} />
           </div>
 
-          <h2 className="text-center text-2xl font-bold text-agora-text">
+          <h2 {...titleProps} className="text-center text-2xl font-bold text-agora-text">
             {t(`${step.key}.title`)}
           </h2>
           <p className="mt-3 text-center text-agora-muted leading-relaxed">

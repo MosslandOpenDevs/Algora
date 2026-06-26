@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import type { DisclosureReportType, DisclosureReportStatus } from '@/lib/api';
 import { safeFormatDate } from '@/lib/utils';
+import { useDialogA11y } from '@/hooks/useDialogA11y';
 
 interface DisclosureReport {
   id: string;
@@ -238,6 +239,7 @@ const MarkdownComponents = {
 
 export function DisclosureDetailModal({ report, onClose, onDownload }: DisclosureDetailModalProps) {
   const [mounted, setMounted] = useState(false);
+  const { dialogProps, titleProps } = useDialogA11y({ onClose });
   const type = typeConfig[report.type];
   const status = statusConfig[report.status];
   const TypeIcon = type.icon;
@@ -325,7 +327,10 @@ Report ID: ${report.id}
       />
 
       {/* Modal */}
-      <div className="relative w-full max-w-4xl max-h-[85vh] flex flex-col rounded-xl border border-agora-border bg-agora-dark shadow-2xl animate-slide-up">
+      <div
+        {...dialogProps}
+        className="relative w-full max-w-4xl max-h-[85vh] flex flex-col rounded-xl border border-agora-border bg-agora-dark shadow-2xl animate-slide-up"
+      >
           {/* Header */}
           <div className="flex items-start justify-between border-b border-agora-border p-4 sm:p-6 flex-shrink-0">
             <div className="flex items-start gap-3 sm:gap-4 min-w-0 flex-1">
@@ -342,7 +347,7 @@ Report ID: ${report.id}
                     {status.label}
                   </span>
                 </div>
-                <h2 className="text-lg sm:text-xl font-bold text-agora-text pr-8 line-clamp-2 break-words">{report.title}</h2>
+                <h2 {...titleProps} className="text-lg sm:text-xl font-bold text-agora-text pr-8 line-clamp-2 break-words">{report.title}</h2>
                 <div className="mt-2 flex flex-wrap items-center gap-2 sm:gap-3 text-sm text-agora-muted">
                   <span className="flex items-center gap-1">
                     <User className="h-4 w-4 flex-shrink-0" />

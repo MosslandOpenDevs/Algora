@@ -19,6 +19,7 @@ import {
   BarChart3,
 } from 'lucide-react';
 import { type WorkflowStatus } from '@/lib/api';
+import { useDialogA11y } from '@/hooks/useDialogA11y';
 
 interface WorkflowDetailModalProps {
   workflow: WorkflowStatus;
@@ -89,6 +90,7 @@ const workflowDetails: Record<string, {
 export function WorkflowDetailModal({ workflow, isOpen, onClose }: WorkflowDetailModalProps) {
   const t = useTranslations('Governance.workflows');
   const [mounted, setMounted] = useState(false);
+  const { dialogProps, titleProps } = useDialogA11y({ isOpen, onClose });
   const Icon = workflowIcons[workflow.type] || MessageSquare;
   const gradient = workflowColors[workflow.type] || 'from-gray-500 to-gray-600';
   const details = workflowDetails[workflow.type] || {
@@ -114,7 +116,10 @@ export function WorkflowDetailModal({ workflow, isOpen, onClose }: WorkflowDetai
       />
 
       {/* Modal */}
-      <div className="relative w-full max-w-2xl max-h-[85vh] overflow-hidden rounded-xl border border-agora-border bg-agora-card shadow-2xl animate-slide-up">
+      <div
+        {...dialogProps}
+        className="relative w-full max-w-2xl max-h-[85vh] overflow-hidden rounded-xl border border-agora-border bg-agora-card shadow-2xl animate-slide-up"
+      >
         {/* Header with gradient */}
         <div className={`bg-gradient-to-br ${gradient} p-6 text-white`}>
           <div className="flex items-start justify-between gap-4">
@@ -128,7 +133,7 @@ export function WorkflowDetailModal({ workflow, isOpen, onClose }: WorkflowDetai
                     {t('type')} {workflow.type}
                   </span>
                 </div>
-                <h2 className="text-xl font-bold">{workflow.name}</h2>
+                <h2 {...titleProps} className="text-xl font-bold">{workflow.name}</h2>
                 <p className="text-sm opacity-80 mt-1">{details.fullName}</p>
               </div>
             </div>

@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import type { Agent } from '@/lib/api';
 import { summonAgent, dismissAgent } from '@/lib/api';
+import { useDialogA11y } from '@/hooks/useDialogA11y';
 
 interface AgentDetailModalProps {
   agent: Agent;
@@ -101,6 +102,7 @@ export function AgentDetailModal({ agent, onClose }: AgentDetailModalProps) {
   const status = agent.status || 'idle';
   const [actionSuccess, setActionSuccess] = useState<'summon' | 'dismiss' | null>(null);
   const [mounted, setMounted] = useState(false);
+  const { dialogProps, titleProps } = useDialogA11y({ onClose });
 
   const group = groupConfig[agent.group_name] || groupConfig.advisors;
   const GroupIcon = group.icon;
@@ -144,7 +146,10 @@ export function AgentDetailModal({ agent, onClose }: AgentDetailModalProps) {
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
 
       {/* Modal */}
-      <div className="relative w-full max-w-lg max-h-[85vh] overflow-hidden rounded-xl border border-agora-border bg-agora-dark shadow-2xl animate-slide-up">
+      <div
+        {...dialogProps}
+        className="relative w-full max-w-lg max-h-[85vh] overflow-hidden rounded-xl border border-agora-border bg-agora-dark shadow-2xl animate-slide-up"
+      >
         {/* Close button */}
         <button
           onClick={onClose}
@@ -176,7 +181,7 @@ export function AgentDetailModal({ agent, onClose }: AgentDetailModalProps) {
               />
             </div>
             <div className="flex-1 pt-1">
-              <h2 className="text-xl font-bold text-agora-text">
+              <h2 {...titleProps} className="text-xl font-bold text-agora-text">
                 {agent.display_name || agent.name}
               </h2>
               <p className="text-sm text-agora-muted">@{agent.name}</p>

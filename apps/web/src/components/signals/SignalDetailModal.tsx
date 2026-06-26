@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import type { Signal } from '@/lib/api';
 import { safeFormatDate } from '@/lib/utils';
+import { useDialogA11y } from '@/hooks/useDialogA11y';
 
 interface SignalDetailModalProps {
   signal: Signal;
@@ -106,6 +107,7 @@ export function SignalDetailModal({ signal, onClose }: SignalDetailModalProps) {
   const severity = signal.severity || 'low';
   const config = severityConfig[severity] || severityConfig.low;
   const SeverityIcon = config.icon;
+  const { dialogProps, titleProps } = useDialogA11y({ onClose });
 
   useEffect(() => {
     setMounted(true);
@@ -122,7 +124,10 @@ export function SignalDetailModal({ signal, onClose }: SignalDetailModalProps) {
       />
 
       {/* Modal */}
-      <div className="relative w-full max-w-2xl max-h-[85vh] flex flex-col rounded-xl border border-agora-border bg-agora-dark shadow-2xl animate-slide-up">
+      <div
+        {...dialogProps}
+        className="relative w-full max-w-2xl max-h-[85vh] flex flex-col rounded-xl border border-agora-border bg-agora-dark shadow-2xl animate-slide-up"
+      >
           {/* Header */}
           <div
             className="animate-slide-up flex items-start justify-between border-b border-agora-border p-4 sm:p-6 flex-shrink-0"
@@ -138,7 +143,7 @@ export function SignalDetailModal({ signal, onClose }: SignalDetailModalProps) {
                 {sourceIcons[sourceType] || sourceIcons.api}
               </div>
               <div className="min-w-0 flex-1">
-                <h2 className="text-lg sm:text-xl font-bold text-agora-text pr-8 line-clamp-2 break-words">{title}</h2>
+                <h2 {...titleProps} className="text-lg sm:text-xl font-bold text-agora-text pr-8 line-clamp-2 break-words">{title}</h2>
                 <div className="mt-2 flex flex-wrap items-center gap-3">
                   {/* Source Badge */}
                   <span className={`flex items-center gap-1.5 text-sm ${(sourceColors[sourceType] || sourceColors.api).split(' ')[0]}`}>

@@ -55,6 +55,7 @@ import {
 } from '@/lib/api';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { safeFormatDate } from '@/lib/utils';
+import { useDialogA11y } from '@/hooks/useDialogA11y';
 
 interface Proposal {
   id: string;
@@ -144,6 +145,7 @@ export function ProposalDetailModal({ proposal, onClose }: ProposalDetailModalPr
   const [activeTab, setActiveTab] = useState<TabType>('overview');
   const StatusIcon = statusConfig[proposal.status].icon;
   const queryClient = useQueryClient();
+  const { dialogProps, titleProps } = useDialogA11y({ onClose });
 
   const totalVotes = proposal.votesFor + proposal.votesAgainst + proposal.votesAbstain;
   const forPercent = totalVotes > 0 ? (proposal.votesFor / totalVotes) * 100 : 0;
@@ -215,7 +217,10 @@ export function ProposalDetailModal({ proposal, onClose }: ProposalDetailModalPr
       />
 
       {/* Modal */}
-      <div className="relative w-full max-w-4xl max-h-[90vh] flex flex-col rounded-xl border border-agora-border bg-agora-dark shadow-2xl animate-slide-up">
+      <div
+        {...dialogProps}
+        className="relative w-full max-w-4xl max-h-[90vh] flex flex-col rounded-xl border border-agora-border bg-agora-dark shadow-2xl animate-slide-up"
+      >
         {/* Header */}
         <div className="flex items-start justify-between border-b border-agora-border p-4 sm:p-6 flex-shrink-0">
           <div className="flex items-start gap-3 sm:gap-4 min-w-0 flex-1">
@@ -231,7 +236,7 @@ export function ProposalDetailModal({ proposal, onClose }: ProposalDetailModalPr
                   {t(`status.${proposal.status}`)}
                 </span>
               </div>
-              <h2 className="text-lg sm:text-xl font-bold text-agora-text pr-8 line-clamp-2 break-words">{proposal.title}</h2>
+              <h2 {...titleProps} className="text-lg sm:text-xl font-bold text-agora-text pr-8 line-clamp-2 break-words">{proposal.title}</h2>
               <div className="mt-2 flex flex-wrap items-center gap-2 sm:gap-3 text-sm text-agora-muted">
                 <span className="flex items-center gap-1">
                   <User className="h-4 w-4 flex-shrink-0" />

@@ -21,6 +21,7 @@ import {
   ExternalLink,
 } from 'lucide-react';
 import { type GovernanceDocument, type DocumentState } from '@/lib/api';
+import { useDialogA11y } from '@/hooks/useDialogA11y';
 
 interface DocumentDetailModalProps {
   document: GovernanceDocument;
@@ -73,6 +74,7 @@ const documentTypeLabels: Record<string, { name: string; description: string }> 
 export function DocumentDetailModal({ document, isOpen, onClose }: DocumentDetailModalProps) {
   const t = useTranslations('Governance.documents');
   const [mounted, setMounted] = useState(false);
+  const { dialogProps, titleProps } = useDialogA11y({ isOpen, onClose });
   const StateIcon = stateIcons[document.state] || FileText;
   const stateColor = stateColors[document.state] || 'text-agora-muted bg-agora-muted/10';
   const typeInfo = documentTypeLabels[document.type] || { name: document.type, description: '' };
@@ -92,7 +94,10 @@ export function DocumentDetailModal({ document, isOpen, onClose }: DocumentDetai
       />
 
       {/* Modal */}
-      <div className="relative w-full max-w-2xl max-h-[85vh] overflow-hidden rounded-xl border border-agora-border bg-agora-card shadow-2xl animate-slide-up">
+      <div
+        {...dialogProps}
+        className="relative w-full max-w-2xl max-h-[85vh] overflow-hidden rounded-xl border border-agora-border bg-agora-card shadow-2xl animate-slide-up"
+      >
         {/* Header */}
         <div className="sticky top-0 flex items-start justify-between gap-4 border-b border-agora-border bg-agora-card p-6">
           <div className="flex-1 min-w-0">
@@ -107,7 +112,7 @@ export function DocumentDetailModal({ document, isOpen, onClose }: DocumentDetai
                 </span>
               </div>
             </div>
-            <h2 className="text-xl font-bold text-agora-text">{document.title}</h2>
+            <h2 {...titleProps} className="text-xl font-bold text-agora-text">{document.title}</h2>
             <p className="text-sm text-agora-muted mt-1">{typeInfo.description}</p>
           </div>
           <button

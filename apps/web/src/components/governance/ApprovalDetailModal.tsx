@@ -18,6 +18,7 @@ import {
   FileText,
 } from 'lucide-react';
 import { type LockedAction, type RiskLevel } from '@/lib/api';
+import { useDialogA11y } from '@/hooks/useDialogA11y';
 
 interface ApprovalDetailModalProps {
   action: LockedAction;
@@ -42,6 +43,7 @@ const statusConfig: Record<string, { icon: React.ElementType; color: string; bgC
 export function ApprovalDetailModal({ action, isOpen, onClose, onApprove }: ApprovalDetailModalProps) {
   const t = useTranslations('Governance.safeAutonomy');
   const [mounted, setMounted] = useState(false);
+  const { dialogProps, titleProps } = useDialogA11y({ isOpen, onClose });
   const riskStyle = riskColors[action.riskLevel];
   const statusStyle = statusConfig[action.status] || statusConfig.locked;
   const StatusIcon = statusStyle.icon;
@@ -66,7 +68,10 @@ export function ApprovalDetailModal({ action, isOpen, onClose, onApprove }: Appr
       />
 
       {/* Modal */}
-      <div className="relative w-full max-w-2xl max-h-[85vh] overflow-hidden rounded-xl border border-agora-border bg-agora-card shadow-2xl animate-slide-up">
+      <div
+        {...dialogProps}
+        className="relative w-full max-w-2xl max-h-[85vh] overflow-hidden rounded-xl border border-agora-border bg-agora-card shadow-2xl animate-slide-up"
+      >
         {/* Header with risk level indicator */}
         <div className={`border-b-4 ${
           action.riskLevel === 'HIGH' ? 'border-agora-error' :
@@ -86,7 +91,7 @@ export function ApprovalDetailModal({ action, isOpen, onClose, onApprove }: Appr
                     <span className="text-sm font-medium capitalize">{t(`status.${action.status}`)}</span>
                   </div>
                 </div>
-                <h2 className="text-xl font-bold text-agora-text">{action.actionType}</h2>
+                <h2 {...titleProps} className="text-xl font-bold text-agora-text">{action.actionType}</h2>
                 <p className="text-sm text-agora-muted mt-1">
                   ID: {action.id}
                 </p>

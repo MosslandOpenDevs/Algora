@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom';
 import { useTranslations } from 'next-intl';
 import { X, MessageSquare, Zap, Shield } from 'lucide-react';
 import type { Agent } from '@/lib/api';
+import { useDialogA11y } from '@/hooks/useDialogA11y';
 
 interface AgentDetailModalProps {
   agent: Agent;
@@ -50,6 +51,7 @@ const groupIcons: Record<string, string> = {
 export function AgentDetailModal({ agent, onClose, messageCount = 0 }: AgentDetailModalProps) {
   const tAgents = useTranslations('Agents.groups');
   const [mounted, setMounted] = useState(false);
+  const { dialogProps, titleProps } = useDialogA11y({ onClose });
 
   const status = statusConfig[agent.status || 'idle'] || statusConfig.idle;
   const groupDescription = groupDescriptions[agent.group_name] || 'Governance participant';
@@ -70,7 +72,10 @@ export function AgentDetailModal({ agent, onClose, messageCount = 0 }: AgentDeta
       />
 
       {/* Modal */}
-      <div className="relative w-full max-w-md max-h-[85vh] overflow-hidden rounded-xl border border-agora-border bg-agora-dark shadow-2xl animate-slide-up">
+      <div
+        {...dialogProps}
+        className="relative w-full max-w-md max-h-[85vh] overflow-hidden rounded-xl border border-agora-border bg-agora-dark shadow-2xl animate-slide-up"
+      >
           {/* Header with Avatar */}
           <div className="relative">
             {/* Background gradient */}
@@ -111,7 +116,7 @@ export function AgentDetailModal({ agent, onClose, messageCount = 0 }: AgentDeta
             {/* Name and Status */}
             <div className="flex items-start justify-between">
               <div>
-                <h2 className="text-xl font-bold text-agora-text">
+                <h2 {...titleProps} className="text-xl font-bold text-agora-text">
                   {agent.display_name || agent.name}
                 </h2>
                 <p className="text-sm text-agora-muted">@{agent.name}</p>

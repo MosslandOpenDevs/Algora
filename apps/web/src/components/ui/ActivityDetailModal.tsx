@@ -20,6 +20,7 @@ import {
   Tag,
 } from 'lucide-react';
 import type { Activity } from '@/lib/api';
+import { useDialogA11y } from '@/hooks/useDialogA11y';
 
 interface ActivityDetailModalProps {
   activity: Activity;
@@ -75,6 +76,7 @@ const severityConfig: Record<string, { color: string; bg: string }> = {
 export function ActivityDetailModal({ activity, onClose }: ActivityDetailModalProps) {
   const t = useTranslations('Activity');
   const [mounted, setMounted] = useState(false);
+  const { dialogProps, titleProps } = useDialogA11y({ onClose });
   const activityConfig = activityIcons[activity.type] || {
     icon: <Heart className="h-5 w-5" />,
     color: 'text-agora-muted',
@@ -111,7 +113,10 @@ export function ActivityDetailModal({ activity, onClose }: ActivityDetailModalPr
       />
 
       {/* Modal */}
-      <div className="relative w-full max-w-lg max-h-[85vh] overflow-hidden rounded-xl border border-agora-border bg-agora-dark shadow-2xl animate-slide-up">
+      <div
+        {...dialogProps}
+        className="relative w-full max-w-lg max-h-[85vh] overflow-hidden rounded-xl border border-agora-border bg-agora-dark shadow-2xl animate-slide-up"
+      >
           {/* Header */}
           <div className="flex items-start justify-between border-b border-agora-border p-6">
             <div className="flex items-start gap-4">
@@ -121,7 +126,7 @@ export function ActivityDetailModal({ activity, onClose }: ActivityDetailModalPr
                 </span>
               </div>
               <div>
-                <h2 className="text-xl font-bold text-agora-text">
+                <h2 {...titleProps} className="text-xl font-bold text-agora-text">
                   {t(`types.${activity.type}`)}
                 </h2>
                 <p className="mt-1 text-sm text-agora-muted">

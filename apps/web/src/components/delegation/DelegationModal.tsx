@@ -14,6 +14,7 @@ import {
 import { useTranslations } from 'next-intl';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { createDelegation } from '@/lib/api';
+import { useDialogA11y } from '@/hooks/useDialogA11y';
 
 type Step = 'intro' | 'input' | 'confirm' | 'success' | 'error';
 
@@ -83,6 +84,8 @@ export function DelegationModal({
     onClose();
   };
 
+  const { dialogProps, titleProps } = useDialogA11y({ isOpen, onClose: handleClose });
+
   const handleContinue = () => {
     if (step === 'intro') {
       setStep('input');
@@ -135,7 +138,10 @@ export function DelegationModal({
       />
 
       {/* Modal */}
-      <div className="relative max-h-[90vh] w-full max-w-md overflow-y-auto rounded-xl border border-agora-border bg-agora-dark p-6 shadow-2xl">
+      <div
+        {...dialogProps}
+        className="relative max-h-[90vh] w-full max-w-md overflow-y-auto rounded-xl border border-agora-border bg-agora-dark p-6 shadow-2xl"
+      >
         {/* Close Button */}
         <button
           onClick={handleClose}
@@ -150,7 +156,7 @@ export function DelegationModal({
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-agora-accent/20">
               <Users className="h-8 w-8 text-agora-accent" />
             </div>
-            <h2 className="mb-2 text-xl font-bold text-agora-text">{t('modal.title')}</h2>
+            <h2 {...titleProps} className="mb-2 text-xl font-bold text-agora-text">{t('modal.title')}</h2>
             <p className="mb-6 text-agora-muted">{t('modal.intro')}</p>
 
             <div className="mb-6 rounded-lg bg-agora-card p-4">
@@ -172,7 +178,7 @@ export function DelegationModal({
         {/* Input Step */}
         {step === 'input' && (
           <div>
-            <h2 className="mb-6 text-xl font-bold text-agora-text">{t('modal.inputTitle')}</h2>
+            <h2 {...titleProps} className="mb-6 text-xl font-bold text-agora-text">{t('modal.inputTitle')}</h2>
 
             {/* Delegate Address */}
             <div className="mb-6">
@@ -265,7 +271,7 @@ export function DelegationModal({
         {/* Confirm Step */}
         {step === 'confirm' && (
           <div>
-            <h2 className="mb-6 text-xl font-bold text-agora-text">{t('confirmDelegation')}</h2>
+            <h2 {...titleProps} className="mb-6 text-xl font-bold text-agora-text">{t('confirmDelegation')}</h2>
 
             <div className="mb-6 space-y-4">
               <div className="rounded-lg bg-agora-card p-4">
@@ -343,7 +349,7 @@ export function DelegationModal({
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-500/20">
               <CheckCircle className="h-8 w-8 text-green-400" />
             </div>
-            <h2 className="mb-2 text-xl font-bold text-agora-text">{t('delegationSuccess')}</h2>
+            <h2 {...titleProps} className="mb-2 text-xl font-bold text-agora-text">{t('delegationSuccess')}</h2>
             <p className="mb-6 text-agora-muted">
               {t('delegationSuccessDesc', {
                 power: votingPower.toLocaleString(),
@@ -365,7 +371,7 @@ export function DelegationModal({
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-red-500/20">
               <AlertCircle className="h-8 w-8 text-red-400" />
             </div>
-            <h2 className="mb-2 text-xl font-bold text-agora-text">{t('delegationFailed')}</h2>
+            <h2 {...titleProps} className="mb-2 text-xl font-bold text-agora-text">{t('delegationFailed')}</h2>
             <p className="mb-6 text-agora-muted">{errorMessage || t('delegationFailedDesc')}</p>
             <div className="flex gap-3">
               <button

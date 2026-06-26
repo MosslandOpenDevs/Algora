@@ -18,6 +18,7 @@ import {
 import { useTranslations } from 'next-intl';
 import { TreasuryTransaction } from './TransactionCard';
 import { safeFormatDate } from '@/lib/utils';
+import { useDialogA11y } from '@/hooks/useDialogA11y';
 
 interface TransactionDetailModalProps {
   transaction: TreasuryTransaction | null;
@@ -53,6 +54,7 @@ export function TransactionDetailModal({
   const t = useTranslations('Treasury');
   const [mounted, setMounted] = useState(false);
   const [copiedField, setCopiedField] = useState<string | null>(null);
+  const { dialogProps, titleProps } = useDialogA11y({ isOpen, onClose });
 
   useEffect(() => {
     setMounted(true);
@@ -90,7 +92,10 @@ export function TransactionDetailModal({
       />
 
       {/* Modal */}
-      <div className="relative max-h-[90vh] w-full max-w-lg flex flex-col rounded-xl border border-agora-border bg-agora-dark shadow-2xl">
+      <div
+        {...dialogProps}
+        className="relative max-h-[90vh] w-full max-w-lg flex flex-col rounded-xl border border-agora-border bg-agora-dark shadow-2xl"
+      >
         {/* Header */}
         <div className="flex items-start justify-between border-b border-agora-border p-4 sm:p-6 flex-shrink-0">
           <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">
@@ -98,7 +103,7 @@ export function TransactionDetailModal({
               <TypeIcon className={`h-5 sm:h-6 w-5 sm:w-6 ${colors.icon}`} />
             </div>
             <div className="min-w-0 flex-1">
-              <h2 className="text-lg sm:text-xl font-bold text-agora-text">{t('modals.transactionDetail')}</h2>
+              <h2 {...titleProps} className="text-lg sm:text-xl font-bold text-agora-text">{t('modals.transactionDetail')}</h2>
               <p className="text-sm text-agora-muted">{t(`transaction.${transaction.type}`)}</p>
             </div>
           </div>

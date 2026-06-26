@@ -18,6 +18,7 @@ import {
   Share2,
 } from 'lucide-react';
 import type { AgoraSession, Agent } from '@/lib/api';
+import { useDialogA11y } from '@/hooks/useDialogA11y';
 
 interface SessionDetailModalProps {
   session: AgoraSession;
@@ -73,6 +74,7 @@ function parseParticipants(summoned_agents: string | null): string[] {
 export function SessionDetailModal({ session, agents, onClose, onJoinSession }: SessionDetailModalProps) {
   const t = useTranslations('Agora');
   const [mounted, setMounted] = useState(false);
+  const { dialogProps, titleProps } = useDialogA11y({ onClose });
   const config = statusConfig[session.status] || statusConfig.active;
   const StatusIcon = config.icon;
 
@@ -98,7 +100,10 @@ export function SessionDetailModal({ session, agents, onClose, onJoinSession }: 
       />
 
       {/* Modal */}
-      <div className="relative w-full max-w-2xl max-h-[85vh] overflow-hidden rounded-xl border border-agora-border bg-agora-dark shadow-2xl animate-slide-up">
+      <div
+        {...dialogProps}
+        className="relative w-full max-w-2xl max-h-[85vh] overflow-hidden rounded-xl border border-agora-border bg-agora-dark shadow-2xl animate-slide-up"
+      >
           {/* Header */}
           <div
             className="animate-slide-up flex items-start justify-between border-b border-agora-border p-6"
@@ -124,7 +129,7 @@ export function SessionDetailModal({ session, agents, onClose, onJoinSession }: 
                     Round {session.current_round}/{session.max_rounds}
                   </span>
                 </div>
-                <h2 className="text-xl font-bold text-agora-text pr-8">{session.title}</h2>
+                <h2 {...titleProps} className="text-xl font-bold text-agora-text pr-8">{session.title}</h2>
                 {session.description && (
                   <p className="mt-1 text-sm text-agora-muted line-clamp-2">
                     {session.description}
