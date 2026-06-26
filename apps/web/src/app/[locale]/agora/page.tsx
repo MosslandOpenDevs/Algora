@@ -355,6 +355,7 @@ export default function AgoraPage() {
                   <button
                     onClick={handleSendMessage}
                     disabled={!message.trim() || isSending}
+                    aria-label="Send message"
                     className="flex items-center gap-2 rounded-lg bg-agora-primary px-3 md:px-4 py-2 text-slate-900 transition-colors hover:bg-agora-primary/80 disabled:opacity-50 min-w-[44px] justify-center"
                   >
                     {isSending ? (

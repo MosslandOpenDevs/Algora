@@ -97,6 +97,7 @@ export function AllocationDetailModal({
           </div>
           <button
             onClick={onClose}
+            aria-label="Close"
             className="rounded-lg p-1 text-agora-muted transition-colors hover:bg-agora-card hover:text-agora-text flex-shrink-0"
           >
             <X className="h-5 w-5" />
@@ -189,6 +190,7 @@ export function AllocationDetailModal({
               <div className="flex gap-1">
                 <button
                   onClick={() => copyToClipboard(allocation.recipient, 'recipient')}
+                  aria-label="Copy recipient address"
                   className="rounded p-1 text-agora-muted transition-colors hover:bg-agora-border hover:text-agora-text"
                 >
                   {copiedField === 'recipient' ? (
@@ -201,6 +203,7 @@ export function AllocationDetailModal({
                   href={`https://etherscan.io/address/${allocation.recipient}`}
                   target="_blank"
                   rel="noopener noreferrer"
+                  aria-label="View recipient on Etherscan"
                   className="rounded p-1 text-agora-muted transition-colors hover:bg-agora-border hover:text-agora-text"
                 >
                   <ExternalLink className="h-4 w-4" />
@@ -220,6 +223,7 @@ export function AllocationDetailModal({
                 <div className="flex gap-1">
                   <button
                     onClick={() => copyToClipboard(allocation.txHash!, 'txHash')}
+                    aria-label="Copy transaction hash"
                     className="rounded p-1 text-agora-muted transition-colors hover:bg-agora-border hover:text-agora-text"
                   >
                     {copiedField === 'txHash' ? (
@@ -232,6 +236,7 @@ export function AllocationDetailModal({
                     href={`https://etherscan.io/tx/${allocation.txHash}`}
                     target="_blank"
                     rel="noopener noreferrer"
+                    aria-label="View transaction on Etherscan"
                     className="rounded p-1 text-agora-muted transition-colors hover:bg-agora-border hover:text-agora-text"
                   >
                     <ExternalLink className="h-4 w-4" />

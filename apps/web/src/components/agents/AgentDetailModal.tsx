@@ -153,6 +153,7 @@ export function AgentDetailModal({ agent, onClose }: AgentDetailModalProps) {
         {/* Close button */}
         <button
           onClick={onClose}
+          aria-label="Close"
           className="absolute right-4 top-4 z-10 rounded-lg p-1.5 text-agora-muted transition-colors hover:bg-agora-card hover:text-slate-900"
         >
           <X className="h-5 w-5" />

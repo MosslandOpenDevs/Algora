@@ -71,6 +71,7 @@ export function NewSessionModal({ onClose, onCreated }: NewSessionModalProps) {
         {/* Close button */}
         <button
           onClick={onClose}
+          aria-label="Close"
           className="absolute right-4 top-4 rounded-lg p-1 text-agora-muted transition-colors hover:bg-agora-card hover:text-agora-text"
         >
           <X className="h-5 w-5" />

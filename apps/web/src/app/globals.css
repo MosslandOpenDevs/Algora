@@ -314,10 +314,24 @@ body > * {
   background: #94a3b8;
 }
 
-/* Reduce motion support */
+/* Reduce motion: honor the OS setting across the animation-heavy UI.
+   Near-instant (not a hard 0) so state still updates, just without motion. */
 @media (prefers-reduced-motion: reduce) {
-  .crt-scanline::before,
-  .cursor-blink::after {
-    animation: none;
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
+}
+
+/* Consistent keyboard focus ring — shows on keyboard navigation only
+   (:focus-visible), never on mouse click. Wrapped in :where() so it keeps
+   zero specificity and any element with its own focus styles overrides it.
+   The outline follows the element's border-radius in modern browsers. */
+:where(a, button, input, select, textarea, summary, [tabindex], [role='button'], [role='tab'], [role='menuitem']):focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
 }

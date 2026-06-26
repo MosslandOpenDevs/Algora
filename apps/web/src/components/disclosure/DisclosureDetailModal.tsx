@@ -363,6 +363,7 @@ Report ID: ${report.id}
 
             <button
               onClick={onClose}
+              aria-label="Close"
               className="rounded-lg p-2 text-agora-muted transition-colors hover:bg-agora-card hover:text-agora-text flex-shrink-0"
             >
               <X className="h-5 w-5" />

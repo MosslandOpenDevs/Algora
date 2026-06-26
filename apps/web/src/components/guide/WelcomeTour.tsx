@@ -200,6 +200,7 @@ export function WelcomeTour({ forceShow = false, onComplete }: WelcomeTourProps)
         {/* Close button */}
         <button
           onClick={handleClose}
+          aria-label="Close"
           className="absolute right-4 top-4 z-10 rounded-full p-1 text-agora-muted transition-colors hover:bg-agora-card hover:text-slate-900"
         >
           <X className="h-5 w-5" />
@@ -215,6 +216,7 @@ export function WelcomeTour({ forceShow = false, onComplete }: WelcomeTourProps)
               <button
                 key={index}
                 onClick={() => setCurrentStep(index)}
+                aria-label={`Go to step ${index + 1}`}
                 className={`h-1.5 rounded-full transition-all ${
                   index === currentStep
                     ? 'w-6 bg-agora-primary'

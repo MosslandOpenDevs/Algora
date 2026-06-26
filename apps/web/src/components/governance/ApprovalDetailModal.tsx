@@ -98,6 +98,7 @@ export function ApprovalDetailModal({ action, isOpen, onClose, onApprove }: Appr
               </div>
               <button
                 onClick={onClose}
+                aria-label="Close"
                 className="rounded-lg p-2 text-agora-muted transition-colors hover:bg-agora-border hover:text-agora-text"
               >
                 <X className="h-5 w-5" />

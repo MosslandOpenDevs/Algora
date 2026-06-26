@@ -197,6 +197,7 @@ export default function ProfilePage() {
                 <p className="font-mono text-lg text-slate-900 dark:text-white">{formatAddress(address!)}</p>
                 <button
                   onClick={copyAddress}
+                  aria-label="Copy address"
                   className="rounded p-1 text-agora-muted hover:bg-agora-border dark:hover:bg-agora-dark-border hover:text-slate-900 dark:hover:text-white"
                 >
                   {copied ? <CheckCircle className="h-4 w-4 text-green-400" /> : <Copy className="h-4 w-4" />}
@@ -205,6 +206,7 @@ export default function ProfilePage() {
                   href={`https://etherscan.io/address/${address}`}
                   target="_blank"
                   rel="noopener noreferrer"
+                  aria-label="View on Etherscan"
                   className="rounded p-1 text-agora-muted hover:bg-agora-border dark:hover:bg-agora-dark-border hover:text-slate-900 dark:hover:text-white"
                 >
                   <ExternalLink className="h-4 w-4" />

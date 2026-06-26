@@ -61,6 +61,7 @@ export function DelegationCard({ delegation, type, onRevoke, index = 0 }: Delega
               </span>
               <button
                 onClick={() => copyToClipboard(targetAddress, 'address')}
+                aria-label="Copy address"
                 className="rounded p-1 text-agora-muted transition-colors hover:bg-agora-border hover:text-agora-text"
               >
                 {copiedField === 'address' ? (
@@ -73,6 +74,7 @@ export function DelegationCard({ delegation, type, onRevoke, index = 0 }: Delega
                 href={`https://etherscan.io/address/${targetAddress}`}
                 target="_blank"
                 rel="noopener noreferrer"
+                aria-label="View address on Etherscan"
                 className="rounded p-1 text-agora-muted transition-colors hover:bg-agora-border hover:text-agora-text"
               >
                 <ExternalLink className="h-3 w-3" />

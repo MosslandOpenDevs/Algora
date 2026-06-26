@@ -109,6 +109,7 @@ export function TransactionDetailModal({
           </div>
           <button
             onClick={onClose}
+            aria-label="Close"
             className="rounded-lg p-1 text-agora-muted transition-colors hover:bg-agora-card hover:text-agora-text flex-shrink-0"
           >
             <X className="h-5 w-5" />
@@ -153,6 +154,7 @@ export function TransactionDetailModal({
                 <div className="flex gap-1">
                   <button
                     onClick={() => copyToClipboard(transaction.fromAddress!, 'from')}
+                    aria-label="Copy from address"
                     className="rounded p-1 text-agora-muted transition-colors hover:bg-agora-border hover:text-agora-text"
                   >
                     {copiedField === 'from' ? (
@@ -165,6 +167,7 @@ export function TransactionDetailModal({
                     href={`https://etherscan.io/address/${transaction.fromAddress}`}
                     target="_blank"
                     rel="noopener noreferrer"
+                    aria-label="View from address on Etherscan"
                     className="rounded p-1 text-agora-muted transition-colors hover:bg-agora-border hover:text-agora-text"
                   >
                     <ExternalLink className="h-4 w-4" />
@@ -185,6 +188,7 @@ export function TransactionDetailModal({
                 <div className="flex gap-1">
                   <button
                     onClick={() => copyToClipboard(transaction.toAddress!, 'to')}
+                    aria-label="Copy to address"
                     className="rounded p-1 text-agora-muted transition-colors hover:bg-agora-border hover:text-agora-text"
                   >
                     {copiedField === 'to' ? (
@@ -197,6 +201,7 @@ export function TransactionDetailModal({
                     href={`https://etherscan.io/address/${transaction.toAddress}`}
                     target="_blank"
                     rel="noopener noreferrer"
+                    aria-label="View to address on Etherscan"
                     className="rounded p-1 text-agora-muted transition-colors hover:bg-agora-border hover:text-agora-text"
                   >
                     <ExternalLink className="h-4 w-4" />
@@ -217,6 +222,7 @@ export function TransactionDetailModal({
                 <div className="flex gap-1">
                   <button
                     onClick={() => copyToClipboard(transaction.txHash!, 'txHash')}
+                    aria-label="Copy transaction hash"
                     className="rounded p-1 text-agora-muted transition-colors hover:bg-agora-border hover:text-agora-text"
                   >
                     {copiedField === 'txHash' ? (
@@ -229,6 +235,7 @@ export function TransactionDetailModal({
                     href={`https://etherscan.io/tx/${transaction.txHash}`}
                     target="_blank"
                     rel="noopener noreferrer"
+                    aria-label="View transaction on Etherscan"
                     className="rounded p-1 text-agora-muted transition-colors hover:bg-agora-border hover:text-agora-text"
                   >
                     <ExternalLink className="h-4 w-4" />

@@ -229,6 +229,7 @@ export function PipelineHealthDashboard() {
           <button
             onClick={handleRefresh}
             disabled={isLoading}
+            aria-label="Refresh pipeline health"
             className="p-2 rounded-lg bg-agora-card dark:bg-agora-dark-card border border-agora-border dark:border-agora-dark-border hover:bg-agora-border dark:hover:bg-agora-dark-border disabled:opacity-50"
           >
             <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
