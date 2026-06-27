@@ -3,6 +3,7 @@
 import { FileText, Briefcase, Code, Megaphone, Shield, Cog } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { safeFormatDate } from '@/lib/utils';
+import { MockDataBadge } from '@/components/ui/MockDataBadge';
 
 export interface BudgetAllocation {
   id: string;
@@ -74,9 +75,12 @@ export function AllocationCard({ allocation, onClick, index = 0 }: AllocationCar
         </div>
       </div>
       <div className="text-left sm:text-right flex-shrink-0">
-        <p className="font-semibold text-agora-text">
-          {formatBalance(allocation.amount)} {allocation.tokenSymbol}
-        </p>
+        <div className="flex items-center gap-2 sm:justify-end">
+          <MockDataBadge />
+          <p className="font-semibold text-agora-text">
+            {formatBalance(allocation.amount)} {allocation.tokenSymbol}
+          </p>
+        </div>
         <span
           className={`mt-1 inline-block rounded px-2 py-0.5 text-xs font-medium ${statusColors[allocation.status]}`}
         >

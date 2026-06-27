@@ -3,6 +3,7 @@
 import { useTranslations } from 'next-intl';
 import { formatDistanceToNow } from 'date-fns';
 import { safeFormatDate } from '@/lib/utils';
+import { MockDataBadge } from '@/components/ui/MockDataBadge';
 import {
   FileText,
   CheckCircle,
@@ -132,9 +133,12 @@ export function ProposalCard({ proposal, onClick }: ProposalCardProps) {
               {t('abstain')}: {formatNumber(proposal.votesAbstain)}
             </span>
           </div>
-          <span className={`whitespace-nowrap ${quorumReached ? 'text-agora-success' : 'text-agora-warning'}`}>
-            {t('quorum')}: {quorumPercent.toFixed(0)}%
-          </span>
+          <div className="flex items-center gap-2">
+            <MockDataBadge />
+            <span className={`whitespace-nowrap ${quorumReached ? 'text-agora-success' : 'text-agora-warning'}`}>
+              {t('quorum')}: {quorumPercent.toFixed(0)}%
+            </span>
+          </div>
         </div>
 
         {/* Progress Bar */}

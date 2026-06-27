@@ -13,6 +13,8 @@ import type Database from 'better-sqlite3';
 import type { SignalCollectorService, CollectorHealth } from '../services/collectors';
 import type { GovernanceOSBridge, EscalatedSession } from '../services/governance-os-bridge';
 import type { SchedulerService } from '../scheduler';
+import { writeLimiter } from '../middleware/rate-limit';
+import { requireAdmin } from '../middleware/auth';
 
 const router = Router();
 
@@ -341,7 +343,7 @@ router.get('/stages', (req: Request, res: Response) => {
  * POST /api/pipeline/retry/:issueId
  * Manually queue a pipeline retry for an issue
  */
-router.post('/retry/:issueId', async (req: Request, res: Response) => {
+router.post('/retry/:issueId', writeLimiter, requireAdmin, async (req: Request, res: Response) => {
   const { db, schedulerService } = getServices(req);
 
   if (!schedulerService) {
@@ -459,7 +461,7 @@ router.get('/escalations', (req: Request, res: Response) => {
  * POST /api/pipeline/escalations/:id/resolve
  * Resolve an escalation
  */
-router.post('/escalations/:id/resolve', (req: Request, res: Response) => {
+router.post('/escalations/:id/resolve', writeLimiter, requireAdmin, (req: Request, res: Response) => {
   try {
     const { governanceOSBridge } = getServices(req);
 
@@ -495,7 +497,7 @@ router.post('/escalations/:id/resolve', (req: Request, res: Response) => {
  * POST /api/pipeline/backfill
  * Manually trigger proposal backfill
  */
-router.post('/backfill', async (req: Request, res: Response) => {
+router.post('/backfill', writeLimiter, requireAdmin, async (req: Request, res: Response) => {
   try {
     const { schedulerService } = getServices(req);
 

@@ -1,6 +1,8 @@
 import { Router } from 'express';
 import type { Request, Response } from 'express';
 import type { QualityGateService, QualityCheckType } from '../services/quality-gate-service';
+import { writeLimiter } from '../middleware/rate-limit';
+import { requireAdmin } from '../middleware/auth';
 
 export const qualityRouter: Router = Router();
 
@@ -40,7 +42,7 @@ qualityRouter.get('/history', (req: Request, res: Response) => {
 });
 
 // POST /api/quality/check - Perform quality check
-qualityRouter.post('/check', (req: Request, res: Response) => {
+qualityRouter.post('/check', writeLimiter, requireAdmin, (req: Request, res: Response) => {
   const service: QualityGateService | undefined = req.app.locals.qualityGateService;
 
   if (!service) {
@@ -77,7 +79,7 @@ qualityRouter.post('/check', (req: Request, res: Response) => {
 });
 
 // POST /api/quality/check/chatter - Check agent chatter
-qualityRouter.post('/check/chatter', (req: Request, res: Response) => {
+qualityRouter.post('/check/chatter', writeLimiter, requireAdmin, (req: Request, res: Response) => {
   const service: QualityGateService | undefined = req.app.locals.qualityGateService;
 
   if (!service) {
@@ -95,7 +97,7 @@ qualityRouter.post('/check/chatter', (req: Request, res: Response) => {
 });
 
 // POST /api/quality/check/agora - Check Agora message
-qualityRouter.post('/check/agora', (req: Request, res: Response) => {
+qualityRouter.post('/check/agora', writeLimiter, requireAdmin, (req: Request, res: Response) => {
   const service: QualityGateService | undefined = req.app.locals.qualityGateService;
 
   if (!service) {
@@ -113,7 +115,7 @@ qualityRouter.post('/check/agora', (req: Request, res: Response) => {
 });
 
 // POST /api/quality/check/decision-packet - Check decision packet
-qualityRouter.post('/check/decision-packet', (req: Request, res: Response) => {
+qualityRouter.post('/check/decision-packet', writeLimiter, requireAdmin, (req: Request, res: Response) => {
   const service: QualityGateService | undefined = req.app.locals.qualityGateService;
 
   if (!service) {
@@ -131,7 +133,7 @@ qualityRouter.post('/check/decision-packet', (req: Request, res: Response) => {
 });
 
 // POST /api/quality/check/summary - Check summary
-qualityRouter.post('/check/summary', (req: Request, res: Response) => {
+qualityRouter.post('/check/summary', writeLimiter, requireAdmin, (req: Request, res: Response) => {
   const service: QualityGateService | undefined = req.app.locals.qualityGateService;
 
   if (!service) {
@@ -149,7 +151,7 @@ qualityRouter.post('/check/summary', (req: Request, res: Response) => {
 });
 
 // DELETE /api/quality/history/old - Clear old quality check logs
-qualityRouter.delete('/history/old', (req: Request, res: Response) => {
+qualityRouter.delete('/history/old', writeLimiter, requireAdmin, (req: Request, res: Response) => {
   const service: QualityGateService | undefined = req.app.locals.qualityGateService;
 
   if (!service) {

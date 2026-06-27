@@ -2,6 +2,7 @@
 
 import { useTranslations } from 'next-intl';
 import { Coins } from 'lucide-react';
+import { MockDataBadge } from '@/components/ui/MockDataBadge';
 
 export interface TreasuryBalance {
   tokenAddress: string;
@@ -53,7 +54,10 @@ export function BalanceDistributionChart({ balances }: BalanceDistributionChartP
 
   return (
     <div className="rounded-xl border border-agora-border bg-agora-card p-6">
-      <h3 className="mb-4 text-lg font-semibold text-agora-text">{t('balanceDistribution')}</h3>
+      <div className="mb-4 flex items-center gap-2">
+        <h3 className="text-lg font-semibold text-agora-text">{t('balanceDistribution')}</h3>
+        <MockDataBadge />
+      </div>
 
       {hasData ? (
         <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">

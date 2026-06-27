@@ -1,5 +1,7 @@
 import { Router } from 'express';
 import type { SignalCollectorService } from '../services/collectors';
+import { writeLimiter } from '../middleware/rate-limit';
+import { requireAdmin } from '../middleware/auth';
 
 export const collectorsRouter: Router = Router();
 
@@ -94,7 +96,7 @@ collectorsRouter.get('/rss/feeds', (req, res) => {
 });
 
 // POST /api/collectors/rss/feeds - Add new RSS feed
-collectorsRouter.post('/rss/feeds', (req, res) => {
+collectorsRouter.post('/rss/feeds', writeLimiter, requireAdmin, (req, res) => {
   const signalCollector: SignalCollectorService = req.app.locals.signalCollector;
   const { name, url, category, fetchInterval } = req.body;
 
@@ -122,7 +124,7 @@ collectorsRouter.post('/rss/feeds', (req, res) => {
 });
 
 // DELETE /api/collectors/rss/feeds/:id - Remove RSS feed
-collectorsRouter.delete('/rss/feeds/:id', (req, res) => {
+collectorsRouter.delete('/rss/feeds/:id', writeLimiter, requireAdmin, (req, res) => {
   const signalCollector: SignalCollectorService = req.app.locals.signalCollector;
   const { id } = req.params;
 
@@ -158,7 +160,7 @@ collectorsRouter.get('/github/repos', (req, res) => {
 });
 
 // POST /api/collectors/github/repos - Add new GitHub repo
-collectorsRouter.post('/github/repos', (req, res) => {
+collectorsRouter.post('/github/repos', writeLimiter, requireAdmin, (req, res) => {
   const signalCollector: SignalCollectorService = req.app.locals.signalCollector;
   const { owner, repo, category, fetchInterval } = req.body;
 
@@ -186,7 +188,7 @@ collectorsRouter.post('/github/repos', (req, res) => {
 });
 
 // DELETE /api/collectors/github/repos/:id - Remove GitHub repo
-collectorsRouter.delete('/github/repos/:id', (req, res) => {
+collectorsRouter.delete('/github/repos/:id', writeLimiter, requireAdmin, (req, res) => {
   const signalCollector: SignalCollectorService = req.app.locals.signalCollector;
   const { id } = req.params;
 
@@ -240,7 +242,7 @@ collectorsRouter.get('/social/sources', (req, res) => {
 });
 
 // POST /api/collectors/social/sources - Add a social source
-collectorsRouter.post('/social/sources', (req, res) => {
+collectorsRouter.post('/social/sources', writeLimiter, requireAdmin, (req, res) => {
   const signalCollector: SignalCollectorService = req.app.locals.signalCollector;
   const { platform, name, endpoint, category, fetchInterval } = req.body;
 
@@ -269,7 +271,7 @@ collectorsRouter.post('/social/sources', (req, res) => {
 });
 
 // DELETE /api/collectors/social/sources/:id - Remove a social source
-collectorsRouter.delete('/social/sources/:id', (req, res) => {
+collectorsRouter.delete('/social/sources/:id', writeLimiter, requireAdmin, (req, res) => {
   const signalCollector: SignalCollectorService = req.app.locals.signalCollector;
   const { id } = req.params;
 

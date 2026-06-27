@@ -17,6 +17,7 @@ import { useTranslations } from 'next-intl';
 import { BudgetAllocation } from './AllocationCard';
 import { safeFormatDate } from '@/lib/utils';
 import { useDialogA11y } from '@/hooks/useDialogA11y';
+import { MockDataBadge } from '@/components/ui/MockDataBadge';
 
 interface AllocationDetailModalProps {
   allocation: BudgetAllocation | null;
@@ -91,7 +92,10 @@ export function AllocationDetailModal({
               <FileText className={`h-5 sm:h-6 w-5 sm:w-6 ${statusConfig[allocation.status]?.color}`} />
             </div>
             <div className="min-w-0 flex-1">
-              <h2 {...titleProps} className="text-lg sm:text-xl font-bold text-agora-text">{t('modals.allocationDetail')}</h2>
+              <div className="flex items-center gap-2">
+                <h2 {...titleProps} className="text-lg sm:text-xl font-bold text-agora-text">{t('modals.allocationDetail')}</h2>
+                <MockDataBadge />
+              </div>
               <p className="text-sm text-agora-muted">{allocation.category}</p>
             </div>
           </div>

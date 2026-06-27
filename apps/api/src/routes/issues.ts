@@ -2,6 +2,8 @@ import { Router } from 'express';
 import type Database from 'better-sqlite3';
 import { v4 as uuidv4 } from 'uuid';
 import type { IssueDetectionService } from '../services/issue-detection';
+import { writeLimiter } from '../middleware/rate-limit';
+import { requireAdmin } from '../middleware/auth';
 
 export const issuesRouter: Router = Router();
 
@@ -59,7 +61,7 @@ issuesRouter.get('/:id', (req, res) => {
 });
 
 // POST /api/issues - Create issue
-issuesRouter.post('/', (req, res) => {
+issuesRouter.post('/', writeLimiter, requireAdmin, (req, res) => {
   const db: Database.Database = req.app.locals.db;
   const io = req.app.locals.io;
   const {
@@ -104,7 +106,7 @@ issuesRouter.post('/', (req, res) => {
 });
 
 // PATCH /api/issues/:id - Update issue
-issuesRouter.patch('/:id', (req, res) => {
+issuesRouter.patch('/:id', writeLimiter, requireAdmin, (req, res) => {
   const db: Database.Database = req.app.locals.db;
   const { id } = req.params;
   const { status, decisionPacket, resolvedAt } = req.body;
@@ -158,7 +160,7 @@ issuesRouter.get('/detection/stats', (req, res) => {
 });
 
 // POST /api/issues/detection/run - Manually trigger detection
-issuesRouter.post('/detection/run', async (req, res) => {
+issuesRouter.post('/detection/run', writeLimiter, requireAdmin, async (req, res) => {
   const issueDetection: IssueDetectionService = req.app.locals.issueDetection;
 
   if (!issueDetection) {

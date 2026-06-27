@@ -19,6 +19,7 @@ import { useTranslations } from 'next-intl';
 import { TreasuryTransaction } from './TransactionCard';
 import { safeFormatDate } from '@/lib/utils';
 import { useDialogA11y } from '@/hooks/useDialogA11y';
+import { MockDataBadge } from '@/components/ui/MockDataBadge';
 
 interface TransactionDetailModalProps {
   transaction: TreasuryTransaction | null;
@@ -103,7 +104,10 @@ export function TransactionDetailModal({
               <TypeIcon className={`h-5 sm:h-6 w-5 sm:w-6 ${colors.icon}`} />
             </div>
             <div className="min-w-0 flex-1">
-              <h2 {...titleProps} className="text-lg sm:text-xl font-bold text-agora-text">{t('modals.transactionDetail')}</h2>
+              <div className="flex items-center gap-2">
+                <h2 {...titleProps} className="text-lg sm:text-xl font-bold text-agora-text">{t('modals.transactionDetail')}</h2>
+                <MockDataBadge />
+              </div>
               <p className="text-sm text-agora-muted">{t(`transaction.${transaction.type}`)}</p>
             </div>
           </div>

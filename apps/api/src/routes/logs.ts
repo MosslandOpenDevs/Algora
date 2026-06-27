@@ -1,6 +1,8 @@
 import { Router, Request, Response } from 'express';
 import type { Router as RouterType } from 'express';
 import { logMonitorService } from '../services/log-monitor';
+import { writeLimiter } from '../middleware/rate-limit';
+import { requireAdmin } from '../middleware/auth';
 
 export const logsRouter: RouterType = Router();
 
@@ -107,7 +109,7 @@ logsRouter.get('/errors/today', async (_req: Request, res: Response) => {
  * Clean up old log files (admin only)
  * Query: daysToKeep (default: 30)
  */
-logsRouter.delete('/cleanup', (req: Request, res: Response) => {
+logsRouter.delete('/cleanup', writeLimiter, requireAdmin, (req: Request, res: Response) => {
   try {
     const daysToKeep = parseInt(req.query.daysToKeep as string) || 30;
 

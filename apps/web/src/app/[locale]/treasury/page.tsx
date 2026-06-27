@@ -134,6 +134,9 @@ export default function TreasuryPage() {
         </div>
       </div>
 
+      {/* Simulated data banner above the money cards */}
+      {dashboard?.tokenInfo?.mockMode && <MockDataBadge variant="banner" className="mb-4" />}
+
       {/* Stats Grid */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div className="rounded-xl border border-agora-border bg-agora-card p-6">

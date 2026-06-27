@@ -42,6 +42,7 @@ import {
 } from 'lucide-react';
 import { TokenVoting } from './TokenVoting';
 import { CopyableHash } from '@/components/ui/CopyableHash';
+import { MockDataBadge } from '@/components/ui/MockDataBadge';
 import {
   fetchDecisionPacket,
   fetchProposalVoteHistory,
@@ -498,6 +499,7 @@ export function ProposalDetailModal({ proposal, onClose }: ProposalDetailModalPr
                     <div className="flex items-center gap-2">
                       <Banknote className="h-5 w-5 text-yellow-700 dark:text-yellow-400 flex-shrink-0" />
                       <h3 className="font-semibold text-agora-text">{tDetail('content.budget')}</h3>
+                      <MockDataBadge />
                     </div>
                     {proposal.budget.total && (
                       <span className="text-base sm:text-lg font-bold text-yellow-700 dark:text-yellow-400 whitespace-nowrap">
@@ -611,6 +613,7 @@ export function ProposalDetailModal({ proposal, onClose }: ProposalDetailModalPr
                   <div className="flex items-center gap-2 text-sm text-agora-muted">
                     <Vote className="h-4 w-4" />
                     <span>{tDetail('votingResults')}</span>
+                    <MockDataBadge />
                   </div>
                   <div className="flex items-center gap-2">
                     <span className={`text-sm font-medium ${quorumReached ? 'text-agora-success' : 'text-agora-warning'}`}>

@@ -1,6 +1,9 @@
 import { Router } from 'express';
 import type { Server as SocketServer } from 'socket.io';
 import type { TokenIntegrationService } from '../services/token';
+import type { SignatureService } from '../services/signature';
+import { writeLimiter } from '../middleware/rate-limit';
+import { requireAdmin } from '../middleware/auth';
 
 export const tokenRouter: Router = Router();
 
@@ -78,7 +81,7 @@ tokenRouter.get('/stats', (req, res) => {
 // === Wallet Verification ===
 
 // POST /api/token/verify/request - Request wallet verification
-tokenRouter.post('/verify/request', (req, res) => {
+tokenRouter.post('/verify/request', writeLimiter, (req, res) => {
   const tokenService: TokenIntegrationService = req.app.locals.tokenIntegration;
   try {
     const { walletAddress, userId } = req.body;
@@ -95,7 +98,7 @@ tokenRouter.post('/verify/request', (req, res) => {
 });
 
 // POST /api/token/verify/confirm - Confirm wallet verification with signature
-tokenRouter.post('/verify/confirm', async (req, res) => {
+tokenRouter.post('/verify/confirm', writeLimiter, async (req, res) => {
   const tokenService: TokenIntegrationService = req.app.locals.tokenIntegration;
   try {
     const { walletAddress, signature, nonce } = req.body;
@@ -157,7 +160,7 @@ tokenRouter.get('/holders/wallet/:address', (req, res) => {
 });
 
 // POST /api/token/holders/:id/refresh - Refresh holder balance
-tokenRouter.post('/holders/:id/refresh', async (req, res) => {
+tokenRouter.post('/holders/:id/refresh', writeLimiter, async (req, res) => {
   const tokenService: TokenIntegrationService = req.app.locals.tokenIntegration;
   try {
     const holder = await tokenService.token.refreshHolderBalance(req.params.id);
@@ -184,7 +187,7 @@ tokenRouter.get('/holders/:address/profile', async (req, res) => {
 // === Token Snapshots ===
 
 // POST /api/token/snapshots - Create a snapshot
-tokenRouter.post('/snapshots', async (req, res) => {
+tokenRouter.post('/snapshots', writeLimiter, requireAdmin, async (req, res) => {
   const tokenService: TokenIntegrationService = req.app.locals.tokenIntegration;
   try {
     const { proposalId } = req.body;
@@ -238,7 +241,7 @@ tokenRouter.get('/snapshots/:id/balance/:address', (req, res) => {
 // === Token Voting ===
 
 // POST /api/token/voting/initialize - Initialize voting for a proposal
-tokenRouter.post('/voting/initialize', async (req, res) => {
+tokenRouter.post('/voting/initialize', writeLimiter, requireAdmin, async (req, res) => {
   const tokenService: TokenIntegrationService = req.app.locals.tokenIntegration;
   try {
     const { proposalId, votingDurationHours, quorumThreshold, passThreshold } = req.body;
@@ -272,16 +275,75 @@ tokenRouter.get('/voting/:proposalId', (req, res) => {
   }
 });
 
+// GET /api/token/voting/:proposalId/typed-data - EIP-712 typed data for a vote.
+// The frontend fetches this, signs it with the connected wallet, then POSTs /vote.
+tokenRouter.get('/voting/:proposalId/typed-data', (req, res) => {
+  const signatureService: SignatureService | undefined = req.app.locals.signatureService;
+  if (!signatureService) {
+    return res.status(503).json({ error: 'Signature service unavailable' });
+  }
+  const { proposalId } = req.params;
+  const { voter, choice, nonce } = req.query;
+  if (typeof voter !== 'string' || typeof choice !== 'string' || typeof nonce !== 'string') {
+    return res.status(400).json({ error: 'voter, choice, nonce query params are required' });
+  }
+  if (!['for', 'against', 'abstain'].includes(choice)) {
+    return res.status(400).json({ error: 'choice must be "for", "against", or "abstain"' });
+  }
+  const issuedAt = Math.floor(Date.now() / 1000);
+  return res.json(
+    signatureService.buildTypedData({
+      proposalId,
+      choice: choice as 'for' | 'against' | 'abstain',
+      voter,
+      nonce,
+      issuedAt,
+    })
+  );
+});
+
 // POST /api/token/voting/:proposalId/vote - Cast a vote
-tokenRouter.post('/voting/:proposalId/vote', async (req, res) => {
+tokenRouter.post('/voting/:proposalId/vote', writeLimiter, async (req, res) => {
   const tokenService: TokenIntegrationService = req.app.locals.tokenIntegration;
   const io: SocketServer = req.app.locals.io;
+  const signatureService: SignatureService | undefined = req.app.locals.signatureService;
   try {
-    const { walletAddress, choice, signature, reason } = req.body;
+    const { walletAddress, choice, signature, reason, nonce, issuedAt } = req.body;
     const proposalId = req.params.proposalId;
 
     if (!walletAddress || !choice) {
       return res.status(400).json({ error: 'walletAddress and choice are required' });
+    }
+
+    if (!['for', 'against', 'abstain'].includes(choice)) {
+      return res.status(400).json({ error: 'choice must be "for", "against", or "abstain"' });
+    }
+
+    // EIP-712 verification — always required on this public vote path.
+    // Every vote must carry a wallet signature that recovers to walletAddress
+    // with a fresh nonce, so a vote cannot be forged for another address or
+    // replayed. (Token balances/voting power remain simulated; the signature
+    // only proves the voter controls the wallet they claim.)
+    if (signatureService) {
+      if (!signature) {
+        return res
+          .status(401)
+          .json({ error: 'Vote signature required. Include signature, nonce, issuedAt.' });
+      }
+      if (!nonce || typeof issuedAt !== 'number') {
+        return res
+          .status(400)
+          .json({ error: 'nonce and issuedAt are required when a signature is provided' });
+      }
+      const result = signatureService.verify(
+        { proposalId, choice, voter: walletAddress, nonce, issuedAt },
+        signature
+      );
+      if (!result.ok) {
+        return res
+          .status(401)
+          .json({ error: `Signature verification failed: ${result.reason}` });
+      }
     }
 
     const vote = await tokenService.voting.castVote(
@@ -350,7 +412,7 @@ tokenRouter.get('/voting/:proposalId/tally', (req, res) => {
 });
 
 // POST /api/token/voting/:proposalId/finalize - Finalize voting
-tokenRouter.post('/voting/:proposalId/finalize', async (req, res) => {
+tokenRouter.post('/voting/:proposalId/finalize', writeLimiter, requireAdmin, async (req, res) => {
   const tokenService: TokenIntegrationService = req.app.locals.tokenIntegration;
   try {
     const tally = await tokenService.voting.finalizeVoting(req.params.proposalId);
@@ -398,7 +460,7 @@ tokenRouter.get('/treasury/stats', (req, res) => {
 // === Treasury Allocations ===
 
 // POST /api/token/treasury/allocations - Create allocation
-tokenRouter.post('/treasury/allocations', (req, res) => {
+tokenRouter.post('/treasury/allocations', writeLimiter, requireAdmin, (req, res) => {
   const tokenService: TokenIntegrationService = req.app.locals.tokenIntegration;
   try {
     const { proposalId, category, tokenAddress, amount, recipient, description } = req.body;
@@ -458,7 +520,7 @@ tokenRouter.get('/treasury/allocations/:id', (req, res) => {
 });
 
 // POST /api/token/treasury/allocations/:id/approve - Approve allocation
-tokenRouter.post('/treasury/allocations/:id/approve', (req, res) => {
+tokenRouter.post('/treasury/allocations/:id/approve', writeLimiter, requireAdmin, (req, res) => {
   const tokenService: TokenIntegrationService = req.app.locals.tokenIntegration;
   try {
     const allocation = tokenService.treasury.approveAllocation(req.params.id);
@@ -469,7 +531,7 @@ tokenRouter.post('/treasury/allocations/:id/approve', (req, res) => {
 });
 
 // POST /api/token/treasury/allocations/:id/disburse - Disburse allocation
-tokenRouter.post('/treasury/allocations/:id/disburse', async (req, res) => {
+tokenRouter.post('/treasury/allocations/:id/disburse', writeLimiter, requireAdmin, async (req, res) => {
   const tokenService: TokenIntegrationService = req.app.locals.tokenIntegration;
   try {
     const { txHash } = req.body;
@@ -481,7 +543,7 @@ tokenRouter.post('/treasury/allocations/:id/disburse', async (req, res) => {
 });
 
 // POST /api/token/treasury/allocations/:id/cancel - Cancel allocation
-tokenRouter.post('/treasury/allocations/:id/cancel', (req, res) => {
+tokenRouter.post('/treasury/allocations/:id/cancel', writeLimiter, requireAdmin, (req, res) => {
   const tokenService: TokenIntegrationService = req.app.locals.tokenIntegration;
   try {
     const allocation = tokenService.treasury.cancelAllocation(req.params.id);
@@ -494,7 +556,7 @@ tokenRouter.post('/treasury/allocations/:id/cancel', (req, res) => {
 // === Treasury Transactions ===
 
 // POST /api/token/treasury/transactions - Record transaction
-tokenRouter.post('/treasury/transactions', (req, res) => {
+tokenRouter.post('/treasury/transactions', writeLimiter, requireAdmin, (req, res) => {
   const tokenService: TokenIntegrationService = req.app.locals.tokenIntegration;
   try {
     const { type, tokenAddress, amount, fromAddress, toAddress, proposalId, txHash, description } =
@@ -541,7 +603,7 @@ tokenRouter.get('/treasury/transactions', (req, res) => {
 });
 
 // POST /api/token/treasury/transactions/:id/confirm - Confirm transaction
-tokenRouter.post('/treasury/transactions/:id/confirm', (req, res) => {
+tokenRouter.post('/treasury/transactions/:id/confirm', writeLimiter, requireAdmin, (req, res) => {
   const tokenService: TokenIntegrationService = req.app.locals.tokenIntegration;
   try {
     const { txHash } = req.body;
@@ -571,7 +633,7 @@ tokenRouter.get('/treasury/limits', (req, res) => {
 });
 
 // POST /api/token/treasury/limits - Set spending limit
-tokenRouter.post('/treasury/limits', (req, res) => {
+tokenRouter.post('/treasury/limits', writeLimiter, requireAdmin, (req, res) => {
   const tokenService: TokenIntegrationService = req.app.locals.tokenIntegration;
   try {
     const { category, tokenAddress, dailyLimit, weeklyLimit, monthlyLimit, requiresProposal } =

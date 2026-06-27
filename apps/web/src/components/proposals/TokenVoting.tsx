@@ -1,12 +1,13 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { useAccount } from 'wagmi';
+import { useAccount, useSignTypedData } from 'wagmi';
 import { useTranslations } from 'next-intl';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { ThumbsUp, ThumbsDown, MinusCircle, Wallet, Loader2, Users, Info, Radio } from 'lucide-react';
 import { useVoteEvents, type VoteCastEvent, type VoteTallyUpdatedEvent } from '@/hooks/useSocket';
+import { MockDataBadge } from '@/components/ui/MockDataBadge';
 
 interface TokenVotingProps {
   proposalId: string;
@@ -40,6 +41,7 @@ export function TokenVoting({ proposalId, onVoteSuccess }: TokenVotingProps) {
   const t = useTranslations('Proposals');
   const tVoting = useTranslations('Voting');
   const { address, isConnected } = useAccount();
+  const { signTypedDataAsync } = useSignTypedData();
   const queryClient = useQueryClient();
   const [selectedChoice, setSelectedChoice] = useState<'for' | 'against' | 'abstain' | null>(null);
   const [reason, setReason] = useState('');
@@ -125,6 +127,33 @@ export function TokenVoting({ proposalId, onVoteSuccess }: TokenVotingProps) {
   // Vote mutation
   const voteMutation = useMutation({
     mutationFn: async (choice: 'for' | 'against' | 'abstain') => {
+      if (!address) throw new Error('Wallet not connected');
+
+      // Cast a vote in 3 steps: fetch EIP-712 typed data → sign it with the
+      // connected wallet → submit with the signature. The signature proves the
+      // voter controls this wallet (prevents forging votes for other addresses
+      // and replays); the underlying voting power is still simulated demo data.
+      const nonce =
+        globalThis.crypto?.randomUUID?.() ??
+        `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
+      const tdRes = await fetch(
+        `${API_URL}/api/token/voting/${proposalId}/typed-data?voter=${address}&choice=${choice}&nonce=${nonce}`
+      );
+      if (!tdRes.ok) {
+        const error = await tdRes.json().catch(() => ({}));
+        throw new Error(error.error || 'Failed to prepare vote signature');
+      }
+      const typedData = await tdRes.json();
+      const issuedAt = typedData.message.issuedAt as number;
+
+      const signature = await signTypedDataAsync({
+        domain: typedData.domain,
+        types: typedData.types,
+        primaryType: typedData.primaryType,
+        message: typedData.message,
+      });
+
       const res = await fetch(`${API_URL}/api/token/voting/${proposalId}/vote`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -132,6 +161,9 @@ export function TokenVoting({ proposalId, onVoteSuccess }: TokenVotingProps) {
           walletAddress: address,
           choice,
           reason: reason || undefined,
+          signature,
+          nonce,
+          issuedAt,
         }),
       });
       if (!res.ok) {
@@ -261,6 +293,9 @@ export function TokenVoting({ proposalId, onVoteSuccess }: TokenVotingProps) {
 
       {/* Voting Power Breakdown */}
       <div className="mb-4 rounded-lg bg-agora-darker p-3">
+        <div className="mb-2 flex justify-end">
+          <MockDataBadge />
+        </div>
         <div className="flex items-center justify-between text-sm">
           <span className="text-agora-muted">{tVoting('ownVotingPower')}:</span>
           <span className="text-agora-text font-medium">{ownVotingPower.toLocaleString()}</span>

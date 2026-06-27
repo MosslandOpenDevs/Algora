@@ -2,6 +2,7 @@
 
 import { Vote, ArrowUpRight, ArrowDownRight, Zap } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { MockDataBadge } from '@/components/ui/MockDataBadge';
 
 export interface DelegationStatsProps {
   ownVotingPower: number;
@@ -55,7 +56,11 @@ export function DelegationStats({
   ];
 
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <div className="space-y-3">
+      <div className="flex justify-end">
+        <MockDataBadge />
+      </div>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
       {stats.map((stat) => (
         <div
           key={stat.label}
@@ -78,6 +83,7 @@ export function DelegationStats({
           </div>
         </div>
       ))}
+      </div>
     </div>
   );
 }

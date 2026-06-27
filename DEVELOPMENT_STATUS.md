@@ -2,9 +2,31 @@
 
 This file tracks the current development progress for continuity between sessions.
 
-**Last Updated**: 2026-02-01
+**Last Updated**: 2026-06-27
 **Current Version**: 0.13.1
 **Production URL**: https://algora.moss.land
+
+---
+
+## Recent Work: Write-Path Hardening + Honest Mock Labeling (2026-06-27)
+
+The wallet-connect and EIP-712 signature layers are real, but MOC balances,
+voting power, and the treasury are simulated demo data (mock balance = hash of
+the wallet address; treasury allocate/approve/disburse are SQLite status flips
+with no on-chain transfer). Two coordinated changes addressed this:
+
+- **Closed the public write control plane.** ~40 operational write endpoints
+  across 15 routers that were reachable unauthenticated now require
+  `requireAdmin`. Public interactive endpoints the live showcase depends on
+  (wallet verify, token vote, agent summon/dismiss, Agora session create/message,
+  alert acknowledge) stay public but are rate-limited via `writeLimiter`.
+- **Votes are now wallet-signed.** `POST /api/token/voting/:proposalId/vote`
+  requires a valid EIP-712 signature (anti-forgery + anti-replay); added
+  `GET /api/token/voting/:proposalId/typed-data` and frontend signing.
+- **Honest labeling.** Surfaced `MockDataBadge` across 15 components so simulated
+  money is clearly marked (real on-chain ETH balance left unbadged).
+- Verified: `apps/api` typecheck clean + 44 tests pass; `apps/web` typecheck clean.
+- Next: native SIWE per-user sessions (WS-1) to replace the shared admin key.
 
 ---
 

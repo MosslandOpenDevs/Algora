@@ -10,6 +10,7 @@ import { usePathname } from 'next/navigation';
 import { toast } from 'sonner';
 
 import { HelpTooltip } from '@/components/guide/HelpTooltip';
+import { MockDataBadge } from '@/components/ui/MockDataBadge';
 import { DelegationStats, DelegationList, DelegationModal } from '@/components/delegation';
 import { VoteHistoryList, type VoteHistoryItem } from '@/components/voting';
 import { fetchDelegations, revokeDelegation, type DelegationResponse } from '@/lib/api';
@@ -267,7 +268,10 @@ export default function ProfilePage() {
                 <Wallet className="h-5 w-5 text-agora-accent" />
               </div>
               <div>
-                <p className="text-xs text-agora-muted">{t('tokenBalance')}</p>
+                <div className="flex items-center gap-2">
+                  <p className="text-xs text-agora-muted">{t('tokenBalance')}</p>
+                  <MockDataBadge />
+                </div>
                 <p className="text-lg font-bold text-slate-900 dark:text-white">
                   {formatBalance(profile.holder.balance)}
                 </p>
@@ -281,7 +285,10 @@ export default function ProfilePage() {
                 <Vote className="h-5 w-5 text-purple-700 dark:text-purple-400" />
               </div>
               <div>
-                <p className="text-xs text-agora-muted">{t('votingPower')}</p>
+                <div className="flex items-center gap-2">
+                  <p className="text-xs text-agora-muted">{t('votingPower')}</p>
+                  <MockDataBadge />
+                </div>
                 <p className="text-lg font-bold text-slate-900 dark:text-white">
                   {effectiveVotingPower.toLocaleString()}
                 </p>

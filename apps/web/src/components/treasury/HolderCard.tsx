@@ -3,6 +3,7 @@
 import { Users, ShieldCheck, Vote, ExternalLink, Copy, Check } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { MockDataBadge } from '@/components/ui/MockDataBadge';
 
 export interface TokenHolder {
   id: string;
@@ -92,6 +93,7 @@ export function HolderCard({ holder, onClick, index = 0 }: HolderCardProps) {
       </div>
       <div className="text-right">
         <div className="flex items-center justify-end gap-1">
+          <MockDataBadge />
           <Vote className="h-4 w-4 text-agora-accent" />
           <p className="font-semibold text-agora-text">
             {holder.votingPower.toLocaleString()} {t('votingPower')}

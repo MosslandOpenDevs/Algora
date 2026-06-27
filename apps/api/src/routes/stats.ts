@@ -2,6 +2,8 @@ import { Router } from 'express';
 import type Database from 'better-sqlite3';
 import type { KPIPersistenceService } from '../services/kpi-persistence';
 import { cache, CACHE_KEYS, CACHE_TTL } from '../lib/cache';
+import { writeLimiter } from '../middleware/rate-limit';
+import { requireAdmin } from '../middleware/auth';
 
 export const statsRouter: Router = Router();
 
@@ -495,7 +497,7 @@ statsRouter.get('/kpi/status', (req, res) => {
 });
 
 // POST /api/stats/kpi/snapshot - Manually trigger a KPI snapshot
-statsRouter.post('/kpi/snapshot', (req, res) => {
+statsRouter.post('/kpi/snapshot', writeLimiter, requireAdmin, (req, res) => {
   const kpiService: KPIPersistenceService | undefined = req.app.locals.kpiService;
 
   if (!kpiService) {
@@ -541,7 +543,7 @@ statsRouter.get('/cache', (_req, res) => {
 });
 
 // POST /api/stats/cache/clear - Clear all caches
-statsRouter.post('/cache/clear', (_req, res) => {
+statsRouter.post('/cache/clear', writeLimiter, requireAdmin, (_req, res) => {
   try {
     cache.clear();
     res.json({ success: true, message: 'Cache cleared' });
@@ -581,7 +583,7 @@ statsRouter.get('/thermal', (req, res) => {
 });
 
 // PATCH /api/stats/thermal/config - Update thermal throttling configuration
-statsRouter.patch('/thermal/config', (req, res) => {
+statsRouter.patch('/thermal/config', writeLimiter, requireAdmin, (req, res) => {
   const llmService = req.app.locals.llmService;
 
   if (!llmService) {

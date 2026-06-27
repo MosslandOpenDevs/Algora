@@ -1,5 +1,7 @@
 import { Router } from 'express';
 import type Database from 'better-sqlite3';
+import { writeLimiter } from '../middleware/rate-limit';
+import { requireAdmin } from '../middleware/auth';
 
 export const agentsRouter: Router = Router();
 
@@ -69,7 +71,7 @@ agentsRouter.get('/group/:groupName', (req, res) => {
 });
 
 // PATCH /api/agents/:id/state - Update agent state
-agentsRouter.patch('/:id/state', (req, res) => {
+agentsRouter.patch('/:id/state', writeLimiter, requireAdmin, (req, res) => {
   const db: Database.Database = req.app.locals.db;
   const { id } = req.params;
   const { status, currentActivity } = req.body;
@@ -103,7 +105,7 @@ agentsRouter.patch('/:id/state', (req, res) => {
 });
 
 // POST /api/agents/:id/summon - Summon an agent (activate)
-agentsRouter.post('/:id/summon', (req, res) => {
+agentsRouter.post('/:id/summon', writeLimiter, (req, res) => {
   const db: Database.Database = req.app.locals.db;
   const io = req.app.locals.io;
   const { id } = req.params;
@@ -156,7 +158,7 @@ agentsRouter.post('/:id/summon', (req, res) => {
 });
 
 // POST /api/agents/:id/dismiss - Dismiss an agent (deactivate)
-agentsRouter.post('/:id/dismiss', (req, res) => {
+agentsRouter.post('/:id/dismiss', writeLimiter, (req, res) => {
   const db: Database.Database = req.app.locals.db;
   const io = req.app.locals.io;
   const { id } = req.params;

@@ -3,6 +3,7 @@
 import { ArrowUpRight, ArrowDownRight, ArrowLeftRight, FileText } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { safeFormatDate } from '@/lib/utils';
+import { MockDataBadge } from '@/components/ui/MockDataBadge';
 
 export interface TreasuryTransaction {
   id: string;
@@ -79,10 +80,13 @@ export function TransactionCard({ transaction, onClick, index = 0 }: Transaction
         </div>
       </div>
       <div className="text-left sm:text-right flex-shrink-0">
-        <p className={`font-semibold ${colors.text}`}>
-          {sign}
-          {formatBalance(transaction.amount)} {transaction.tokenSymbol}
-        </p>
+        <div className="flex items-center gap-2 sm:justify-end">
+          <MockDataBadge />
+          <p className={`font-semibold ${colors.text}`}>
+            {sign}
+            {formatBalance(transaction.amount)} {transaction.tokenSymbol}
+          </p>
+        </div>
         <span
           className={`mt-1 inline-block rounded px-2 py-0.5 text-xs font-medium ${statusColors[transaction.status]}`}
         >

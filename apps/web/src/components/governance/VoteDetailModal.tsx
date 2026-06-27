@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { type DualHouseVote } from '@/lib/api';
 import { useDialogA11y } from '@/hooks/useDialogA11y';
+import { MockDataBadge } from '@/components/ui/MockDataBadge';
 
 interface VoteDetailModalProps {
   vote: DualHouseVote;
@@ -240,6 +241,11 @@ export function VoteDetailModal({ vote, isOpen, onClose }: VoteDetailModalProps)
 
         {/* Content */}
         <div className="overflow-y-auto p-6" style={{ maxHeight: 'calc(85vh - 220px)' }}>
+          {/* Simulated data notice — tallies are weighted by mock MOC voting power */}
+          <div className="mb-4 flex justify-start">
+            <MockDataBadge />
+          </div>
+
           {/* Final Result Banner */}
           {vote.status !== 'voting' && vote.status !== 'pending' && (
             <div className={`mb-6 rounded-xl p-4 ${

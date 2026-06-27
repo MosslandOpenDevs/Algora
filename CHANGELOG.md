@@ -9,9 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security
+- **Closed the public write control plane** — ~40 previously-unauthenticated operational write endpoints across 15 routers now require `requireAdmin` (`x-admin-key` / Bearer): collector source management (also an SSRF vector), signal/issue injection, Agora session orchestration, treasury allocate/approve/disburse + transactions + limits, token snapshots, voting initialize/finalize, RAG indexing/wipe, disclosure publishing, alert deletion, KPI snapshot/cache-clear/thermal config, pipeline retry/backfill/escalation-resolve, quality-log purge, log-file cleanup.
+- **Vote forgery & replay blocked** — `POST /api/token/voting/:proposalId/vote` now requires a valid EIP-712 wallet signature that recovers to the claimed `walletAddress` with a single-use nonce (added `GET /api/token/voting/:proposalId/typed-data`; mirrors the existing `proposals.ts` signature flow). The frontend now signs each vote via wagmi `useSignTypedData`.
+- **Rate-limiting on public interactive endpoints** — wallet verify/refresh, token vote, agent summon/dismiss, Agora session create/message, and alert acknowledge are kept public (the live showcase needs them) but now sit behind `writeLimiter` (20 writes/min/IP) to throttle spam/abuse.
+
+### Changed
+- **Honest "simulated data" labeling** — surfaced the existing `MockDataBadge` across 15 components so demo (non-on-chain) money is clearly marked: a persistent banner over the treasury stats grid plus inline badges on profile/wallet balance + voting-power tiles, the vote power breakdown, proposal & dual-house tallies, and allocation/transaction cards. The real on-chain ETH balance (wagmi `useBalance`) is intentionally left unbadged.
+
 ### Planned
 - Full integration testing
-- Security audit
+- Native SIWE per-user sessions (WS-1) to replace the shared admin key for governance writes
 
 ---
 

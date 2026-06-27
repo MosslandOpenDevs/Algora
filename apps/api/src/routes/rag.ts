@@ -1,6 +1,8 @@
 import { Router } from 'express';
 import type { Request, Response } from 'express';
 import type { RAGService, RAGDocument } from '../services/rag-service';
+import { writeLimiter } from '../middleware/rate-limit';
+import { requireAdmin } from '../middleware/auth';
 
 export const ragRouter: Router = Router();
 
@@ -86,7 +88,7 @@ ragRouter.post('/context', async (req: Request, res: Response) => {
 });
 
 // POST /api/rag/index - Index a document
-ragRouter.post('/index', async (req: Request, res: Response) => {
+ragRouter.post('/index', writeLimiter, requireAdmin, async (req: Request, res: Response) => {
   const service: RAGService | undefined = req.app.locals.ragService;
 
   if (!service) {
@@ -131,7 +133,7 @@ ragRouter.post('/index', async (req: Request, res: Response) => {
 });
 
 // POST /api/rag/index/batch - Index multiple documents
-ragRouter.post('/index/batch', async (req: Request, res: Response) => {
+ragRouter.post('/index/batch', writeLimiter, requireAdmin, async (req: Request, res: Response) => {
   const service: RAGService | undefined = req.app.locals.ragService;
 
   if (!service) {
@@ -227,7 +229,7 @@ ragRouter.get('/document/source/:sourceId', (req: Request, res: Response) => {
 });
 
 // DELETE /api/rag/document/:id - Delete document
-ragRouter.delete('/document/:id', (req: Request, res: Response) => {
+ragRouter.delete('/document/:id', writeLimiter, requireAdmin, (req: Request, res: Response) => {
   const service: RAGService | undefined = req.app.locals.ragService;
 
   if (!service) {
@@ -245,7 +247,7 @@ ragRouter.delete('/document/:id', (req: Request, res: Response) => {
 });
 
 // POST /api/rag/reindex - Re-index all documents
-ragRouter.post('/reindex', async (req: Request, res: Response) => {
+ragRouter.post('/reindex', writeLimiter, requireAdmin, async (req: Request, res: Response) => {
   const service: RAGService | undefined = req.app.locals.ragService;
 
   if (!service) {
@@ -265,7 +267,7 @@ ragRouter.post('/reindex', async (req: Request, res: Response) => {
 });
 
 // DELETE /api/rag/clear - Clear all documents
-ragRouter.delete('/clear', (req: Request, res: Response) => {
+ragRouter.delete('/clear', writeLimiter, requireAdmin, (req: Request, res: Response) => {
   const service: RAGService | undefined = req.app.locals.ragService;
 
   if (!service) {

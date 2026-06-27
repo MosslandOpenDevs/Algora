@@ -1,6 +1,8 @@
 import { Router } from 'express';
 import type { Request, Response } from 'express';
 import type { PassiveConsensusService } from '../services/passive-consensus';
+import { writeLimiter } from '../middleware/rate-limit';
+import { requireAdmin } from '../middleware/auth';
 
 export const passiveConsensusRouter: Router = Router();
 
@@ -137,7 +139,7 @@ passiveConsensusRouter.get('/:documentId', async (req: Request, res: Response) =
 });
 
 // POST /api/passive-consensus - Create a new consensus item
-passiveConsensusRouter.post('/', async (req: Request, res: Response) => {
+passiveConsensusRouter.post('/', writeLimiter, requireAdmin, async (req: Request, res: Response) => {
   const service: PassiveConsensusService | undefined = req.app.locals.passiveConsensusService;
 
   if (!service) {
@@ -173,7 +175,7 @@ passiveConsensusRouter.post('/', async (req: Request, res: Response) => {
 });
 
 // POST /api/passive-consensus/:documentId/approve - Explicitly approve
-passiveConsensusRouter.post('/:documentId/approve', async (req: Request, res: Response) => {
+passiveConsensusRouter.post('/:documentId/approve', writeLimiter, requireAdmin, async (req: Request, res: Response) => {
   const service: PassiveConsensusService | undefined = req.app.locals.passiveConsensusService;
 
   if (!service) {
@@ -199,7 +201,7 @@ passiveConsensusRouter.post('/:documentId/approve', async (req: Request, res: Re
 });
 
 // POST /api/passive-consensus/:documentId/veto - Veto a document
-passiveConsensusRouter.post('/:documentId/veto', async (req: Request, res: Response) => {
+passiveConsensusRouter.post('/:documentId/veto', writeLimiter, requireAdmin, async (req: Request, res: Response) => {
   const service: PassiveConsensusService | undefined = req.app.locals.passiveConsensusService;
 
   if (!service) {
@@ -228,7 +230,7 @@ passiveConsensusRouter.post('/:documentId/veto', async (req: Request, res: Respo
 });
 
 // POST /api/passive-consensus/:documentId/escalate - Escalate to Director 3
-passiveConsensusRouter.post('/:documentId/escalate', async (req: Request, res: Response) => {
+passiveConsensusRouter.post('/:documentId/escalate', writeLimiter, requireAdmin, async (req: Request, res: Response) => {
   const service: PassiveConsensusService | undefined = req.app.locals.passiveConsensusService;
 
   if (!service) {
@@ -257,7 +259,7 @@ passiveConsensusRouter.post('/:documentId/escalate', async (req: Request, res: R
 });
 
 // POST /api/passive-consensus/process - Manually trigger processing of expired items
-passiveConsensusRouter.post('/process', async (req: Request, res: Response) => {
+passiveConsensusRouter.post('/process', writeLimiter, requireAdmin, async (req: Request, res: Response) => {
   const service: PassiveConsensusService | undefined = req.app.locals.passiveConsensusService;
 
   if (!service) {

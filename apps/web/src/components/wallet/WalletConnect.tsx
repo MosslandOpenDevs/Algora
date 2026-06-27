@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useWalletContext } from '@/contexts/WalletContext';
+import { MockDataBadge } from '@/components/ui/MockDataBadge';
 import { WalletVerifyModal } from './WalletVerifyModal';
 
 export function WalletConnect() {
@@ -153,6 +154,7 @@ export function WalletConnect() {
                     <div className="mb-1 flex items-center gap-1 text-xs text-agora-muted">
                       <Coins className="h-3 w-3" />
                       {t('mocBalance')}
+                      <MockDataBadge />
                     </div>
                     <div className="text-sm font-semibold text-agora-text">
                       {holder ? formatBalance(holder.balance) : '0'} MOC
@@ -165,6 +167,7 @@ export function WalletConnect() {
                   <div className="mb-1 flex items-center gap-1 text-xs text-agora-muted">
                     <Vote className="h-3 w-3" />
                     {t('votingPower')}
+                    <MockDataBadge />
                   </div>
                   <div className="flex items-center justify-between">
                     <div className="text-lg font-bold text-agora-accent">

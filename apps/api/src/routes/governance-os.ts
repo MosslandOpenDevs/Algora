@@ -949,7 +949,9 @@ router.get('/kpi/export', (req: Request, res: Response) => {
  * POST /governance-os/translate
  * Translate text to Korean
  */
-router.post('/translate', llmLimiter, requireAuth, async (req: Request, res: Response) => {
+// Public read-only Tier-1 (local Ollama) translation for the live showcase
+// language toggle. No governance side effects; llmLimiter caps abuse.
+router.post('/translate', llmLimiter, async (req: Request, res: Response) => {
   try {
     const { text, targetLanguage = 'ko' } = req.body;
 
@@ -999,7 +1001,8 @@ router.post('/translate', llmLimiter, requireAuth, async (req: Request, res: Res
  * POST /governance-os/translate/batch
  * Translate multiple texts to Korean (for batch translation)
  */
-router.post('/translate/batch', llmLimiter, requireAuth, async (req: Request, res: Response) => {
+// Public read-only Tier-1 batch translation for the live showcase. See above.
+router.post('/translate/batch', llmLimiter, async (req: Request, res: Response) => {
   try {
     const { texts, targetLanguage = 'ko' } = req.body;
 

@@ -1,6 +1,8 @@
 import { Router } from 'express';
 import type { DisclosureService } from '../services/disclosure';
 import type { ReportGeneratorService } from '../services/report-generator';
+import { writeLimiter } from '../middleware/rate-limit';
+import { requireAdmin } from '../middleware/auth';
 
 export const disclosureRouter: Router = Router();
 
@@ -78,7 +80,7 @@ disclosureRouter.get('/metrics/preview', (req, res) => {
 
 // POST /api/disclosure/generate/weekly - Generate weekly report manually
 // NOTE: This must be before /:id route
-disclosureRouter.post('/generate/weekly', async (req, res) => {
+disclosureRouter.post('/generate/weekly', writeLimiter, requireAdmin, async (req, res) => {
   const reportGenerator: ReportGeneratorService | undefined = req.app.locals.reportGenerator;
   const { autoPublish = false } = req.body;
 
@@ -102,7 +104,7 @@ disclosureRouter.post('/generate/weekly', async (req, res) => {
 
 // POST /api/disclosure/generate/monthly - Generate monthly report manually
 // NOTE: This must be before /:id route
-disclosureRouter.post('/generate/monthly', async (req, res) => {
+disclosureRouter.post('/generate/monthly', writeLimiter, requireAdmin, async (req, res) => {
   const reportGenerator: ReportGeneratorService | undefined = req.app.locals.reportGenerator;
   const { autoPublish = false } = req.body;
 
@@ -125,7 +127,7 @@ disclosureRouter.post('/generate/monthly', async (req, res) => {
 });
 
 // POST /api/disclosure - Create disclosure report
-disclosureRouter.post('/', (req, res) => {
+disclosureRouter.post('/', writeLimiter, requireAdmin, (req, res) => {
   const disclosure: DisclosureService = req.app.locals.disclosure;
   const { title, type, date, summary, content, fileUrl, author } = req.body;
 
@@ -179,7 +181,7 @@ disclosureRouter.get('/:id', (req, res) => {
 });
 
 // PUT /api/disclosure/:id - Update report
-disclosureRouter.put('/:id', (req, res) => {
+disclosureRouter.put('/:id', writeLimiter, requireAdmin, (req, res) => {
   const disclosure: DisclosureService = req.app.locals.disclosure;
   const { id } = req.params;
   const { title, type, date, summary, content, fileUrl } = req.body;
@@ -202,7 +204,7 @@ disclosureRouter.put('/:id', (req, res) => {
 });
 
 // POST /api/disclosure/:id/publish - Publish report
-disclosureRouter.post('/:id/publish', (req, res) => {
+disclosureRouter.post('/:id/publish', writeLimiter, requireAdmin, (req, res) => {
   const disclosure: DisclosureService = req.app.locals.disclosure;
   const { id } = req.params;
 
@@ -216,7 +218,7 @@ disclosureRouter.post('/:id/publish', (req, res) => {
 });
 
 // POST /api/disclosure/:id/pending - Set report to pending
-disclosureRouter.post('/:id/pending', (req, res) => {
+disclosureRouter.post('/:id/pending', writeLimiter, requireAdmin, (req, res) => {
   const disclosure: DisclosureService = req.app.locals.disclosure;
   const { id } = req.params;
 
@@ -230,7 +232,7 @@ disclosureRouter.post('/:id/pending', (req, res) => {
 });
 
 // DELETE /api/disclosure/:id - Delete report
-disclosureRouter.delete('/:id', (req, res) => {
+disclosureRouter.delete('/:id', writeLimiter, requireAdmin, (req, res) => {
   const disclosure: DisclosureService = req.app.locals.disclosure;
   const { id } = req.params;
 

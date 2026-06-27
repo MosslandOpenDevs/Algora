@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { type DualHouseVote } from '@/lib/api';
 import { safeFormatDate } from '@/lib/utils';
+import { MockDataBadge } from '@/components/ui/MockDataBadge';
 
 interface DualHouseVoteCardProps {
   vote: DualHouseVote;
@@ -131,6 +132,7 @@ export function DualHouseVoteCard({ vote, onClick, index = 0 }: DualHouseVoteCar
         </div>
 
         <div className="flex items-center gap-2">
+          <MockDataBadge />
           <div className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 ${statusColor}`}>
             <StatusIcon className="h-3.5 w-3.5" />
             <span className="text-xs font-medium capitalize">{t(`status.${vote.status}`)}</span>

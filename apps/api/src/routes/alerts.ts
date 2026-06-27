@@ -1,6 +1,8 @@
 import { Router } from 'express';
 import type { Request, Response } from 'express';
 import type Database from 'better-sqlite3';
+import { writeLimiter } from '../middleware/rate-limit';
+import { requireAdmin } from '../middleware/auth';
 
 export const alertsRouter: Router = Router();
 
@@ -118,7 +120,7 @@ alertsRouter.get('/budget', (req: Request, res: Response) => {
 });
 
 // PATCH /api/alerts/:id/acknowledge - Acknowledge an alert
-alertsRouter.patch('/:id/acknowledge', (req: Request, res: Response) => {
+alertsRouter.patch('/:id/acknowledge', writeLimiter, (req: Request, res: Response) => {
   const db: Database.Database = req.app.locals.db;
   const { id } = req.params;
 
@@ -141,7 +143,7 @@ alertsRouter.patch('/:id/acknowledge', (req: Request, res: Response) => {
 });
 
 // PATCH /api/alerts/acknowledge-all - Acknowledge all alerts
-alertsRouter.patch('/acknowledge-all', (req: Request, res: Response) => {
+alertsRouter.patch('/acknowledge-all', writeLimiter, (req: Request, res: Response) => {
   const db: Database.Database = req.app.locals.db;
   const { metric_name } = req.query;
 
@@ -164,7 +166,7 @@ alertsRouter.patch('/acknowledge-all', (req: Request, res: Response) => {
 });
 
 // DELETE /api/alerts/:id - Delete an alert
-alertsRouter.delete('/:id', (req: Request, res: Response) => {
+alertsRouter.delete('/:id', writeLimiter, requireAdmin, (req: Request, res: Response) => {
   const db: Database.Database = req.app.locals.db;
   const { id } = req.params;
 

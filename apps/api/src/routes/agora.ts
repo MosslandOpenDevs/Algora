@@ -2,6 +2,8 @@ import { Router } from 'express';
 import type Database from 'better-sqlite3';
 import { v4 as uuidv4 } from 'uuid';
 import { getAgoraService } from '../services/socket';
+import { writeLimiter } from '../middleware/rate-limit';
+import { requireAdmin } from '../middleware/auth';
 
 export const agoraRouter: Router = Router();
 
@@ -68,7 +70,7 @@ agoraRouter.get('/sessions/:id', (req, res) => {
 });
 
 // POST /api/agora/sessions - Create new session
-agoraRouter.post('/sessions', (req, res) => {
+agoraRouter.post('/sessions', writeLimiter, (req, res) => {
   const db: Database.Database = req.app.locals.db;
   const io = req.app.locals.io;
   const { title, issueId, summonedAgents } = req.body;
@@ -95,7 +97,7 @@ agoraRouter.post('/sessions', (req, res) => {
 });
 
 // POST /api/agora/sessions/:id/message - Add message to session
-agoraRouter.post('/sessions/:id/message', (req, res) => {
+agoraRouter.post('/sessions/:id/message', writeLimiter, (req, res) => {
   const db: Database.Database = req.app.locals.db;
   const io = req.app.locals.io;
   const { id } = req.params;
@@ -128,7 +130,7 @@ agoraRouter.post('/sessions/:id/message', (req, res) => {
 });
 
 // POST /api/agora/sessions/:id/summon - Summon agent to session
-agoraRouter.post('/sessions/:id/summon', (req, res) => {
+agoraRouter.post('/sessions/:id/summon', writeLimiter, requireAdmin, (req, res) => {
   const db: Database.Database = req.app.locals.db;
   const io = req.app.locals.io;
   const { id } = req.params;
@@ -170,7 +172,7 @@ agoraRouter.post('/sessions/:id/summon', (req, res) => {
 });
 
 // POST /api/agora/sessions/:id/conclude - Conclude session
-agoraRouter.post('/sessions/:id/conclude', (req, res) => {
+agoraRouter.post('/sessions/:id/conclude', writeLimiter, requireAdmin, (req, res) => {
   const db: Database.Database = req.app.locals.db;
   const io = req.app.locals.io;
   const { id } = req.params;
@@ -208,7 +210,7 @@ agoraRouter.post('/sessions/:id/conclude', (req, res) => {
 });
 
 // POST /api/agora/sessions/create - Create session with AgoraService
-agoraRouter.post('/sessions/create', async (req, res) => {
+agoraRouter.post('/sessions/create', writeLimiter, requireAdmin, async (req, res) => {
   const agoraService = getAgoraService();
   if (!agoraService) {
     return res.status(503).json({ error: 'Agora service not available' });
@@ -253,7 +255,7 @@ agoraRouter.get('/sessions/:id/participants', (req, res) => {
 });
 
 // POST /api/agora/sessions/:id/participants - Add participant to session
-agoraRouter.post('/sessions/:id/participants', async (req, res) => {
+agoraRouter.post('/sessions/:id/participants', writeLimiter, requireAdmin, async (req, res) => {
   const agoraService = getAgoraService();
   if (!agoraService) {
     return res.status(503).json({ error: 'Agora service not available' });
@@ -272,7 +274,7 @@ agoraRouter.post('/sessions/:id/participants', async (req, res) => {
 });
 
 // DELETE /api/agora/sessions/:id/participants/:agentId - Remove participant
-agoraRouter.delete('/sessions/:id/participants/:agentId', (req, res) => {
+agoraRouter.delete('/sessions/:id/participants/:agentId', writeLimiter, requireAdmin, (req, res) => {
   const agoraService = getAgoraService();
   if (!agoraService) {
     return res.status(503).json({ error: 'Agora service not available' });
@@ -290,7 +292,7 @@ agoraRouter.delete('/sessions/:id/participants/:agentId', (req, res) => {
 });
 
 // POST /api/agora/sessions/:id/generate - Generate agent response
-agoraRouter.post('/sessions/:id/generate', async (req, res) => {
+agoraRouter.post('/sessions/:id/generate', writeLimiter, requireAdmin, async (req, res) => {
   const agoraService = getAgoraService();
   if (!agoraService) {
     return res.status(503).json({ error: 'Agora service not available' });
@@ -313,7 +315,7 @@ agoraRouter.post('/sessions/:id/generate', async (req, res) => {
 });
 
 // POST /api/agora/sessions/:id/advance - Advance to next round
-agoraRouter.post('/sessions/:id/advance', async (req, res) => {
+agoraRouter.post('/sessions/:id/advance', writeLimiter, requireAdmin, async (req, res) => {
   const agoraService = getAgoraService();
   if (!agoraService) {
     return res.status(503).json({ error: 'Agora service not available' });
@@ -335,7 +337,7 @@ agoraRouter.post('/sessions/:id/advance', async (req, res) => {
 });
 
 // POST /api/agora/sessions/:id/complete - Complete a session
-agoraRouter.post('/sessions/:id/complete', async (req, res) => {
+agoraRouter.post('/sessions/:id/complete', writeLimiter, requireAdmin, async (req, res) => {
   const agoraService = getAgoraService();
   if (!agoraService) {
     return res.status(503).json({ error: 'Agora service not available' });
@@ -357,7 +359,7 @@ agoraRouter.post('/sessions/:id/complete', async (req, res) => {
 });
 
 // POST /api/agora/sessions/:id/automated/start - Start automated discussion
-agoraRouter.post('/sessions/:id/automated/start', (req, res) => {
+agoraRouter.post('/sessions/:id/automated/start', writeLimiter, requireAdmin, (req, res) => {
   const agoraService = getAgoraService();
   if (!agoraService) {
     return res.status(503).json({ error: 'Agora service not available' });
@@ -377,7 +379,7 @@ agoraRouter.post('/sessions/:id/automated/start', (req, res) => {
 });
 
 // POST /api/agora/sessions/:id/automated/stop - Stop automated discussion
-agoraRouter.post('/sessions/:id/automated/stop', (req, res) => {
+agoraRouter.post('/sessions/:id/automated/stop', writeLimiter, requireAdmin, (req, res) => {
   const agoraService = getAgoraService();
   if (!agoraService) {
     return res.status(503).json({ error: 'Agora service not available' });

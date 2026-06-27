@@ -1,5 +1,7 @@
 import { Router } from 'express';
 import type { ProofOfOutcomeService } from '../services/proof-of-outcome';
+import { writeLimiter } from '../middleware/rate-limit';
+import { requireAdmin } from '../middleware/auth';
 
 export const outcomesRouter: Router = Router();
 
@@ -71,7 +73,7 @@ outcomesRouter.get('/:id', (req, res) => {
 });
 
 // POST /api/outcomes/from-proposal/:proposalId - Create outcome from proposal
-outcomesRouter.post('/from-proposal/:proposalId', (req, res) => {
+outcomesRouter.post('/from-proposal/:proposalId', writeLimiter, requireAdmin, (req, res) => {
   const poo: ProofOfOutcomeService = req.app.locals.proofOfOutcome;
   const { proposalId } = req.params;
   const { decision } = req.body;
@@ -95,7 +97,7 @@ outcomesRouter.post('/from-proposal/:proposalId', (req, res) => {
 // ========================================
 
 // POST /api/outcomes/:id/plan - Set execution plan
-outcomesRouter.post('/:id/plan', (req, res) => {
+outcomesRouter.post('/:id/plan', writeLimiter, requireAdmin, (req, res) => {
   const poo: ProofOfOutcomeService = req.app.locals.proofOfOutcome;
   const { id } = req.params;
   const { plan, steps } = req.body;
@@ -115,7 +117,7 @@ outcomesRouter.post('/:id/plan', (req, res) => {
 });
 
 // POST /api/outcomes/:id/start - Start execution
-outcomesRouter.post('/:id/start', (req, res) => {
+outcomesRouter.post('/:id/start', writeLimiter, requireAdmin, (req, res) => {
   const poo: ProofOfOutcomeService = req.app.locals.proofOfOutcome;
   const { id } = req.params;
   const { executor } = req.body;
@@ -135,7 +137,7 @@ outcomesRouter.post('/:id/start', (req, res) => {
 });
 
 // PUT /api/outcomes/:id/steps/:stepNumber - Update execution step
-outcomesRouter.put('/:id/steps/:stepNumber', (req, res) => {
+outcomesRouter.put('/:id/steps/:stepNumber', writeLimiter, requireAdmin, (req, res) => {
   const poo: ProofOfOutcomeService = req.app.locals.proofOfOutcome;
   const { id, stepNumber } = req.params;
   const { status, result, error } = req.body;
@@ -155,7 +157,7 @@ outcomesRouter.put('/:id/steps/:stepNumber', (req, res) => {
 });
 
 // POST /api/outcomes/:id/complete - Complete execution
-outcomesRouter.post('/:id/complete', (req, res) => {
+outcomesRouter.post('/:id/complete', writeLimiter, requireAdmin, (req, res) => {
   const poo: ProofOfOutcomeService = req.app.locals.proofOfOutcome;
   const { id } = req.params;
   const { resultSummary, evidence = [] } = req.body;
@@ -175,7 +177,7 @@ outcomesRouter.post('/:id/complete', (req, res) => {
 });
 
 // POST /api/outcomes/:id/fail - Fail execution
-outcomesRouter.post('/:id/fail', (req, res) => {
+outcomesRouter.post('/:id/fail', writeLimiter, requireAdmin, (req, res) => {
   const poo: ProofOfOutcomeService = req.app.locals.proofOfOutcome;
   const { id } = req.params;
   const { reason } = req.body;
@@ -199,7 +201,7 @@ outcomesRouter.post('/:id/fail', (req, res) => {
 // ========================================
 
 // POST /api/outcomes/:id/verify - Add verification
-outcomesRouter.post('/:id/verify', (req, res) => {
+outcomesRouter.post('/:id/verify', writeLimiter, requireAdmin, (req, res) => {
   const poo: ProofOfOutcomeService = req.app.locals.proofOfOutcome;
   const { id } = req.params;
   const { verifierId, verifierType = 'human', result, confidence = 0.5, evidence = [], notes } = req.body;
@@ -238,7 +240,7 @@ outcomesRouter.get('/:id/verifications', (req, res) => {
 });
 
 // POST /api/outcomes/:id/dispute - Dispute outcome
-outcomesRouter.post('/:id/dispute', (req, res) => {
+outcomesRouter.post('/:id/dispute', writeLimiter, requireAdmin, (req, res) => {
   const poo: ProofOfOutcomeService = req.app.locals.proofOfOutcome;
   const { id } = req.params;
   const { disputedBy, reason } = req.body;
@@ -326,7 +328,7 @@ outcomesRouter.get('/trust/:agentId', (req, res) => {
 });
 
 // POST /api/outcomes/trust/:agentId/predict - Record prediction
-outcomesRouter.post('/trust/:agentId/predict', (req, res) => {
+outcomesRouter.post('/trust/:agentId/predict', writeLimiter, requireAdmin, (req, res) => {
   const poo: ProofOfOutcomeService = req.app.locals.proofOfOutcome;
   const { agentId } = req.params;
   const { proposalId, prediction, confidence = 0.5, reasoning } = req.body;

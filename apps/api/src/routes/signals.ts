@@ -1,6 +1,8 @@
 import { Router } from 'express';
 import type Database from 'better-sqlite3';
 import { v4 as uuidv4 } from 'uuid';
+import { writeLimiter } from '../middleware/rate-limit';
+import { requireAdmin } from '../middleware/auth';
 
 export const signalsRouter: Router = Router();
 
@@ -63,7 +65,7 @@ signalsRouter.get('/', (req, res) => {
 });
 
 // POST /api/signals - Create signal
-signalsRouter.post('/', (req, res) => {
+signalsRouter.post('/', writeLimiter, requireAdmin, (req, res) => {
   const db: Database.Database = req.app.locals.db;
   const io = req.app.locals.io;
   const {
