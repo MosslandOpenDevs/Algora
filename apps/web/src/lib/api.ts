@@ -805,27 +805,27 @@ export async function fetchDecisionPacket(proposalId: string): Promise<DecisionP
 }
 
 export async function generateDecisionPacket(proposalId: string, requestedBy: string = 'user'): Promise<DecisionPacket | null> {
-  try {
-    const response = await fetchAPI<{ packet: any }>(`/api/proposals/${proposalId}/decision-packet/generate`, {
-      method: 'POST',
-      body: JSON.stringify({ requestedBy }),
-    });
-    if (!response.packet) return null;
-    return {
-      id: response.packet.id,
-      proposalId: response.packet.proposal_id,
-      version: response.packet.version,
-      content: typeof response.packet.content === 'string'
-        ? JSON.parse(response.packet.content)
-        : response.packet.content,
-      summary: response.packet.summary,
-      generatedAt: response.packet.generated_at,
-      generatedBy: response.packet.generated_by,
-      modelUsed: response.packet.model_used,
-    };
-  } catch {
-    return null;
-  }
+  // Note: do NOT swallow errors here. This endpoint is admin-gated (it runs a
+  // costly LLM analysis), so an unauthorized caller must surface a real error
+  // to the mutation's onError — not resolve to null, which the UI would
+  // misread as a successful generation.
+  const response = await fetchAPI<{ packet: any }>(`/api/proposals/${proposalId}/decision-packet/generate`, {
+    method: 'POST',
+    body: JSON.stringify({ requestedBy }),
+  });
+  if (!response.packet) return null;
+  return {
+    id: response.packet.id,
+    proposalId: response.packet.proposal_id,
+    version: response.packet.version,
+    content: typeof response.packet.content === 'string'
+      ? JSON.parse(response.packet.content)
+      : response.packet.content,
+    summary: response.packet.summary,
+    generatedAt: response.packet.generated_at,
+    generatedBy: response.packet.generated_by,
+    modelUsed: response.packet.model_used,
+  };
 }
 
 export async function fetchProposalVoteHistory(proposalId: string): Promise<ProposalVote[]> {
@@ -1169,11 +1169,47 @@ export async function fetchDelegations(address: string): Promise<DelegationRespo
   };
 }
 
+export interface DelegationTypedData {
+  domain: Record<string, unknown>;
+  types: Record<string, { name: string; type: string }[]>;
+  primaryType: string;
+  message: {
+    delegator: string;
+    delegate: string;
+    action: 'create' | 'revoke';
+    delegationId: string;
+    nonce: string;
+    issuedAt: number;
+  };
+}
+
+// Fetch the EIP-712 typed data the delegator wallet must sign before a
+// create/revoke is accepted by the (public, rate-limited) delegation routes.
+export async function getDelegationTypedData(params: {
+  delegator: string;
+  delegate: string;
+  action: 'create' | 'revoke';
+  delegationId?: string;
+  nonce: string;
+}): Promise<DelegationTypedData> {
+  const q = new URLSearchParams({
+    delegator: params.delegator,
+    delegate: params.delegate,
+    action: params.action,
+    delegationId: params.delegationId || '',
+    nonce: params.nonce,
+  });
+  return fetchAPI<DelegationTypedData>(`/api/proposals/delegation/typed-data?${q.toString()}`);
+}
+
 export async function createDelegation(data: {
   delegator: string;
   delegate: string;
   categories?: string[];
   expiresAt?: string;
+  signature?: string;
+  nonce?: string;
+  issuedAt?: number;
 }): Promise<Delegation> {
   const response = await fetchAPI<{ delegation: Delegation }>('/api/proposals/delegation', {
     method: 'POST',
@@ -1182,8 +1218,12 @@ export async function createDelegation(data: {
   return response.delegation;
 }
 
-export async function revokeDelegation(delegationId: string): Promise<void> {
+export async function revokeDelegation(
+  delegationId: string,
+  auth?: { delegator: string; signature: string; nonce: string; issuedAt: number }
+): Promise<void> {
   await fetchAPI(`/api/proposals/delegation/${delegationId}`, {
     method: 'DELETE',
+    ...(auth ? { body: JSON.stringify(auth) } : {}),
   });
 }

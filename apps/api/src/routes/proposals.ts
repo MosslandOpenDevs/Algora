@@ -469,14 +469,66 @@ proposalsRouter.get('/:id/decision-packet/versions', (req, res) => {
 // Delegation Endpoints
 // ========================================
 
-// POST /api/proposals/delegation - Create delegation
-proposalsRouter.post('/delegation', requireAuth, (req, res) => {
+// GET /api/proposals/delegation/typed-data - EIP-712 data to sign a delegation
+// create/revoke. Declared BEFORE /delegation/:address so it is not captured by
+// the :address param route. The frontend signs the result with the delegator's
+// wallet, then POSTs/DELETEs with the signature.
+proposalsRouter.get('/delegation/typed-data', writeLimiter, (req, res) => {
+  const signatureService: SignatureService | undefined = req.app.locals.signatureService;
+  if (!signatureService) {
+    res.status(503).json({ error: 'Signature service unavailable' });
+    return;
+  }
+  const { delegator, delegate, action, delegationId = '', nonce } = req.query;
+  if (
+    typeof delegator !== 'string' ||
+    typeof delegate !== 'string' ||
+    typeof nonce !== 'string' ||
+    (action !== 'create' && action !== 'revoke')
+  ) {
+    res.status(400).json({ error: 'delegator, delegate, action(create|revoke), nonce are required' });
+    return;
+  }
+  const issuedAt = Math.floor(Date.now() / 1000);
+  res.json(
+    signatureService.buildDelegationTypedData({
+      delegator,
+      delegate,
+      action,
+      delegationId: typeof delegationId === 'string' ? delegationId : '',
+      nonce,
+      issuedAt,
+    })
+  );
+});
+
+// POST /api/proposals/delegation - Create delegation (wallet-signed)
+proposalsRouter.post('/delegation', writeLimiter, (req, res) => {
   const governance: GovernanceService = req.app.locals.governance;
-  const { delegator, delegate, categories, expiresAt } = req.body;
+  const signatureService: SignatureService | undefined = req.app.locals.signatureService;
+  const { delegator, delegate, categories, expiresAt, signature, nonce, issuedAt } = req.body;
 
   if (!delegator || !delegate) {
     res.status(400).json({ error: 'delegator and delegate are required' });
     return;
+  }
+
+  // Require an EIP-712 signature from the delegator so a delegation cannot be
+  // forged for someone else's wallet (voting power is simulated; the signature
+  // only proves control of the delegator address).
+  if (signatureService) {
+    if (!signature || !nonce || typeof issuedAt !== 'number') {
+      res.status(401).json({ error: 'Delegation signature required. Include signature, nonce, issuedAt.' });
+      return;
+    }
+    const result = signatureService.verifyDelegation(
+      { delegator, delegate, action: 'create', delegationId: '', nonce, issuedAt },
+      signature
+    );
+    if (!result.ok) {
+      res.status(401).json({ error: `Signature verification failed: ${result.reason}` });
+      return;
+    }
   }
 
   try {
@@ -488,10 +540,38 @@ proposalsRouter.post('/delegation', requireAuth, (req, res) => {
   }
 });
 
-// DELETE /api/proposals/delegation/:id - Revoke delegation
-proposalsRouter.delete('/delegation/:id', requireAuth, (req, res) => {
+// DELETE /api/proposals/delegation/:id - Revoke delegation (signed by the delegator)
+proposalsRouter.delete('/delegation/:id', writeLimiter, (req, res) => {
   const governance: GovernanceService = req.app.locals.governance;
+  const signatureService: SignatureService | undefined = req.app.locals.signatureService;
   const { id } = req.params;
+  const { delegator, signature, nonce, issuedAt } = req.body;
+
+  const existing = governance.voting.getDelegationById(id);
+  if (!existing || !existing.is_active) {
+    res.status(404).json({ error: 'Delegation not found' });
+    return;
+  }
+
+  // Only the delegator, proven via signature, may revoke their delegation.
+  if (signatureService) {
+    if (!signature || !nonce || typeof issuedAt !== 'number' || !delegator) {
+      res.status(401).json({ error: 'Delegation signature required. Include delegator, signature, nonce, issuedAt.' });
+      return;
+    }
+    if (existing.delegator.toLowerCase() !== String(delegator).toLowerCase()) {
+      res.status(403).json({ error: 'Only the delegator can revoke this delegation' });
+      return;
+    }
+    const result = signatureService.verifyDelegation(
+      { delegator, delegate: existing.delegate, action: 'revoke', delegationId: id, nonce, issuedAt },
+      signature
+    );
+    if (!result.ok) {
+      res.status(401).json({ error: `Signature verification failed: ${result.reason}` });
+      return;
+    }
+  }
 
   try {
     governance.voting.revokeDelegation(id);

@@ -23,9 +23,17 @@ with no on-chain transfer). Two coordinated changes addressed this:
 - **Votes are now wallet-signed.** `POST /api/token/voting/:proposalId/vote`
   requires a valid EIP-712 signature (anti-forgery + anti-replay); added
   `GET /api/token/voting/:proposalId/typed-data` and frontend signing.
+- **Delegation is now wallet-signed.** Create/revoke moved off the admin key to
+  public-but-signed (EIP-712 `Delegation`, single-use nonce; revoke also checks
+  delegator ownership). Lets any connected holder delegate while blocking forgery.
 - **Honest labeling.** Surfaced `MockDataBadge` across 15 components so simulated
   money is clearly marked (real on-chain ETH balance left unbadged).
-- Verified: `apps/api` typecheck clean + 44 tests pass; `apps/web` typecheck clean.
+- **Demo fixes.** Restored the public Tier-1 translation toggle (dropped
+  `requireAuth`, kept `llmLimiter`); fixed the decision-packet "Generate Analysis"
+  false-success toast so a failed (admin-gated) run shows an honest error.
+- Verified: `apps/api` typecheck clean + 44 tests pass; `apps/web` typecheck clean;
+  adversarial multi-agent review (gating, EIP-712 flows, regressions) found no
+  blocker/major.
 - Next: native SIWE per-user sessions (WS-1) to replace the shared admin key.
 
 ---

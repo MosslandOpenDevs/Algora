@@ -22,9 +22,16 @@ allocate/approve/disburse는 온체인 전송 없는 SQLite 상태 변경). 두 
 - **투표는 이제 지갑 서명 필요.** `POST /api/token/voting/:proposalId/vote`는 유효한
   EIP-712 서명을 요구합니다(위조·재전송 방지). `GET /api/token/voting/:proposalId/typed-data`
   엔드포인트와 프론트엔드 서명을 추가했습니다.
+- **위임도 이제 지갑 서명 필요.** 생성/취소를 admin 키에서 공개+서명 방식으로 전환
+  (EIP-712 `Delegation`, 1회용 nonce; 취소는 위임자 소유권도 검증). 연결된 홀더는
+  위임할 수 있게 하면서 위조는 차단합니다.
 - **정직한 라벨링.** 15개 컴포넌트에 `MockDataBadge`를 노출해 시뮬레이션된 금액을
   명확히 표시했습니다(실제 온체인 ETH 잔액은 라벨 미부착).
-- 검증: `apps/api` 타입체크 통과 + 테스트 44개 통과; `apps/web` 타입체크 통과.
+- **데모 수정.** 공개 Tier-1 번역 토글 복구(`requireAuth` 제거, `llmLimiter` 유지);
+  decision-packet "Generate Analysis"의 거짓 성공 토스트 수정(admin 게이트 실패 시
+  정직한 에러 표시).
+- 검증: `apps/api` 타입체크 통과 + 테스트 44개 통과; `apps/web` 타입체크 통과;
+  적대적 멀티에이전트 리뷰(게이팅·EIP-712 흐름·회귀)에서 blocker/major 없음.
 - 다음: 거버넌스 쓰기에서 공유 admin 키를 대체할 네이티브 SIWE 사용자별 세션(WS-1).
 
 ---

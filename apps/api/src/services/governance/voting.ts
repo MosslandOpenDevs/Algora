@@ -366,6 +366,11 @@ export class VotingService {
     return { delegatedTo, delegatedFrom };
   }
 
+  getDelegationById(id: string): Delegation | null {
+    const row = this.db.prepare('SELECT * FROM delegations WHERE id = ?').get(id) as Delegation | undefined;
+    return row ?? null;
+  }
+
   // === Voter Registry ===
 
   registerVoter(address: string, displayName?: string, votingPower?: number): void {

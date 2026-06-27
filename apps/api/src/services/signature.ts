@@ -57,6 +57,29 @@ export interface DualHouseSignaturePayload {
   issuedAt: number;
 }
 
+// Delegation struct — a delegator signs to create or revoke a delegation of
+// their voting power. Distinct from the vote structs so a signature for one
+// flow can't be replayed into another.
+const DELEGATION_TYPES: Record<string, TypedDataField[]> = {
+  Delegation: [
+    { name: 'delegator', type: 'address' },
+    { name: 'delegate', type: 'address' },
+    { name: 'action', type: 'string' },
+    { name: 'delegationId', type: 'string' },
+    { name: 'nonce', type: 'string' },
+    { name: 'issuedAt', type: 'uint256' },
+  ],
+};
+
+export interface DelegationSignaturePayload {
+  delegator: string;
+  delegate: string;
+  action: 'create' | 'revoke';
+  delegationId: string; // '' for create, the delegation id for revoke
+  nonce: string;
+  issuedAt: number;
+}
+
 const MAX_SKEW_MS = 5 * 60 * 1000; // 5 minutes either direction
 
 export class SignatureService {
@@ -113,6 +136,20 @@ export class SignatureService {
     };
   }
 
+  buildDelegationTypedData(payload: DelegationSignaturePayload): {
+    domain: TypedDataDomain;
+    types: Record<string, TypedDataField[]>;
+    primaryType: string;
+    message: DelegationSignaturePayload;
+  } {
+    return {
+      domain: DOMAIN,
+      types: DELEGATION_TYPES,
+      primaryType: 'Delegation',
+      message: payload,
+    };
+  }
+
   verify(payload: VoteSignaturePayload, signature: string): VerifyResult {
     return this.verifyGeneric(TYPES, payload as unknown as Record<string, unknown>, signature, {
       voter: payload.voter,
@@ -128,6 +165,15 @@ export class SignatureService {
       nonce: payload.nonce,
       issuedAt: payload.issuedAt,
       subject: payload.votingId,
+    });
+  }
+
+  verifyDelegation(payload: DelegationSignaturePayload, signature: string): VerifyResult {
+    return this.verifyGeneric(DELEGATION_TYPES, payload as unknown as Record<string, unknown>, signature, {
+      voter: payload.delegator,
+      nonce: payload.nonce,
+      issuedAt: payload.issuedAt,
+      subject: `delegation:${payload.action}:${payload.delegationId}`,
     });
   }
 

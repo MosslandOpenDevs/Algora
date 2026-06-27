@@ -1,6 +1,6 @@
 'use client';
 
-import { useAccount, useSignMessage } from 'wagmi';
+import { useAccount, useSignMessage, useSignTypedData } from 'wagmi';
 import { useTranslations } from 'next-intl';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Wallet, Vote, History, Shield, Loader2, RefreshCw, CheckCircle, Copy, ExternalLink, AlertCircle, Users, FileText, TrendingUp, Award, Activity } from 'lucide-react';
@@ -13,7 +13,7 @@ import { HelpTooltip } from '@/components/guide/HelpTooltip';
 import { MockDataBadge } from '@/components/ui/MockDataBadge';
 import { DelegationStats, DelegationList, DelegationModal } from '@/components/delegation';
 import { VoteHistoryList, type VoteHistoryItem } from '@/components/voting';
-import { fetchDelegations, revokeDelegation, type DelegationResponse } from '@/lib/api';
+import { fetchDelegations, revokeDelegation, getDelegationTypedData, type DelegationResponse } from '@/lib/api';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3201';
 
@@ -44,6 +44,7 @@ export default function ProfilePage() {
   const tGuide = useTranslations('Guide.tooltips');
   const { address, isConnected } = useAccount();
   const { signMessageAsync } = useSignMessage();
+  const { signTypedDataAsync } = useSignTypedData();
   const queryClient = useQueryClient();
   const [copied, setCopied] = useState(false);
   const [showDelegationModal, setShowDelegationModal] = useState(false);
@@ -108,7 +109,32 @@ export default function ProfilePage() {
   });
 
   const revokeMutation = useMutation({
-    mutationFn: revokeDelegation,
+    mutationFn: async (delegationId: string) => {
+      if (!address) throw new Error('Wallet not connected');
+      const target = delegations?.delegatedTo?.find((d) => d.id === delegationId);
+      if (!target) throw new Error('Delegation not found');
+
+      // The delegator signs an EIP-712 revoke so only they can cancel it.
+      const nonce =
+        globalThis.crypto?.randomUUID?.() ??
+        `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      const typedData = await getDelegationTypedData({
+        delegator: address,
+        delegate: target.delegate,
+        action: 'revoke',
+        delegationId,
+        nonce,
+      });
+      const signature = await signTypedDataAsync(
+        typedData as unknown as Parameters<typeof signTypedDataAsync>[0]
+      );
+      await revokeDelegation(delegationId, {
+        delegator: address,
+        signature,
+        nonce,
+        issuedAt: typedData.message.issuedAt,
+      });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['delegations', address] });
       toast.success('Delegation revoked');

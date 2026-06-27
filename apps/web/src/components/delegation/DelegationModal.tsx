@@ -13,8 +13,9 @@ import {
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useSignTypedData } from 'wagmi';
 import { toast } from 'sonner';
-import { createDelegation } from '@/lib/api';
+import { createDelegation, getDelegationTypedData } from '@/lib/api';
 import { useDialogA11y } from '@/hooks/useDialogA11y';
 
 type Step = 'intro' | 'input' | 'confirm' | 'success' | 'error';
@@ -42,6 +43,7 @@ export function DelegationModal({
 }: DelegationModalProps) {
   const t = useTranslations('Delegation');
   const queryClient = useQueryClient();
+  const { signTypedDataAsync } = useSignTypedData();
   const [mounted, setMounted] = useState(false);
   const [step, setStep] = useState<Step>('intro');
   const [delegateAddress, setDelegateAddress] = useState('');
@@ -54,16 +56,39 @@ export function DelegationModal({
   }, []);
 
   const delegationMutation = useMutation({
-    mutationFn: () => {
+    mutationFn: async () => {
       const expiresAt = expiration
         ? new Date(Date.now() + expiration * 24 * 60 * 60 * 1000).toISOString()
         : undefined;
 
+      // Normalize to lowercase so a non-canonical-casing address still passes
+      // viem/ethers EIP-712 address validation (they reject a mixed-case string
+      // with an invalid EIP-55 checksum). The same value is signed and stored.
+      const delegate = delegateAddress.trim().toLowerCase();
+
+      // Prove control of the delegator wallet with an EIP-712 signature so the
+      // delegation cannot be forged for someone else's address.
+      const nonce =
+        globalThis.crypto?.randomUUID?.() ??
+        `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      const typedData = await getDelegationTypedData({
+        delegator: walletAddress,
+        delegate,
+        action: 'create',
+        nonce,
+      });
+      const signature = await signTypedDataAsync(
+        typedData as unknown as Parameters<typeof signTypedDataAsync>[0]
+      );
+
       return createDelegation({
         delegator: walletAddress,
-        delegate: delegateAddress,
+        delegate,
         categories: selectedCategories.length > 0 ? selectedCategories : undefined,
         expiresAt,
+        signature,
+        nonce,
+        issuedAt: typedData.message.issuedAt,
       });
     },
     onSuccess: () => {
