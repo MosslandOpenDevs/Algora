@@ -49,7 +49,13 @@ const seo: Record<Locale, { title: string; description: string }> = {
 };
 
 export const viewport: Viewport = {
-  themeColor: '#16f6ab',
+  // Match the browser address bar to the page surface in each mode (light:
+  // slate-50 body bg; dark: near-black). The brand mint (#16f6ab) lives on as
+  // the PWA manifest theme_color for the installed-app toolbar.
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#f8fafc' },
+    { media: '(prefers-color-scheme: dark)', color: '#0a0a0f' },
+  ],
   // App defaults to light and supports a dark toggle (ThemeContext) — advertise
   // both so UA form controls / scrollbars follow the active theme.
   colorScheme: 'light dark',
@@ -84,11 +90,10 @@ export async function generateMetadata({
       shortcut: '/favicon.ico',
       apple: '/apple-touch-icon.png',
     },
-    // NOTE: canonical + hreflang are path-dependent, but this layout cannot
-    // know the child route during static metadata generation. They are set
-    // correctly per-path in the (server) home page and in sitemap.xml; here we
-    // omit them so sub-pages self-canonicalize instead of all pointing at the
-    // locale home.
+    // NOTE: canonical + hreflang are path-dependent, so the layout omits them
+    // (otherwise every page would point at the locale home). They are set
+    // per-path by the home page and by each route's server wrapper via
+    // pageMetadata() in lib/seo.ts, and mirrored in sitemap.xml.
     openGraph: {
       type: 'website',
       siteName: 'Algora',
@@ -106,7 +111,7 @@ export async function generateMetadata({
       card: 'summary_large_image',
       title,
       description,
-      images: ['/og.png'],
+      images: [{ url: '/og.png', alt: title }],
     },
     appleWebApp: {
       capable: true,

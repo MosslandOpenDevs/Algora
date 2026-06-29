@@ -2,9 +2,31 @@
 
 이 파일은 세션 간 개발 연속성을 위해 현재 개발 진행 상황을 추적합니다.
 
-**최종 업데이트**: 2026-06-27
+**최종 업데이트**: 2026-06-29
 **현재 버전**: 0.13.1
 **프로덕션 URL**: https://algora.moss.land
+
+---
+
+## 최근 작업: 페이지별 SEO 메타데이터 + PWA 마무리 (2026-06-29)
+
+웹 앱의 메타데이터 기본 사항(favicon, title, OG, Twitter, manifest, robots,
+sitemap)을 점검한 결과 모두 정상이었습니다. 유일한 실제 갭: 모든 하위 페이지가
+클라이언트 컴포넌트라서 인덱싱 대상 로케일 URL ~39개가 홈페이지의 단일
+title/description을 그대로 상속했고 `%s · Algora` 템플릿은 사실상 죽은 코드였습니다.
+
+- **페이지별 메타데이터.** 15개 하위 페이지(`issues/[id]` 포함)를 각각
+  `generateMetadata`를 내보내는 얇은 서버 `page.tsx`(신규 `apps/web/src/lib/seo.ts`)와
+  원본 클라이언트 컴포넌트를 렌더링하는 `*View.tsx`(바이트 동일 — 내용 변경 없음)로
+  분리했습니다. 공개 라우트는 로케일별 제목(`Navigation` 라벨 재사용), 섹션
+  설명(`<Namespace>.subtitle` 재사용), 자기 참조 canonical, `<head>` 내 hreflang
+  대체 링크를 갖고, `admin`/`profile`은 `noindex`를 갖습니다.
+- **PWA / 소셜 마무리.** `theme-color`를 라이트/다크 대응으로 변경; Twitter 이미지에
+  `alt` 추가; manifest `orientation`을 `any`로 완화; 굵은 `any` 아이콘과 분리한
+  전체 화면(full-bleed) 마스커블 아이콘 변형(192/512) 추가.
+- 검증: `apps/web` 타입체크 + 프로덕션 빌드 통과, 린트 클린; curl로 en/ko/ja/zh
+  전반의 로케일별 제목/설명/canonical/hreflang, admin의 `noindex`, 하위 페이지의
+  og:image 절대 경로 유지를 확인; 적대적 멀티에이전트 리뷰에서 blocker 없음.
 
 ---
 

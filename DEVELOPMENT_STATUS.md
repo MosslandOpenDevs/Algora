@@ -2,9 +2,33 @@
 
 This file tracks the current development progress for continuity between sessions.
 
-**Last Updated**: 2026-06-27
+**Last Updated**: 2026-06-29
 **Current Version**: 0.13.1
 **Production URL**: https://algora.moss.land
+
+---
+
+## Recent Work: Per-Page SEO Metadata + PWA Polish (2026-06-29)
+
+Audited the web app's metadata basics (favicon, title, OG, Twitter, manifest,
+robots, sitemap) — all present and correct. The one real gap: every sub-page
+was a Client Component, so all ~39 indexable locale URLs inherited the home
+page's single title/description and the `%s · Algora` template was dead code.
+
+- **Per-page metadata.** Split each of the 15 sub-pages (incl. `issues/[id]`)
+  into a thin Server `page.tsx` that exports `generateMetadata` (new
+  `apps/web/src/lib/seo.ts`) and renders the original client component, now
+  `*View.tsx` (byte-identical — no content drift). Public routes get a
+  localized title (reusing `Navigation` labels), a section description
+  (reusing `<Namespace>.subtitle`), a self-canonical, and in-`<head>` hreflang
+  alternates; `admin`/`profile` get `noindex`.
+- **PWA / social polish.** `theme-color` is now light/dark-aware; the Twitter
+  image carries `alt`; manifest `orientation` relaxed to `any`; added dedicated
+  full-bleed maskable icon variants (192/512) split from the bold `any` icons.
+- Verified: `apps/web` typecheck + production build pass, lint clean; curl
+  confirms localized titles/descriptions/canonical/hreflang across en/ko/ja/zh,
+  `noindex` on admin, and og:image still absolute on sub-pages; adversarial
+  multi-agent review found no blocker.
 
 ---
 

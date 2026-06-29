@@ -18,9 +18,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - **Honest "simulated data" labeling** — surfaced the existing `MockDataBadge` across 15 components so demo (non-on-chain) money is clearly marked: a persistent banner over the treasury stats grid plus inline badges on profile/wallet balance + voting-power tiles, the vote power breakdown, proposal & dual-house tallies, and allocation/transaction cards. The real on-chain ETH balance (wagmi `useBalance`) is intentionally left unbadged.
 - **Live-showcase translation toggle restored** — the Tier-1 (local Ollama) `/governance-os/translate[/batch]` routes dropped `requireAuth` (kept `llmLimiter`) so the public 한글/EN toggle works for anonymous visitors again.
+- **Per-page SEO metadata** — every locale sub-page is now a thin Server wrapper that emits a localized `<title>` (through the `%s · Algora` template), a per-section description, a self-referential canonical, and in-`<head>` `hreflang` alternates (a new `apps/web/src/lib/seo.ts` reuses the existing `Navigation`/`subtitle` i18n catalogs). `admin`/`profile` additionally emit `robots: noindex`. The browser `theme-color` is now light/dark-aware, the Twitter card image carries `alt` text, and the PWA manifest relaxes `orientation` to `any` and ships dedicated full-bleed maskable icon variants (192/512).
 
 ### Fixed
 - **Decision-packet false success** — `generateDecisionPacket` no longer swallows the admin-gated endpoint's 401/503; a failed "Generate Analysis" now surfaces an honest error toast instead of a misleading "AI analysis generated" success.
+- **Duplicate sub-page titles/descriptions** — the ~39 indexable locale URLs (12 public routes × 4 locales, minus home) previously inherited the home page's single `<title>`/description because every sub-page was a Client Component; the `%s · Algora` template was effectively dead code. Each route now self-describes per locale.
 
 ### Planned
 - Full integration testing
