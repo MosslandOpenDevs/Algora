@@ -256,7 +256,7 @@ export function WelcomeTour({ forceShow = false, onComplete }: WelcomeTourProps)
           {/* Points for problem step */}
           {step.hasPoints && (
             <div className="mt-4 space-y-2">
-              {['24/7 monitoring when humans sleep', 'AI agents analyze all incoming data', 'Humans approve only final actions'].map((point, i) => (
+              {(t.raw(`${step.key}.points`) as string[]).map((point, i) => (
                 <div key={i} className="flex items-center gap-2 rounded-lg bg-agora-card p-2">
                   <CheckCircle className="h-4 w-4 text-agora-success flex-shrink-0" />
                   <span className="text-sm text-agora-text">{point}</span>

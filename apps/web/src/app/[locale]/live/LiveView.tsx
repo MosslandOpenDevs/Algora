@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 import {
   LiveHeader,
   LiveMetrics,
@@ -12,6 +13,8 @@ import {
 } from '@/components/live';
 
 export default function LivePage() {
+  const t = useTranslations('Live');
+
   // Add live-theme class to enable dark mode styles
   useEffect(() => {
     document.documentElement.classList.add('live-theme');
@@ -55,13 +58,11 @@ export default function LivePage() {
           <AgoraPreview />
         </div>
 
-        {/* Footer */}
+        {/* Footer — middot-separated, locale-aware (Live.footer). Carries the
+            holders-decide hedge and the non-binding/not-official-governance
+            disclaimer in passport.moss.land's restrained register. */}
         <div className="text-center text-[10px] text-[var(--text-dim)] py-4">
-          <span>ALGORA</span>
-          <span className="mx-2">|</span>
-          <span>24/7 Live Agentic Governance Platform</span>
-          <span className="mx-2">|</span>
-          <span>Powered by 38 AI Agents</span>
+          {t('footer')}
         </div>
       </div>
     </div>

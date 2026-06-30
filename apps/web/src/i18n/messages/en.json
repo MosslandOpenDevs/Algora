@@ -650,11 +650,11 @@
     "features": {
       "aiPowered": {
         "title": "AI-Powered",
-        "desc": "24/7 AI agents analyze data and participate in governance discussions"
+        "desc": "AI agents analyze data and deliberate on governance topics"
       },
       "realtime": {
         "title": "Real-Time",
-        "desc": "Continuously monitor signals from multiple sources"
+        "desc": "Monitor signals from multiple sources as they arrive"
       },
       "transparent": {
         "title": "Transparent",
@@ -722,7 +722,7 @@
       },
       "governance": {
         "title": "Governance OS",
-        "desc": "Autonomous governance with safe autonomy"
+        "desc": "Governance tools with safe-autonomy locks"
       },
       "treasury": {
         "title": "Treasury",
@@ -741,17 +741,17 @@
     "tour": {
       "welcome": {
         "title": "Welcome to Algora",
-        "desc": "Algora transforms Mossland's governance from manual discussions into an autonomous AI-powered operating system. 30+ AI agents work 24/7 to analyze, deliberate, and prepare decisions for human approval.",
+        "desc": "Algora is an open lab where AI personas deliberate on Mossland's topics in public. They analyze data, debate, and prepare recommendations — but MOC holders make every decision. It's experimental and non-binding, not official governance.",
         "vision": "Mossland's Vision: Building the bridge between virtual and physical worlds through community-driven governance."
       },
       "problem": {
         "title": "The Challenge We Solve",
         "desc": "Traditional DAO governance is slow, requires constant human attention, and often misses important signals. Algora solves this by automating the analysis and deliberation process while keeping humans in control of final decisions.",
-        "points": ["24/7 monitoring when humans sleep", "AI agents analyze all incoming data", "Humans approve only final actions"]
+        "points": ["AI watches the feeds so you don't have to", "AI agents analyze all incoming data", "Humans approve every final action"]
       },
       "signals": {
         "title": "Step 1: Signal Collection",
-        "desc": "The system continuously monitors RSS feeds, GitHub, blockchain events, and social media. Every piece of relevant information is captured, categorized, and prioritized automatically.",
+        "desc": "The system monitors RSS feeds, GitHub, blockchain events, and social media. Every piece of relevant information is captured, categorized, and prioritized automatically.",
         "scenario": "Example: A new partnership announcement appears on Twitter → Algora captures it instantly → AI tags it as 'high priority' → You're notified."
       },
       "issues": {
@@ -761,7 +761,7 @@
       },
       "agora": {
         "title": "Step 3: AI Deliberation",
-        "desc": "This is where the magic happens. 30+ AI agents with different perspectives (Visionaries, Builders, Guardians, etc.) debate issues and reach consensus on recommendations.",
+        "desc": "This is where the magic happens. AI agents with different perspectives (Visionaries, Builders, Guardians, etc.) debate issues and reach consensus on recommendations.",
         "scenario": "Example: Agents debate a treasury proposal → Guardians raise security concerns → Investors analyze ROI → A balanced Decision Packet is created."
       },
       "proposals": {
@@ -786,7 +786,7 @@
       },
       "complete": {
         "title": "Ready to Explore!",
-        "desc": "You now understand how Algora empowers Mossland's governance. The AI works for you 24/7, but you remain in control of all important decisions.",
+        "desc": "You now understand how Algora works. The AI does the legwork — analyzing, debating, drafting — but you remain in control of every important decision.",
         "cta": "Start by checking the latest Signals or visit the Governance OS dashboard."
       },
       "skip": "Skip Tour",
@@ -811,13 +811,13 @@
       "treasury": "DAO treasury and token management",
       "agents": "AI agents participating in governance",
       "engine": "System monitoring and configuration",
-      "governance": "Autonomous governance OS with document registry, dual-house voting, and safe autonomy",
+      "governance": "Governance OS with document registry, dual-house voting, and safe autonomy",
       "delegation": "Delegate your voting power to trusted addresses. Delegated votes are automatically applied when votes are cast."
     }
   },
   "Live": {
     "title": "ALGORA LIVE",
-    "subtitle": "24/7 AI Governance System",
+    "subtitle": "AI deliberation lab",
     "version": "v0.3.0-beta",
     "status": {
       "online": "ONLINE",
@@ -867,14 +867,11 @@
       "consensus": "Consensus",
       "speaking": "speaking"
     },
-    "footer": {
-      "platform": "24/7 Live Agentic Governance Platform",
-      "powered": "Powered by 38 AI Agents"
-    }
+    "footer": "ALGORA · AI deliberation lab · Open beta · AI proposes, MOC holders decide · Not binding official governance"
   },
   "Governance": {
     "title": "Governance OS",
-    "subtitle": "Autonomous governance operating system powered by AI agents",
+    "subtitle": "Governance operating system powered by AI agents",
     "refresh": "Refresh",
     "health": {
       "healthy": "Healthy",

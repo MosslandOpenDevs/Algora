@@ -27,24 +27,24 @@ const siteUrl =
 // Localized title/description per supported locale.
 const seo: Record<Locale, { title: string; description: string }> = {
   en: {
-    title: 'Algora — 24/7 Live Agentic Governance Platform',
+    title: 'Algora — AI deliberation lab',
     description:
-      'A living Agora where infinitely scalable AI personas engage in continuous deliberation for MOC holders.',
+      'A lab where AI personas deliberate on Mossland topics in the open. AI proposes; MOC holders decide. Experimental and non-binding — not official governance.',
   },
   ko: {
-    title: 'Algora — 24/7 라이브 에이전트 거버넌스 플랫폼',
+    title: 'Algora — AI 숙의 실험실',
     description:
-      '무한히 확장되는 AI 페르소나가 MOC 홀더를 위해 끊임없이 토론하는 살아있는 아고라.',
+      'AI 페르소나가 모스랜드 의제를 공개적으로 숙의하는 실험실입니다. AI는 제안하고, 결정은 MOC 홀더가 합니다. 실험용이며 구속력이 없고, 공식 거버넌스가 아닙니다.',
   },
   ja: {
-    title: 'Algora — 24/7 ライブ・エージェント型ガバナンス・プラットフォーム',
+    title: 'Algora — AI 熟議ラボ',
     description:
-      '無限にスケールするAIペルソナがMOCホルダーのために絶え間なく熟議する、生きたアゴラ。',
+      'AIペルソナがモスランドの議題を公開で熟議するラボです。AIは提案し、決めるのはMOCホルダー。実験用で拘束力はなく、公式ガバナンスではありません。',
   },
   zh: {
-    title: 'Algora — 24/7 实时智能体治理平台',
+    title: 'Algora — AI 审议实验室',
     description:
-      '可无限扩展的 AI 角色为 MOC 持有者持续审议的实时治理广场。',
+      'AI 角色公开审议 Mossland 议题的实验室。AI 负责提议，由 MOC 持有者决定。实验性质，无约束力，并非官方治理。',
   },
 };
 
