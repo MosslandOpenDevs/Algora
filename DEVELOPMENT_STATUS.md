@@ -8,6 +8,65 @@ This file tracks the current development progress for continuity between session
 
 ---
 
+## Recent Work: Zombie Sessions + the ISO-'T' Timestamp Trap (2026-08-06)
+
+Checking whether the live deliberation → proposal path had started firing
+turned up something worse upstream: of 6 "active" Agora sessions, **five had
+been dead for 8–21 hours** — no messages, no progress — while the hourly
+stale-sweeper reported nothing to clean.
+
+**Root cause (one bug, three subsystems).** Most timestamp columns are
+written from JS as `new Date().toISOString()` — `2026-08-05T21:27:40.708Z`,
+with a `'T'` separator — but were compared against SQLite's
+`datetime('now', ...)`, which renders with a **space**. Both are TEXT, so
+the comparison is lexicographic, and `'T'` (0x54) sorts after `' '` (0x20):
+any row whose date component matches the cutoff's compares as *greater*
+regardless of its time. Measured on production:
+
+- **Staleness (`<`) matched nothing until the UTC date rolled over.** Stale
+  sessions accumulated all day, then 72 were closed in a single batch just
+  after midnight. The sweeper query found 0 of 5 genuinely stale sessions
+  at audit time; the ISO-bound version found all 5.
+- **Recent-window counts (`>`) were inflated.** The dashboard reported
+  3,547 signals in 24h against a true 2,404 (+47%).
+- **The proposal queue lagged ~24h per stage** — already fixed in the
+  earlier loop work, before the pattern was recognized as systemic.
+- **Wallet-verification nonces did not expire on time.** `expires_at >
+  datetime('now')` kept same-day nonces valid, stretching the intended
+  15-minute signature-replay window to end-of-UTC-day. Ended token votings
+  and expired delegations had the same flaw.
+
+**Fix.** A documented `apps/api/src/utils/time.ts` (`isoNow`, `isoAgo`,
+`isoMinutesAgo`, `isoHoursAgo`, `isoDaysAgo`) produces ISO-8601 bounds that
+compare correctly against ISO columns *and* keep index usage — unlike
+wrapping the column in `datetime(col)`. Applied to every affected site
+across signal/activity stats, pipeline health, issue detection, proposal
+stats, the Agora sweep, and token/delegation expiry. Columns genuinely
+written by SQL `DEFAULT CURRENT_TIMESTAMP` (`issues.created_at`,
+`signals.created_at`, the trust tables) were verified individually and left
+comparing against `datetime('now')`, which is correct for them.
+
+**Second defect found in the same audit: swept sessions were thrown away.**
+`cleanupStaleSessions()` only flips status to `'completed'` — no summary, no
+decision packet, no governance integration — so every swept session was a
+dead end for the proposal pipeline. Since in-memory round timers do not
+survive an API restart (six deploys on 08-05 alone), that was the normal
+path, not the exception: **2,176 completed sessions but only 20 decision
+packets.** A new bounded `harvestStaleSessions()` now runs first each hour
+and puts orphans that actually deliberated (≥5 agent messages) through the
+real `completeSession()` flow — summary → decision packet → bridge →
+proposal. The sweep now preserves harvest-eligible sessions until a 6-hour
+escape hatch, so the harvest bound is meaningful and a permanently failing
+session still gets closed.
+
+- Tests: `utils/time.test.ts` pins the trap itself (both `<` and `>`
+  directions, skipping the vacuous just-after-midnight case) and
+  `services/agora-stale.test.ts` covers the sweep/harvest interaction
+  (zombie detection, preservation, hard-close escape hatch, boot-recovery
+  behavior). Full api suite 71/71, `tsc` clean.
+
+---
+
 ## Recent Work: Live Governance Integration Reconnected + LLM Context Fix (2026-08-06)
 
 Prompted by the operator's report that moss-ao's local-LLM deliberations

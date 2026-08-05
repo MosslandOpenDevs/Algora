@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import type Database from 'better-sqlite3';
+import { isoHoursAgo } from '../utils/time';
 
 export const activityRouter: Router = Router();
 
@@ -68,21 +69,21 @@ activityRouter.get('/stats', (req, res) => {
       total: (db.prepare('SELECT COUNT(*) as count FROM activity_log').get() as any).count,
       last24h: (db.prepare(`
         SELECT COUNT(*) as count FROM activity_log
-        WHERE timestamp > datetime('now', '-24 hours')
-      `).get() as any).count,
+        WHERE timestamp > ?
+      `).get(isoHoursAgo(24)) as any).count,
       byType: db.prepare(`
         SELECT type, COUNT(*) as count
         FROM activity_log
-        WHERE timestamp > datetime('now', '-24 hours')
+        WHERE timestamp > ?
         GROUP BY type
         ORDER BY count DESC
-      `).all(),
+      `).all(isoHoursAgo(24)),
       bySeverity: db.prepare(`
         SELECT severity, COUNT(*) as count
         FROM activity_log
-        WHERE timestamp > datetime('now', '-24 hours')
+        WHERE timestamp > ?
         GROUP BY severity
-      `).all(),
+      `).all(isoHoursAgo(24)),
     };
 
     res.json({ stats });

@@ -5,6 +5,7 @@ import { llmService, type ModelComplexity } from './llm';
 import { AgoraService } from './agora';
 import type { GovernanceOSBridge } from './governance-os-bridge';
 import { wrapUntrustedList, UNTRUSTED_CONTEXT_NOTICE } from './prompt-safety';
+import { isoHoursAgo } from '../utils/time';
 
 // Issue detection patterns
 export interface DetectionPattern {
@@ -815,13 +816,13 @@ export class IssueDetectionService {
     const signals = this.db.prepare(`
       SELECT s.* FROM signals s
       WHERE s.severity IN ('critical', 'high')
-      AND s.timestamp > datetime('now', '-1 hour')
+      AND s.timestamp > ?
       AND NOT EXISTS (
         SELECT 1 FROM issue_signals iss WHERE iss.signal_id = s.id
       )
       ORDER BY s.timestamp DESC
       LIMIT 5
-    `).all() as Signal[];
+    `).all(isoHoursAgo(1)) as Signal[];
 
     if (signals.length === 0) return;
 
@@ -1123,8 +1124,8 @@ Respond in JSON format:
       SELECT priority, COUNT(*) as count FROM issues GROUP BY priority
     `).all();
     const recentDetections = this.db.prepare(`
-      SELECT COUNT(*) as count FROM issues WHERE detected_at > datetime('now', '-24 hours')
-    `).get() as { count: number };
+      SELECT COUNT(*) as count FROM issues WHERE detected_at > ?
+    `).get(isoHoursAgo(24)) as { count: number };
 
     return {
       total: total.count,

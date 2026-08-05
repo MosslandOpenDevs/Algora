@@ -1,6 +1,7 @@
 import type Database from 'better-sqlite3';
 import { Server as SocketServer } from 'socket.io';
 import { ethers } from 'ethers';
+import { isoNow } from '../../utils/time';
 
 // MOC Token ERC-20 ABI (minimal for balance checking)
 const MOC_TOKEN_ABI = [
@@ -173,13 +174,16 @@ export class TokenService {
     const normalizedAddress = walletAddress.toLowerCase();
 
     // Get pending verification
+    // expires_at is ISO-'T' (see utils/time.ts): compared against
+    // datetime('now') the nonce's 15-minute window silently stretched to the
+    // end of the UTC day, widening the signature-replay window.
     const verification = this.db.prepare(`
       SELECT * FROM wallet_verifications
       WHERE wallet_address = ? AND nonce = ? AND status = 'pending'
-        AND expires_at > datetime('now')
+        AND expires_at > ?
       ORDER BY created_at DESC
       LIMIT 1
-    `).get(normalizedAddress, nonce) as any;
+    `).get(normalizedAddress, nonce, isoNow()) as any;
 
     if (!verification) {
       throw new Error('Invalid or expired verification request');

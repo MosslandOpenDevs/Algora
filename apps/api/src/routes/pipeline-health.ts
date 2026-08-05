@@ -15,6 +15,7 @@ import type { GovernanceOSBridge, EscalatedSession } from '../services/governanc
 import type { SchedulerService } from '../scheduler';
 import { writeLimiter } from '../middleware/rate-limit';
 import { requireAdmin } from '../middleware/auth';
+import { isoHoursAgo } from '../utils/time';
 
 const router = Router();
 
@@ -587,8 +588,8 @@ function calculateStageHealth(
   `).get() as { count: number };
   const recentCompleted = db.prepare(`
     SELECT COUNT(*) as count FROM agora_sessions
-    WHERE status = 'completed' AND concluded_at >= datetime('now', '-24 hours')
-  `).get() as { count: number };
+    WHERE status = 'completed' AND concluded_at >= ?
+  `).get(isoHoursAgo(24)) as { count: number };
   const agoraScore = activeSessions.count <= 10 && recentCompleted.count >= 0 ? 100 : 70;
   stages.agoraDeliberation = {
     status: agoraScore >= 75 ? 'healthy' : agoraScore >= 50 ? 'degraded' : 'critical',
