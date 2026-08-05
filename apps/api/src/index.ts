@@ -11,6 +11,7 @@ import { pinoHttp } from 'pino-http';
 import { logger } from './logger';
 
 import { initDatabase } from './db';
+import { seedAgents } from './agents/seed';
 import { setupRoutes } from './routes';
 import { setupSocketHandlers, getAgoraService } from './services/socket';
 import { ActivityService } from './activity';
@@ -33,6 +34,19 @@ import { SignatureService } from './services/signature';
 
 const PORT = process.env.PORT || 3201;
 const NODE_ENV = process.env.NODE_ENV || 'development';
+
+// Resilience: a stray async error must not crash-loop this 24/7 service
+// (2026-08-04: an unhandled SqliteError rejection from a session timer
+// killed the process ~57x/day). Log rejections and keep serving. Uncaught
+// synchronous exceptions still exit — state may be inconsistent — and pm2
+// restarts us with a clear marker in the log.
+process.on('unhandledRejection', (reason) => {
+  console.error('[Process] Unhandled rejection:', reason);
+});
+process.on('uncaughtException', (error) => {
+  console.error('[Process] Uncaught exception (exiting):', error);
+  process.exit(1);
+});
 
 const app: ReturnType<typeof express> = express();
 const httpServer = createServer(app);
@@ -352,6 +366,12 @@ async function bootstrap() {
     // Initialize database
     console.info('Initializing database...');
     const db = initDatabase();
+
+    // Re-seed the agent roster on every boot (INSERT OR REPLACE — idempotent).
+    // Seeding previously only ran on manual `pnpm db:init`, so roster changes
+    // in code left stale rosters in prod; messages inserted under a missing
+    // agent id then failed their FK and crash-looped the process.
+    seedAgents(db);
 
     // Make db available to routes
     app.locals.db = db;

@@ -225,6 +225,7 @@ export class AgoraService {
   private roundCheckInProgress: Set<string> = new Set(); // Prevent concurrent round checks
   private sessionTimers: Map<string, SessionTimers> = new Map(); // Track session/round times
   private timeoutCheckers: Map<string, NodeJS.Timeout> = new Map(); // Timeout check intervals
+  private timeoutFailureCounts: Map<string, number> = new Map(); // Consecutive checkTimeouts failures
   private extractedActionItems: Map<string, ActionItem[]> = new Map(); // Action items per session
 
   constructor(db: Database.Database, io: SocketServer, governanceOSBridge?: GovernanceOSBridge) {
@@ -1289,9 +1290,37 @@ Return [] if no clear action items. JSON array only:`,
       lastMessageTime: now,
     });
 
-    // Check timeouts every 30 seconds
+    // Check timeouts every 30 seconds. The catch is load-bearing: an
+    // unhandled rejection here (e.g. a SqliteError while inserting the
+    // round-summary message) kills the whole process under Node's default
+    // policy — this crash-looped prod ~57x/day on 2026-08-04. Three
+    // consecutive failures force-complete the session and stop its timer,
+    // so a persistent failure cannot silently re-run the (LLM-calling)
+    // timeout handlers every 30s forever.
     const checker = setInterval(() => {
-      this.checkTimeouts(sessionId);
+      this.checkTimeouts(sessionId)
+        .then(() => this.timeoutFailureCounts.delete(sessionId))
+        .catch((error) => {
+          const failures = (this.timeoutFailureCounts.get(sessionId) ?? 0) + 1;
+          this.timeoutFailureCounts.set(sessionId, failures);
+          console.error(`[Orchestrator] Timeout check failed for session ${sessionId.slice(0, 8)} (attempt ${failures}/3):`, error);
+          if (failures < 3) return;
+
+          this.stopTimeoutChecker(sessionId);
+          try {
+            const now = new Date().toISOString();
+            this.db.prepare(`
+              UPDATE agora_sessions
+              SET status = 'completed', updated_at = ?, concluded_at = COALESCE(concluded_at, ?)
+              WHERE id = ? AND status = 'active'
+            `).run(now, now, sessionId);
+            this.db.prepare(`DELETE FROM agora_participants WHERE session_id = ?`).run(sessionId);
+            this.io.emit('agora:sessionCompleted', { sessionId, reason: 'timeout-checker-failure' });
+            console.error(`[Orchestrator] Force-completed session ${sessionId.slice(0, 8)} after 3 consecutive timeout-check failures`);
+          } catch (dbError) {
+            console.error(`[Orchestrator] Could not force-complete session ${sessionId.slice(0, 8)}:`, dbError);
+          }
+        });
     }, 30000);
 
     this.timeoutCheckers.set(sessionId, checker);
@@ -1304,6 +1333,7 @@ Return [] if no clear action items. JSON array only:`,
       this.timeoutCheckers.delete(sessionId);
     }
     this.sessionTimers.delete(sessionId);
+    this.timeoutFailureCounts.delete(sessionId);
   }
 
   private async checkTimeouts(sessionId: string): Promise<void> {
@@ -1369,6 +1399,14 @@ Return [] if no clear action items. JSON array only:`,
     const session = this.getSession(sessionId);
     if (!session) return;
 
+    // Reset the round timer up front: if the handler fails part-way through,
+    // the retry happens after another full round window — not on every 30s
+    // tick, which would re-run the LLM summary and re-post the same message.
+    const timers = this.sessionTimers.get(sessionId);
+    if (timers) {
+      timers.roundStartTime = Date.now();
+    }
+
     // Generate round summary before advancing
     const summary = await this.generateRoundSummary(sessionId);
 
@@ -1390,12 +1428,6 @@ Return [] if no clear action items. JSON array only:`,
 
     // Advance round
     await this.advanceRound(sessionId);
-
-    // Reset round timer
-    const timers = this.sessionTimers.get(sessionId);
-    if (timers) {
-      timers.roundStartTime = Date.now();
-    }
 
     // Add system message
     await this.addMessage(sessionId, {
