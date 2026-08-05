@@ -2,9 +2,51 @@
 
 This file tracks the current development progress for continuity between sessions.
 
-**Last Updated**: 2026-06-29
+**Last Updated**: 2026-08-05
 **Current Version**: 0.13.1
 **Production URL**: https://algora.moss.land
+
+---
+
+## Recent Work: Issue-Flood Cleanup + Lifecycle Fixes (2026-08-05)
+
+The L1 issue-detection service had accumulated **4,956 permanently-open
+issues** in prod (~100–200/day since 2026-06-17) and, as a side effect,
+auto-spawned **2,163 Agora LLM debate sessions** (token cost). Three root
+causes: no code path ever closed an issue; the threshold-alert dedup compared
+`category = '%'` for wildcard thresholds (an equality that never matches); and
+pattern dedup relied only on an in-memory cooldown that resets on every pm2
+restart (algora-api restarts frequently).
+
+- **Threshold-alert dedup fixed.** An alert is skipped while an issue for the
+  same threshold is open and recent (title-prefix match, 6h re-arm bound),
+  instead of the broken category comparison; the bound keeps one stale open
+  alert from suppressing a new, distinct surge indefinitely.
+- **Pattern-issue dedup.** While a recent issue from the same pattern is open
+  (re-arm window: 6h critical/high, 24h medium/low), new matches fold their
+  signals into it — `issue_signals`, the denormalized `signal_ids` column
+  (read by the web UI signal counts, pipeline-health, orchestrator bridge),
+  `updated_at`, plus an `issue:updated` emit — instead of creating another
+  issue, which also stops the duplicate Agora sessions and documents.
+- **Auto-expiry janitor.** Each 2-minute detection cycle dismisses
+  `detected`/`confirmed` issues untouched (by `updated_at`) for
+  `ISSUE_AUTO_EXPIRE_DAYS` (default 7); `in_progress` gets a 3x horizon and
+  mid-governance statuses (`pending_vote`, `approved_for_action`, ...) are
+  never auto-expired. Explicit `0` disables; empty/invalid falls back to 7
+  with a warning so a config typo can't silently disable it. Emits
+  `issue:updated` per dismissal; logged as `ISSUE_AUTO_EXPIRED`.
+- **Stats fix.** `openIssues` in `/api/stats` counted a nonexistent `'open'`
+  status; now counts `detected`/`confirmed`/`in_progress`.
+- **One-time prod cleanup.** Online-backed-up `algora.db`
+  (`data/algora.db.backup-issues-cleanup-20260805`), then dismissed 4,094
+  stale (>7 days) + 852 duplicate open issues → **10 open remain** (newest per
+  pattern/alert group).
+- Verified: `apps/api` tsc build passes (all 8 workspace packages), 44/44
+  tests pass; adversarial multi-agent review (13 agents) confirmed 7 findings
+  (dedup swallowing distinct events, janitor dismissing mid-governance work,
+  stale `signal_ids`, env-parsing footgun) — all addressed by the re-arm
+  bounds, `updated_at`-keyed staleness + status scoping, `signal_ids` sync,
+  and strict env parsing above.
 
 ---
 

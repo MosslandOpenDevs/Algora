@@ -70,6 +70,27 @@ export class IssueDetectionService {
   private checkIntervalId: NodeJS.Timeout | null = null;
   private lastPatternTrigger: Map<string, Date> = new Map();
   private lastAutoAgoraSession: Map<string, Date> = new Map();
+  private autoExpireDays: number = IssueDetectionService.resolveAutoExpireDays();
+
+  /**
+   * Days before open issues are auto-dismissed. Empty/invalid values fall
+   * back to the 7-day default (with a warning) so a config typo cannot
+   * silently disable expiry; only an explicit <= 0 disables it.
+   */
+  private static resolveAutoExpireDays(): number {
+    const raw = (process.env.ISSUE_AUTO_EXPIRE_DAYS ?? '').trim();
+    if (raw === '') return 7;
+    const days = Number(raw);
+    if (!Number.isFinite(days)) {
+      console.warn(`[IssueDetection] Invalid ISSUE_AUTO_EXPIRE_DAYS="${raw}" — falling back to 7 days`);
+      return 7;
+    }
+    if (days <= 0) {
+      console.warn('[IssueDetection] ISSUE_AUTO_EXPIRE_DAYS <= 0 — issue auto-expiry is DISABLED');
+      return 0;
+    }
+    return days;
+  }
 
   // Predefined detection patterns
   private patterns: DetectionPattern[] = [
@@ -305,6 +326,9 @@ export class IssueDetectionService {
     console.log('[IssueDetection] Running detection cycle...');
 
     try {
+      // 0. Expire stale open issues so the backlog cannot grow unbounded
+      this.runAutoExpiry();
+
       // 1. Pattern-based detection
       await this.runPatternDetection();
 
@@ -392,6 +416,52 @@ export class IssueDetectionService {
   }
 
   private async createIssueFromPattern(pattern: DetectionPattern, signals: Signal[]): Promise<void> {
+    // Dedup: while a recent issue from this pattern is still open, fold new
+    // signals into it instead of creating another issue (and another Agora
+    // session/document) — the in-memory cooldown alone resets on every restart.
+    // The re-arm window bounds how long a stale open issue can absorb a
+    // genuinely new event: 6h for critical/high patterns, 24h for medium/low.
+    const rearmHours = pattern.priority === 'critical' || pattern.priority === 'high' ? 6 : 24;
+    const existing = this.db.prepare(`
+      SELECT id, signal_ids FROM issues
+      WHERE status IN ('detected', 'confirmed', 'in_progress')
+      AND title LIKE ?
+      AND datetime(detected_at) > datetime('now', ?)
+      ORDER BY detected_at DESC
+      LIMIT 1
+    `).get(`[${pattern.name}]%`, `-${rearmHours} hours`) as
+      { id: string; signal_ids: string | null } | undefined;
+
+    if (existing) {
+      const attach = this.db.prepare(`
+        INSERT OR IGNORE INTO issue_signals (id, issue_id, signal_id, relevance_score)
+        VALUES (?, ?, ?, 1.0)
+      `);
+      for (const signal of signals) {
+        attach.run(uuidv4(), existing.id, signal.id);
+      }
+
+      // Keep the denormalized signal_ids column in sync — the web UI signal
+      // count, pipeline-health metrics, and the orchestrator bridge read it
+      // directly rather than the issue_signals junction table.
+      let mergedIds: string[];
+      try {
+        mergedIds = JSON.parse(existing.signal_ids || '[]');
+      } catch {
+        mergedIds = [];
+      }
+      const known = new Set(mergedIds);
+      for (const signal of signals) {
+        if (!known.has(signal.id)) mergedIds.push(signal.id);
+      }
+      this.db.prepare('UPDATE issues SET signal_ids = ?, updated_at = ? WHERE id = ?')
+        .run(JSON.stringify(mergedIds.slice(-500)), new Date().toISOString(), existing.id);
+
+      this.io.emit('issue:updated', { issueId: existing.id, mergedSignals: signals.length });
+      console.log(`[IssueDetection] Merged ${signals.length} signal(s) into open issue ${existing.id.slice(0, 8)} (${pattern.name})`);
+      return;
+    }
+
     const issueId = uuidv4();
     const signalIds = signals.map(s => s.id);
     const now = new Date().toISOString();
@@ -694,13 +764,17 @@ export class IssueDetectionService {
   }
 
   private async createThresholdAlert(threshold: AlertThreshold, count: number): Promise<void> {
-    // Check if we already have a similar open issue
+    // Dedup: skip while a recent issue for this threshold is still open. The
+    // old check compared category = '%' for wildcard thresholds, which never
+    // matched and let every 2-minute cycle create a fresh alert issue. The
+    // 6-hour re-arm bound keeps one stale open alert from suppressing a new,
+    // distinct surge indefinitely.
     const existing = this.db.prepare(`
       SELECT id FROM issues
-      WHERE category = ? AND status IN ('detected', 'confirmed')
-      AND detected_at > datetime('now', '-1 hour')
+      WHERE status IN ('detected', 'confirmed', 'in_progress')
       AND title LIKE ?
-    `).get(threshold.category === '*' ? '%' : threshold.category, `%${threshold.name}%`);
+      AND datetime(detected_at) > datetime('now', '-6 hours')
+    `).get(`[Alert] ${threshold.name}%`);
 
     if (existing) return;
 
@@ -935,6 +1009,45 @@ Respond in JSON format:
   }
 
   // === Issue Lifecycle Management ===
+
+  /**
+   * Auto-dismiss open issues that have gone stale. Detected issues are
+   * signal-driven and ephemeral; without this the open backlog grows forever.
+   * Staleness is keyed on the last touch (status change or merged signal),
+   * not detection time, and issues already picked up by the pipeline
+   * ('in_progress') get a 3x horizon so live governance work is not
+   * dismissed mid-flight. Statuses beyond the open set (pending_vote,
+   * approved_for_action, needs_manual_review, ...) are never auto-expired.
+   */
+  private runAutoExpiry(): void {
+    const days = this.autoExpireDays;
+    if (days <= 0) return;
+
+    const now = new Date().toISOString();
+    const expire = (statuses: string[], horizonDays: number): number => {
+      const stale = this.db.prepare(`
+        SELECT id FROM issues
+        WHERE status IN (${statuses.map(() => '?').join(',')})
+        AND COALESCE(MAX(datetime(updated_at), datetime(detected_at)), datetime(detected_at)) < datetime('now', ?)
+      `).all(...statuses, `-${horizonDays} days`) as { id: string }[];
+
+      const dismiss = this.db.prepare(`UPDATE issues SET status = 'dismissed', updated_at = ? WHERE id = ?`);
+      for (const row of stale) {
+        dismiss.run(now, row.id);
+        this.io.emit('issue:updated', { issueId: row.id, status: 'dismissed' });
+      }
+      return stale.length;
+    };
+
+    const expired = expire(['detected', 'confirmed'], days) + expire(['in_progress'], days * 3);
+    if (expired > 0) {
+      this.logActivity('ISSUE_AUTO_EXPIRED', 'info', `Auto-dismissed ${expired} stale issue(s) (horizon: ${days}d, in-progress: ${days * 3}d)`, {
+        expiredCount: expired,
+        horizonDays: days,
+      });
+      console.log(`[IssueDetection] Auto-dismissed ${expired} stale issue(s)`);
+    }
+  }
 
   updateIssueStatus(issueId: string, newStatus: string, resolution?: string): void {
     const validStatuses = ['detected', 'confirmed', 'in_progress', 'resolved', 'dismissed'];
