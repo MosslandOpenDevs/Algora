@@ -11,6 +11,12 @@ export interface LLMConfig {
       quality: string;   // Complex reasoning
     };
     timeout: number;
+    // Context window (num_ctx) requested per call. Ollama's server-side
+    // default is tiny (measured ~2048 on prod, 2026-08-06) and it silently
+    // truncates any prompt that exceeds it — the summary prompt (~3.4k
+    // tokens) was losing its head every time. Must comfortably exceed the
+    // largest prompt + num_predict.
+    numCtx: number;
   };
   tier2: {
     anthropic?: {
@@ -125,6 +131,10 @@ export class LLMService extends EventEmitter {
           quality: process.env.LOCAL_LLM_MODEL_QUALITY || 'gemma3:4b',
         },
         timeout: parseInt(process.env.LLM_TIER1_TIMEOUT_MS || '180000', 10), // 3 min default
+        // 8192 covers the largest current prompt (~3.4k tokens) with 2x
+        // headroom; gemma3:4b supports 128k, and its KV cache at 8k is
+        // negligible on the serving host. Raise via env if prompts grow.
+        numCtx: parseInt(process.env.LOCAL_LLM_NUM_CTX || '8192', 10),
       },
       tier2: {
         anthropic: tier2Enabled && process.env.ANTHROPIC_API_KEY
@@ -396,6 +406,9 @@ export class LLMService extends EventEmitter {
         options: {
           temperature: request.temperature ?? 0.7,
           num_predict: maxTokens,
+          // Without an explicit num_ctx Ollama applies its server default
+          // (~2048 measured on prod) and SILENTLY truncates longer prompts.
+          num_ctx: this.config.tier1.numCtx,
         },
       }),
       signal: AbortSignal.timeout(this.config.tier1.timeout),
@@ -410,7 +423,21 @@ export class LLMService extends EventEmitter {
       thinking?: string;
       done_reason?: string;
       eval_count?: number;
+      prompt_eval_count?: number;
     };
+
+    // Truncation is silent on Ollama's side: when the prompt fills the
+    // context window it drops the head and the model answers from a
+    // fragment. Make that loud so an outgrown prompt is a log line, not a
+    // quality mystery.
+    if (
+      typeof data.prompt_eval_count === 'number' &&
+      data.prompt_eval_count >= this.config.tier1.numCtx - maxTokens
+    ) {
+      console.warn(
+        `[LLM] Prompt filled the context window (${data.prompt_eval_count}/${this.config.tier1.numCtx} tokens) — input was likely truncated; raise LOCAL_LLM_NUM_CTX or trim the prompt`
+      );
+    }
 
     // Some reasoning models return only `thinking` if num_predict cuts them off
     // before the visible response. Fall back to the trimmed thinking output so
