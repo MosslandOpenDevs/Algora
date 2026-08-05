@@ -69,6 +69,34 @@ export function truncateAddress(address: string, chars = 4): string {
 }
 
 /**
+ * Strip markdown syntax from text for plain-text previews
+ * (e.g., line-clamped card descriptions)
+ *
+ * Usage:
+ * ```tsx
+ * stripMarkdown('## Title\n\n**bold** text') // "Title bold text"
+ * ```
+ */
+export function stripMarkdown(text: string): string {
+  return text
+    .replace(/```[\s\S]*?```/g, ' ')
+    .replace(/`([^`]*)`/g, '$1')
+    .replace(/!\[([^\]]*)\]\([^)]*\)/g, '$1')
+    .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
+    .replace(/^#{1,6}\s+/gm, '')
+    .replace(/^\s*(?:[-*+]|\d+\.)\s+/gm, '')
+    .replace(/^\s*>\s?/gm, '')
+    .replace(/\*\*([^*]+)\*\*/g, '$1')
+    .replace(/__([^_]+)__/g, '$1')
+    .replace(/\*([^*]+)\*/g, '$1')
+    .replace(/~~([^~]+)~~/g, '$1')
+    .replace(/^\s*(?:---+|\*\*\*+|___+)\s*$/gm, ' ')
+    .replace(/\|/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+/**
  * Sleep for a specified number of milliseconds
  */
 export function sleep(ms: number): Promise<void> {

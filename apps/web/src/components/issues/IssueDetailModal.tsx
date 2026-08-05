@@ -24,6 +24,7 @@ import {
 import type { Issue } from '@/lib/api';
 import { safeFormatDate } from '@/lib/utils';
 import { useDialogA11y } from '@/hooks/useDialogA11y';
+import { MarkdownContent } from '@/components/ui/MarkdownContent';
 
 interface IssueDetailModalProps {
   issue: Issue;
@@ -165,9 +166,7 @@ export function IssueDetailModal({ issue, onClose }: IssueDetailModalProps) {
                 <FileText className="h-4 w-4" />
                 <span>{t('detail.description')}</span>
               </div>
-              <p className="text-agora-text whitespace-pre-wrap leading-relaxed break-words overflow-hidden">
-                {issue.description}
-              </p>
+              <MarkdownContent content={issue.description} className="overflow-hidden" />
             </div>
 
             {/* Stats Grid */}

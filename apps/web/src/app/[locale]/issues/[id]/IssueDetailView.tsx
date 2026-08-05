@@ -27,6 +27,7 @@ import Link from 'next/link';
 
 import { fetchIssue } from '@/lib/api';
 import { safeFormatDate } from '@/lib/utils';
+import { MarkdownContent } from '@/components/ui/MarkdownContent';
 
 const statusConfig = {
   detected: {
@@ -223,11 +224,7 @@ export default function IssueDetailPage() {
           <FileText className="h-4 w-4" />
           <span>{t('detail.description')}</span>
         </div>
-        <div className="prose prose-slate max-w-none">
-          <p className="text-agora-text whitespace-pre-wrap leading-relaxed">
-            {issue.description}
-          </p>
-        </div>
+        <MarkdownContent content={issue.description} />
       </div>
 
       {/* Stats Grid */}
