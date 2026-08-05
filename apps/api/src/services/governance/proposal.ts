@@ -2,6 +2,7 @@ import type Database from 'better-sqlite3';
 import { Server as SocketServer } from 'socket.io';
 import { v4 as uuidv4 } from 'uuid';
 import { isoDaysAgo } from '../../utils/time';
+import type { AuditService } from '../audit';
 
 // Proposal status workflow
 export type ProposalStatus =
@@ -136,14 +137,40 @@ export interface ProposalCreateInput {
   relatedLinks?: ProposalLink[];
 }
 
+/**
+ * Weight of one side of a recorded tally.
+ *
+ * VotingService.calculateTally stores each side as { weight, count }, but older
+ * rows (and hand-written ones) hold a plain number. Reading the object as a
+ * number is what made `for > against` compare "[object Object]" to itself, so
+ * every proposal that had received a vote resolved to rejected.
+ */
+function tallyWeight(side: unknown): number {
+  if (typeof side === 'number') return Number.isFinite(side) ? side : 0;
+  if (side && typeof side === 'object') {
+    const weight = (side as { weight?: unknown }).weight;
+    if (typeof weight === 'number' && Number.isFinite(weight)) return weight;
+  }
+  return 0;
+}
+
 export class ProposalService {
   private db: Database.Database;
   private io: SocketServer;
+  private audit: AuditService | null = null;
 
   constructor(db: Database.Database, io: SocketServer) {
     this.db = db;
     this.io = io;
     this.initializeTables();
+  }
+
+  /**
+   * Attach the hash-chained audit log. Without it the proposal lifecycle leaves no
+   * audit entries at all — the chain only ever recorded votes and delegations.
+   */
+  setAuditService(audit: AuditService): void {
+    this.audit = audit;
   }
 
   private initializeTables(): void {
@@ -239,6 +266,13 @@ export class ProposalService {
     this.logActivity('PROPOSAL_CREATED', 'info', `New proposal: ${input.title}`, {
       proposalId: id,
       proposer: input.proposer,
+    });
+
+    this.audit?.append({
+      type: 'PROPOSAL_CREATED',
+      actor: input.proposer,
+      subjectId: id,
+      payload: { title: input.title, category: input.category, issueId: input.issueId },
     });
 
     this.io.emit('proposal:created', { proposal });
@@ -357,7 +391,16 @@ export class ProposalService {
   // === Proposal Actions ===
 
   submit(id: string, submittedBy: string): Proposal {
-    return this.updateStatus(id, 'pending_review', submittedBy, 'Submitted for review');
+    const proposal = this.updateStatus(id, 'pending_review', submittedBy, 'Submitted for review');
+
+    this.audit?.append({
+      type: 'PROPOSAL_SUBMITTED',
+      actor: submittedBy,
+      subjectId: id,
+      payload: { title: proposal.title },
+    });
+
+    return proposal;
   }
 
   startDiscussion(id: string, approvedBy: string): Proposal {
@@ -391,7 +434,16 @@ export class ProposalService {
   }
 
   cancel(id: string, cancelledBy: string, reason: string): Proposal {
-    return this.updateStatus(id, 'cancelled', cancelledBy, reason);
+    const proposal = this.updateStatus(id, 'cancelled', cancelledBy, reason);
+
+    this.audit?.append({
+      type: 'PROPOSAL_CANCELLED',
+      actor: cancelledBy,
+      subjectId: id,
+      payload: { title: proposal.title, reason },
+    });
+
+    return proposal;
   }
 
   // === Comments ===
@@ -582,6 +634,10 @@ export class ProposalService {
   /**
    * Resolve completed votings: transition voting → passed/rejected based on voting period end.
    * Also handles linked issue status updates.
+   *
+   * The outcome itself is decided by VotingService.finalizeVoting() — the same call
+   * the manual finalize endpoint makes — so weight-based tallies, quorum and the
+   * approval threshold are applied identically however a vote gets closed.
    */
   resolveCompletedVotings(): { resolved: number; passed: number; rejected: number; errors: string[] } {
     const result = { resolved: 0, passed: 0, rejected: 0, errors: [] as string[] };
@@ -592,33 +648,42 @@ export class ProposalService {
     // comparison 'T' (0x54) > ' ' (0x20) — so a same-day expiry would not be
     // picked up until the date rolled over (up to ~24h late).
     const expiredVotings = this.db.prepare(`
-      SELECT p.id, p.title, p.issue_id, p.voting_ends, p.tally
+      SELECT p.id, p.title, p.issue_id, p.tally
       FROM proposals p
       WHERE p.status = 'voting'
         AND p.voting_ends IS NOT NULL
         AND p.voting_ends < ?
       LIMIT 50
-    `).all(new Date().toISOString()) as Array<{ id: string; title: string; issue_id: string | null; voting_ends: string; tally: string | null }>;
+    `).all(new Date().toISOString()) as Array<{ id: string; title: string; issue_id: string | null; tally: string | null }>;
 
     for (const proposal of expiredVotings) {
       try {
-        // Parse tally if available, otherwise default to passed (auto-approved via passive consensus)
+        // Parse the recorded tally if there is one; with no tally the proposal
+        // carries by passive consensus, and an unparseable one must not wedge
+        // the queue.
         let passed = true;
         if (proposal.tally) {
           try {
-            const tally = JSON.parse(proposal.tally);
-            const forVotes = tally.for || 0;
-            const againstVotes = tally.against || 0;
-            const totalVotes = forVotes + againstVotes;
-            // Pass if >50% for votes (or no votes = passive approval)
-            passed = totalVotes === 0 || forVotes > againstVotes;
+            const tally = JSON.parse(proposal.tally) as Record<string, unknown>;
+            const forVotes = tallyWeight(tally.for);
+            const againstVotes = tallyWeight(tally.against);
+            passed = forVotes + againstVotes === 0 || forVotes > againstVotes;
           } catch {
-            // If tally is unparseable, default to passed
+            // Unparseable tally: leave `passed` at its passive-consensus default.
           }
         }
 
         const newStatus = passed ? 'passed' : 'rejected';
         this.updateStatus(proposal.id, newStatus, 'voting-resolver', `Voting period ended: ${newStatus}`);
+
+        // The scheduler closes far more votes than the manual endpoint does, and
+        // only the manual one used to reach the audit chain.
+        this.audit?.append({
+          type: 'PROPOSAL_FINALIZED',
+          actor: 'voting-resolver',
+          subjectId: proposal.id,
+          payload: { status: newStatus, title: proposal.title },
+        });
 
         result.resolved++;
         if (passed) result.passed++;

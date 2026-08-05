@@ -20,6 +20,7 @@ export class GovernanceService {
     this.proposals = new ProposalService(db, io);
     this.voting = new VotingService(db, io);
     this.voting.setAuditService(this.audit);
+    this.proposals.setAuditService(this.audit);
     this.decisionPackets = new DecisionPacketService(db, io);
 
     console.log('[Governance] Service initialized (audit chain enabled)');
