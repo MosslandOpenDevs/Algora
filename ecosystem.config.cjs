@@ -115,7 +115,10 @@ module.exports = {
       env: {
         NODE_ENV: 'production',
         DEPLOY_BRANCH: process.env.DEPLOY_BRANCH || 'main',
-        DEPLOY_REQUIRE_CI: process.env.DEPLOY_REQUIRE_CI || '0',
+        // Fail-closed: only CI-green commits ship. Overriding this to '0' turns
+        // auto-deploy back into "whatever is on main", which is how untested
+        // commits reached production before .github/workflows/ci.yml existed.
+        DEPLOY_REQUIRE_CI: process.env.DEPLOY_REQUIRE_CI || '1',
         DEPLOY_ALERT_WEBHOOK: process.env.DEPLOY_ALERT_WEBHOOK || ALERT_WEBHOOK,
         GITHUB_TOKEN: process.env.GITHUB_TOKEN || '',
       },

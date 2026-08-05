@@ -10,8 +10,8 @@
 
 import { Router, Request, Response } from 'express';
 import type Database from 'better-sqlite3';
-import type { SignalCollectorService, CollectorHealth } from '../services/collectors';
-import type { GovernanceOSBridge, EscalatedSession } from '../services/governance-os-bridge';
+import type { SignalCollectorService } from '../services/collectors';
+import type { GovernanceOSBridge } from '../services/governance-os-bridge';
 import type { SchedulerService } from '../scheduler';
 import { writeLimiter } from '../middleware/rate-limit';
 import { requireAdmin } from '../middleware/auth';

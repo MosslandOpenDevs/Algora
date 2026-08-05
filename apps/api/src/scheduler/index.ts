@@ -9,7 +9,7 @@ import { BudgetAlertService } from '../services/budget-alerts';
 import { KPIPersistenceService } from '../services/kpi-persistence';
 import type { PassiveConsensusService } from '../services/passive-consensus';
 import type { ProposalService } from '../services/governance/proposal';
-import { InMemoryQueue, JobStatus } from '../lib/job-queue';
+import { InMemoryQueue } from '../lib/job-queue';
 
 export type Tier = 0 | 1 | 2;
 

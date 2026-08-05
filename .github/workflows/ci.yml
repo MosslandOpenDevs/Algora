@@ -1,0 +1,62 @@
+name: CI
+
+# The deploy poller (scripts/deploy.sh, registered by ecosystem.config.cjs when
+# ALGORA_AUTO_DEPLOY=1) refuses to ship a commit unless this workflow reports a
+# green check run for it. Every job here is therefore a release gate: keep it
+# green, and do not add a job that is expected to fail.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # The `prepare` script installs husky hooks, which are meaningless on a runner.
+  HUSKY: 0
+
+jobs:
+  checks:
+    name: build, typecheck, lint, test
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.0.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      # better-sqlite3 is a native module; the api tests open real databases.
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      # turbo gives typecheck/lint/test a `^build` dependency, so building first
+      # only warms the cache — it does not change what the later steps verify.
+      - name: Build
+        run: pnpm build
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Test
+        run: pnpm test
+
+      # Advisory only. 289 files predate Prettier being enforced; gating on this
+      # today would make the deploy gate permanently red and therefore useless.
+      # Once the mechanical reformat lands, drop continue-on-error so it blocks.
+      - name: Format check (advisory)
+        continue-on-error: true
+        run: pnpm format:check
