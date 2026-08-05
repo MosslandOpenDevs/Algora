@@ -5,9 +5,7 @@
     "rootDir": "./src",
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"],
-      "@algora/core": ["../../packages/core/src"],
-      "@algora/core/*": ["../../packages/core/src/*"]
+      "@/*": ["./src/*"]
     },
     "noUnusedLocals": false,
     "noUnusedParameters": false,

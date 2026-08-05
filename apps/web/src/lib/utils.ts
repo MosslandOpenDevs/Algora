@@ -70,31 +70,10 @@ export function truncateAddress(address: string, chars = 4): string {
 
 /**
  * Strip markdown syntax from text for plain-text previews
- * (e.g., line-clamped card descriptions)
- *
- * Usage:
- * ```tsx
- * stripMarkdown('## Title\n\n**bold** text') // "Title bold text"
- * ```
+ * (e.g., line-clamped card descriptions). Shared with the API via
+ * @algora/core so search-result snippets strip identically.
  */
-export function stripMarkdown(text: string): string {
-  return text
-    .replace(/```[\s\S]*?```/g, ' ')
-    .replace(/`([^`]*)`/g, '$1')
-    .replace(/!\[([^\]]*)\]\([^)]*\)/g, '$1')
-    .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
-    .replace(/^#{1,6}\s+/gm, '')
-    .replace(/^\s*(?:[-*+]|\d+\.)\s+/gm, '')
-    .replace(/^\s*>\s?/gm, '')
-    .replace(/\*\*([^*]+)\*\*/g, '$1')
-    .replace(/__([^_]+)__/g, '$1')
-    .replace(/\*([^*]+)\*/g, '$1')
-    .replace(/~~([^~]+)~~/g, '$1')
-    .replace(/^\s*(?:---+|\*\*\*+|___+)\s*$/gm, ' ')
-    .replace(/\|/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
-}
+export { stripMarkdown } from '@algora/core';
 
 /**
  * Sleep for a specified number of milliseconds
