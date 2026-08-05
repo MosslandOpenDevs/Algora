@@ -573,7 +573,7 @@ export class GovernanceOSBridge extends EventEmitter {
         try {
           const redTeamAgents = this.db.prepare(`
             SELECT id FROM agents
-            WHERE group_name = 'red_team' AND is_active = 1
+            WHERE group_name = 'red-team' AND is_active = 1
           `).all() as Array<{ id: string }>;
 
           for (const agent of redTeamAgents) {
