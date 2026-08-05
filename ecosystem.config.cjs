@@ -4,9 +4,16 @@
 // fast-forwarding itself to origin/main as soon as someone ran
 // `pm2 start ecosystem.config.cjs`. Minimal .env read, no dotenv dep at root.
 let AUTO_DEPLOY = false;
+let ALERT_WEBHOOK = '';
 try {
   const env = require('fs').readFileSync(`${__dirname}/.env`, 'utf8');
   AUTO_DEPLOY = /^ALGORA_AUTO_DEPLOY=1\s*$/m.test(env);
+  // Same minimal .env read for the deploy-failure webhook, so configuring it
+  // doesn't depend on whichever shell happens to run `pm2 start` (registration
+  // captures env at that moment; an unexported var would silently disable
+  // alerts — the deploy tripwire's webhook path relies on this).
+  const webhook = env.match(/^DEPLOY_ALERT_WEBHOOK=(\S+)\s*$/m);
+  if (webhook) ALERT_WEBHOOK = webhook[1];
 } catch {
   // no .env — auto-deploy stays off
 }
@@ -109,7 +116,7 @@ module.exports = {
         NODE_ENV: 'production',
         DEPLOY_BRANCH: process.env.DEPLOY_BRANCH || 'main',
         DEPLOY_REQUIRE_CI: process.env.DEPLOY_REQUIRE_CI || '0',
-        DEPLOY_ALERT_WEBHOOK: process.env.DEPLOY_ALERT_WEBHOOK || '',
+        DEPLOY_ALERT_WEBHOOK: process.env.DEPLOY_ALERT_WEBHOOK || ALERT_WEBHOOK,
         GITHUB_TOKEN: process.env.GITHUB_TOKEN || '',
       },
       error_file: './logs/deploy-error.log',

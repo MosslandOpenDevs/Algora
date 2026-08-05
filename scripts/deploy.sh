@@ -65,6 +65,13 @@ DEPLOY_LOCK_STALE_MIN=${DEPLOY_LOCK_STALE_MIN:-90}
 PM2_BIN=${PM2_BIN:-pm2}
 PNPM_BIN=${PNPM_BIN:-pnpm}
 
+# pm2 flattens the managed process's own config into its child environment, so
+# under the algora-deploy cron this shell literally has cron_restart,
+# autorestart etc. as env vars. Scrub them so no pm2 invocation from this
+# script can ever merge them into a target app's stored config (the 2026-08-05
+# `--update-env` incident class — see build_and_restart).
+unset cron_restart autorestart watch max_memory_restart
+
 FORCE=0
 CHECK_ONLY=0
 
@@ -101,6 +108,41 @@ alert() {
     "${DEPLOY_ALERT_WEBHOOK}" >/dev/null 2>&1 || true
 }
 
+# Tripwire for the config-bleed class of pm2 bug (2026-08-05 incident: the
+# then-used `pm2 restart --update-env` merged this process's flattened config
+# into algora-api, whose inherited `1-59/5 * * * *` cron_restart SIGKILLed it
+# every 5 minutes for hours, undetected). The app processes must never carry a
+# cron_restart or a disabled autorestart — only algora-deploy/db-backup
+# legitimately do, and the name allowlist excludes them. Runs on every tick
+# (a bleed from outside this script would otherwise sit until the next real
+# deploy) and again right after our own restarts. Fails open — a broken check
+# must never block a deploy — but loudly, so a wedged pm2/jlist is
+# distinguishable from a clean pass.
+check_config_bleed() {
+  local out
+  out=$("${PM2_BIN}" jlist 2>/dev/null | node -e '
+    const list = JSON.parse(require("fs").readFileSync(0, "utf8"));
+    const bad = list.filter(p => ["algora-api", "algora-web"].includes(p.name)
+      && p.pm2_env
+      && (p.pm2_env.cron_restart
+          || p.pm2_env.autorestart === false
+          || p.pm2_env.autorestart === "false"));
+    console.log(bad.length ? "BLEED " + bad.map(p => p.name).join(" ") : "OK");
+  ' 2>/dev/null || true)
+  case "${out}" in
+    OK) ;;
+    "BLEED "*)
+      local leaked="${out#BLEED }"
+      log "WARNING pm2 config bleed: cron_restart/autorestart poisoned on: ${leaked}"
+      log "WARNING fix: pm2 delete <app> && pm2 start ecosystem.config.cjs --only <app> && pm2 save"
+      alert "Algora: pm2 config bleed on ${leaked} -- restarts every 5 minutes (or stops reviving on crash) until re-registered: pm2 delete <app> && pm2 start ecosystem.config.cjs --only <app> && pm2 save"
+      ;;
+    *)
+      log "WARN config-bleed tripwire could not run (pm2 jlist unparseable or node failed)"
+      ;;
+  esac
+}
+
 # ---------------------------------------------------------------------------
 # Single-flight lock. A crash mid-deploy would otherwise wedge every later tick,
 # so a lock older than DEPLOY_LOCK_STALE_MIN is reclaimed.
@@ -121,6 +163,8 @@ trap 'rm -rf "${DEPLOY_LOCK}" 2>/dev/null || true' EXIT
 # ---------------------------------------------------------------------------
 # 1. Is there anything to deploy?
 # ---------------------------------------------------------------------------
+check_config_bleed
+
 git fetch --quiet "${DEPLOY_REMOTE}" "${DEPLOY_BRANCH}" || {
   log "WARN git fetch failed -- will retry next tick"
   exit 0
@@ -272,17 +316,31 @@ build_and_restart() {
     fi
   fi
 
+  # NEVER pass --update-env here. This script runs under pm2 (algora-deploy),
+  # and pm2 flattens the managed process's own config into its environment —
+  # cron_restart, autorestart and friends become env vars of this shell.
+  # `pm2 restart --update-env` merges the CLI's environment into the target's
+  # stored config, so algora-api inherited algora-deploy's `1-59/5 * * * *`
+  # cron_restart and was SIGKILLed every 5 minutes (2026-08-05; autorestart
+  # bleeds the same way). A plain restart keeps the target's registered config
+  # untouched — verified on pm2 7.0.3. The API re-reads apps/api/.env itself at
+  # boot, and ecosystem config changes need a delete+start re-registration
+  # anyway (this script flags that case — see the ECOSYSTEM_CHANGED NOTE).
   if [ "${api}" = "1" ]; then
     log "pm2 restart algora-api"
-    "${PM2_BIN}" restart algora-api --update-env >/dev/null \
+    "${PM2_BIN}" restart algora-api >/dev/null \
       || { log "ERROR pm2 restart algora-api failed"; return 1; }
   fi
   if [ "${web}" = "1" ]; then
     log "pm2 restart algora-web"
-    "${PM2_BIN}" restart algora-web --update-env >/dev/null \
+    "${PM2_BIN}" restart algora-web >/dev/null \
       || { log "ERROR pm2 restart algora-web failed"; return 1; }
   fi
   # Never `pm2 restart all` here: the box hosts ~20 unrelated projects.
+
+  # A bleed caused by the restarts above should be caught now, not on the next
+  # tick (the every-tick call at the top of the flow covers external causes).
+  check_config_bleed
 }
 
 health_ok() {
@@ -325,8 +383,11 @@ git reset --hard --quiet "${TARGET}"
 
 if [ "${ECOSYSTEM_CHANGED}" = "1" ]; then
   log "NOTE ecosystem.config.cjs changed -- process definitions (cron, env) are"
-  log "     NOT re-registered automatically. Run on the server when convenient:"
-  log "     pm2 restart ecosystem.config.cjs --update-env && pm2 save"
+  log "     NOT re-registered automatically. Run on the server, per changed app:"
+  log "     pm2 delete <app> && pm2 start ecosystem.config.cjs --only <app> && pm2 save"
+  log "     (pm2 restart --update-env merges but never clears keys -- it cannot"
+  log "     remove a cron_restart or revert autorestart; delete+start is the"
+  log "     only reliable re-registration)"
 fi
 
 if [ "${API_CHANGED}" = "0" ] && [ "${WEB_CHANGED}" = "0" ]; then

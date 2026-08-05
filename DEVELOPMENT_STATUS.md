@@ -8,6 +8,68 @@ This file tracks the current development progress for continuity between session
 
 ---
 
+## Recent Work: Auto-Deploy pm2 Config Bleed Fixed (2026-08-05)
+
+Prod `algora-api` was stopped and SIGKILLed every 5 minutes for ~2.5 hours
+(05:26–08:03 UTC), starting right after the first real auto-deploys. Root
+cause: pm2 flattens a managed process's config into its child environment,
+so inside the `algora-deploy` cron process (`cron_restart: '1-59/5 * * * *'`,
+`autorestart: false`) those keys are literal env vars — and `pm2 restart
+--update-env` in `scripts/deploy.sh` merges the CLI's environment into the
+target's stored config. `algora-api` inherited the deploy poller's 5-minute
+cron_restart on the 05:21 deploy and pm2 dutifully restarted it every tick
+after. Verified empirically on the box (pm2 7.0.3): a plain restart with the
+same poisoned environment does NOT bleed; `--update-env` transfers both
+`cron_restart` and `autorestart: false`. The diagnosis then reproduced
+itself live: while this fix was in review, the still-deployed old script
+deployed PR #8 (a web change) at 08:11 UTC and poisoned `algora-web` the
+same way.
+
+- **`--update-env` dropped** from both restart calls in
+  `build_and_restart()` (rollback shares the same path). Nothing relied on
+  it: the API reads `apps/api/.env` itself via dotenv at boot, web bakes
+  `NEXT_PUBLIC_*` at build time, and ecosystem env changes already require
+  manual re-registration (the script logs a NOTE for that case).
+- **Environment scrub.** The script prologue now `unset`s
+  `cron_restart`/`autorestart`/`watch`/`max_memory_restart`, so even a
+  future reintroduction of `--update-env` (or any other env-merging pm2
+  call) has nothing poisonous to merge.
+- **Config-bleed tripwire, every tick.** `check_config_bleed()` parses
+  `pm2 jlist` on every 5-minute tick (external causes) and again right
+  after the script's own restarts (immediate detection), flagging a
+  cron_restart OR a disabled autorestart (boolean or string `"false"` —
+  the other half of the demonstrated bleed, which would silently disable
+  crash recovery) on `algora-api`/`algora-web`. It fails open — a broken
+  check never blocks a deploy — but loudly: an unparseable `pm2 jlist`
+  logs its own WARN instead of masquerading as a clean pass. Covered by a
+  fixture harness (clean roster, each bleed shape, banner-polluted jlist,
+  missing node).
+- **Recovery guidance corrected.** The ECOSYSTEM_CHANGED NOTE used to
+  recommend `pm2 restart ecosystem.config.cjs --update-env && pm2 save`,
+  which cannot clear a poisoned key (pm2 merges but never removes — even
+  an explicit `--cron-restart 0` fails on 7.0.3) and whose `pm2 save`
+  would have persisted the poison across reboots. Both the NOTE and the
+  tripwire WARNING now prescribe the only reliable form:
+  `pm2 delete <app> && pm2 start ecosystem.config.cjs --only <app> && pm2 save`.
+- **Alert webhook registration hardened.** `ecosystem.config.cjs` now
+  reads `DEPLOY_ALERT_WEBHOOK` from the root `.env` (same minimal parse as
+  the `ALGORA_AUTO_DEPLOY` gate), so configuring alerts no longer depends
+  on the variable happening to be exported in whichever shell registered
+  the poller. (No webhook is configured on the box yet — alerts are
+  log-only until one is added.)
+- **Server state cleaned:** `algora-api` and `algora-web` deleted and
+  re-registered from `ecosystem.config.cjs` (new pm2 ids 44/47, so logs
+  rotated to `api-*-44.log`/`web-*-47.log`), `pm2 save` re-run; verified
+  cron-free, `autorestart: true` intact, and healthy across subsequent
+  poller ticks.
+- **Same disease elsewhere on the box:** pm2 logs show sibling projects'
+  apps (e.g. `oracle-web`) being cron-bounced at :00 seconds — the other
+  moss-ao-family deploy pollers this script was adapted from likely carry
+  the same `--update-env` bug. Flagged for their own repos; out of scope
+  here.
+
+---
+
 ## Recent Work: Vacuous Governance-Proposal Detections Fixed (2026-08-05)
 
 Keyword pattern conditions in the L1 issue-detection service evaluated
