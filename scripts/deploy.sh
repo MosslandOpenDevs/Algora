@@ -200,7 +200,8 @@ if [ "${DEPLOY_REQUIRE_CI}" = "1" ] && [ "${FORCE}" = "0" ]; then
 fi
 
 # What kind of change is this? packages/* and root build config feed both apps
-# through turbo, so they mark both. Docs-only changes skip build and restart.
+# through turbo, so they mark both. Docs-only changes are synced (checkout
+# reset so on-server docs stay current) but not deployed.
 API_CHANGED=0
 WEB_CHANGED=0
 DEPS_CHANGED=0
@@ -329,7 +330,7 @@ if [ "${ECOSYSTEM_CHANGED}" = "1" ]; then
 fi
 
 if [ "${API_CHANGED}" = "0" ] && [ "${WEB_CHANGED}" = "0" ]; then
-  log "DEPLOYED ${CURRENT:0:8} -> ${TARGET:0:8} (docs/scripts only -- no build or restart)"
+  log "SYNCED ${CURRENT:0:8} -> ${TARGET:0:8} (docs/scripts only -- checkout updated, no deploy)"
   exit 0
 fi
 
