@@ -8,6 +8,8 @@ build/
 .next/
 out/
 .turbo/
+# deploy.sh's pre-build snapshot of the live outputs
+.deploy-backup/
 
 # Database
 *.db
