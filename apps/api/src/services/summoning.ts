@@ -67,7 +67,7 @@ export class SummoningService {
         .get(context.issueId) as { priority: string } | undefined;
 
       if (issue?.priority === 'critical') {
-        const redTeamAgents = this.getAgentsByGroup('red_team');
+        const redTeamAgents = this.getAgentsByGroup('red-team');
         const summonedIds = new Set(summoned.map(s => s.agent.id));
 
         for (const agent of redTeamAgents) {
