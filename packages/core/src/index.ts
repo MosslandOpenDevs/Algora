@@ -175,3 +175,32 @@ export interface HealthStatus {
 export type DeepPartial<T> = {
   [P in keyof T]?: T[P] extends object ? DeepPartial<T[P]> : T[P];
 };
+
+// ===========================================
+// Utility Functions
+// ===========================================
+
+/**
+ * Strip markdown syntax from text for plain-text previews
+ * (line-clamped cards, search-result snippets).
+ *
+ * stripMarkdown('## Title\n\n**bold** text') // "Title bold text"
+ */
+export function stripMarkdown(text: string): string {
+  return text
+    .replace(/```[\s\S]*?```/g, ' ')
+    .replace(/`([^`]*)`/g, '$1')
+    .replace(/!\[([^\]]*)\]\([^)]*\)/g, '$1')
+    .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
+    .replace(/^#{1,6}\s+/gm, '')
+    .replace(/^\s*(?:[-*+]|\d+\.)\s+/gm, '')
+    .replace(/^\s*>\s?/gm, '')
+    .replace(/\*\*([^*]+)\*\*/g, '$1')
+    .replace(/__([^_]+)__/g, '$1')
+    .replace(/\*([^*]+)\*/g, '$1')
+    .replace(/~~([^~]+)~~/g, '$1')
+    .replace(/^\s*(?:---+|\*\*\*+|___+)\s*$/gm, ' ')
+    .replace(/\|/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}

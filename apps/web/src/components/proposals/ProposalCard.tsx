@@ -2,7 +2,7 @@
 
 import { useTranslations } from 'next-intl';
 import { formatDistanceToNow } from 'date-fns';
-import { safeFormatDate } from '@/lib/utils';
+import { safeFormatDate, stripMarkdown } from '@/lib/utils';
 import { MockDataBadge } from '@/components/ui/MockDataBadge';
 import {
   FileText,
@@ -117,7 +117,7 @@ export function ProposalCard({ proposal, onClick }: ProposalCardProps) {
       </div>
 
       {/* Summary */}
-      <p className="mt-3 text-sm text-agora-muted line-clamp-2">{proposal.summary}</p>
+      <p className="mt-3 text-sm text-agora-muted line-clamp-2">{stripMarkdown(proposal.summary)}</p>
 
       {/* Voting Progress */}
       <div className="mt-4">
