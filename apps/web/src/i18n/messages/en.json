@@ -1067,6 +1067,13 @@
     "title": "Research / Testing / Non-Production",
     "description": "This service is an experimental environment for research, testing, and PoC purposes. Data loss and service interruption may occur."
   },
+  "Ecosystem": {
+    "label": "Mossland Ecosystem",
+    "bridgeRole": "Governance OS",
+    "algoraRole": "AI Deliberation Lab",
+    "aoRole": "Agentic Orchestrator",
+    "newTab": "opens in new tab"
+  },
   "MockData": {
     "badge": "Mock Data",
     "title": "Simulated Data",
