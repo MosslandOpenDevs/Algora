@@ -261,8 +261,14 @@ build_and_restart() {
   if [ "${api}" = "1" ] || [ "${web}" = "1" ]; then
     # turbo caches unchanged packages, so a full build is cheap; NEXT_PUBLIC_*
     # is baked in at web build time, so restarting alone would serve stale env.
+    # Full output goes to build-last.log; on failure its tail is copied into
+    # the deploy log so the cause survives without shelling into the server.
     log "pnpm build"
-    "${PNPM_BIN}" build >/dev/null 2>&1 || { log "ERROR pnpm build failed"; return 1; }
+    if ! "${PNPM_BIN}" build >"${REPO_ROOT}/logs/build-last.log" 2>&1; then
+      log "ERROR pnpm build failed -- last lines of logs/build-last.log:"
+      tail -20 "${REPO_ROOT}/logs/build-last.log" | while read -r l; do log "  ${l}"; done
+      return 1
+    fi
   fi
 
   if [ "${api}" = "1" ]; then
