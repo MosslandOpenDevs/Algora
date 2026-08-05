@@ -10,6 +10,7 @@ import { Header } from '@/components/layout/Header';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { ExperimentalBanner } from '@/components/ui/ExperimentalBanner';
 import { NpcCityStrip } from '@/components/cross-link/NpcCityStrip';
+import { EcosystemBar } from '@/components/cross-link/EcosystemBar';
 import {
   type Locale,
   defaultLocale,
@@ -162,6 +163,9 @@ export default async function RootLayout({
                     {/* NPC city cross-link — read-side fetch with 10-min
                         revalidate; renders nothing if npc.moss.land is down. */}
                     <NpcCityStrip />
+                    {/* Mossland sister-site wayfinding — same content and
+                        order as the bars on BRIDGE and MOSS.AO. */}
+                    <EcosystemBar />
                   </main>
                 </div>
               </div>

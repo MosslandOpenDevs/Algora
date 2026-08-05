@@ -432,6 +432,8 @@ App
 │   │   └── StatusBar (예산, 큐, 시스템 상태)
 │   ├── Sidebar (내비게이션)
 │   └── Main Content
+│       ├── NpcCityStrip (npc.moss.land 크로스링크)
+│       └── EcosystemBar (모스랜드 자매 사이트 웨이파인딩)
 │
 ├── Pages
 │   ├── Dashboard

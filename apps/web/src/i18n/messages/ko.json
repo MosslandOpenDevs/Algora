@@ -1067,6 +1067,13 @@
     "title": "연구용 / 테스트 / 비프로덕션",
     "description": "본 서비스는 연구·테스트·PoC 목적의 실험 환경입니다. 데이터 유실 및 서비스 중단이 발생할 수 있습니다."
   },
+  "Ecosystem": {
+    "label": "모스랜드 에코시스템",
+    "bridgeRole": "거버넌스 OS",
+    "algoraRole": "AI 숙의 실험실",
+    "aoRole": "에이전트 오케스트레이터",
+    "newTab": "새 탭에서 열림"
+  },
   "MockData": {
     "badge": "목업 데이터",
     "title": "시뮬레이션 데이터",

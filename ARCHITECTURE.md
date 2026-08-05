@@ -432,6 +432,8 @@ App
 │   │   └── StatusBar (Budget, Queue, System Status)
 │   ├── Sidebar (Navigation)
 │   └── Main Content
+│       ├── NpcCityStrip (npc.moss.land cross-link)
+│       └── EcosystemBar (Mossland sister-site wayfinding)
 │
 ├── Pages
 │   ├── Dashboard

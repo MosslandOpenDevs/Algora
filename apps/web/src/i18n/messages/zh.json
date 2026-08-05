@@ -1077,6 +1077,13 @@
     "title": "研究 / 测试 / 非生产",
     "description": "此服务是用于研究、测试和PoC目的的实验环境。可能发生数据丢失和服务中断。"
   },
+  "Ecosystem": {
+    "label": "Mossland 生态系统",
+    "bridgeRole": "治理OS",
+    "algoraRole": "AI 审议实验室",
+    "aoRole": "AI 代理编排器",
+    "newTab": "在新标签页中打开"
+  },
   "MockData": {
     "badge": "模拟数据",
     "title": "模拟数据",
