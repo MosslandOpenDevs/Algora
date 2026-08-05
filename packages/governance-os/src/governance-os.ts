@@ -343,20 +343,22 @@ export class GovernanceOS {
                 if (result.success) {
                   // Create document from research digest
                   if (result.researchDigest) {
-                    const doc = await this.documentRegistry.documents.create({
+                    const docs = this.documentRegistry.documents;
+                    const doc = await docs.create({
                       type: 'RD' as DocumentType,
-                      title: `Research Digest: ${status.context.issue.title}`,
-                      summary: result.researchDigest.introduction || 'Research findings',
+                      title: docs.clampTitle(`Research Digest: ${status.context.issue.title}`, '(RD)'),
+                      summary: docs.clampSummary(result.researchDigest.introduction, `Research digest for issue: ${status.context.issue.title}`),
                       content: JSON.stringify(result.researchDigest),
                       createdBy: 'orchestrator-workflow-a',
                     });
                     documents.push(doc.id);
                   }
                   if (result.technologyAssessment) {
-                    const doc = await this.documentRegistry.documents.create({
+                    const docs = this.documentRegistry.documents;
+                    const doc = await docs.create({
                       type: 'TA' as DocumentType,
-                      title: `Technology Assessment: ${status.context.issue.title}`,
-                      summary: result.technologyAssessment.executiveSummary || 'Technology assessment',
+                      title: docs.clampTitle(`Technology Assessment: ${status.context.issue.title}`, '(TA)'),
+                      summary: docs.clampSummary(result.technologyAssessment.executiveSummary, `Technology assessment for issue: ${status.context.issue.title}`),
                       content: JSON.stringify(result.technologyAssessment),
                       createdBy: 'orchestrator-workflow-a',
                     });
@@ -368,10 +370,11 @@ export class GovernanceOS {
               case 'B': {
                 const result = await this.orchestrator.executeWorkflowB(workflowId);
                 if (result.success && result.debateSummary) {
-                  const doc = await this.documentRegistry.documents.create({
+                  const docs = this.documentRegistry.documents;
+                    const doc = await docs.create({
                     type: 'DS' as DocumentType,
-                    title: `Debate Summary: ${status.context.issue.title}`,
-                    summary: result.debateSummary.executiveSummary || 'Debate findings',
+                    title: docs.clampTitle(`Debate Summary: ${status.context.issue.title}`, '(DS)'),
+                    summary: docs.clampSummary(result.debateSummary.executiveSummary, `Debate summary for issue: ${status.context.issue.title}`),
                     content: JSON.stringify(result.debateSummary),
                     createdBy: 'orchestrator-workflow-b',
                   });
@@ -391,10 +394,11 @@ export class GovernanceOS {
                 if (resultD.success) {
                   // Create document from ecosystem report
                   if (resultD.ecosystemReport) {
-                    const doc = await this.documentRegistry.documents.create({
+                    const docs = this.documentRegistry.documents;
+                    const doc = await docs.create({
                       type: 'ER' as DocumentType,
-                      title: `Ecosystem Report: ${status.context.issue.title}`,
-                      summary: resultD.ecosystemReport.executiveSummary || 'Ecosystem expansion analysis',
+                      title: docs.clampTitle(`Ecosystem Report: ${status.context.issue.title}`, '(ER)'),
+                      summary: docs.clampSummary(resultD.ecosystemReport.executiveSummary, `Ecosystem expansion analysis for issue: ${status.context.issue.title}`),
                       content: JSON.stringify(resultD.ecosystemReport),
                       createdBy: 'orchestrator-workflow-d',
                     });
@@ -402,10 +406,11 @@ export class GovernanceOS {
                   }
                   // Create assessment document
                   if (resultD.opportunityAssessment) {
-                    const doc = await this.documentRegistry.documents.create({
+                    const docs = this.documentRegistry.documents;
+                    const doc = await docs.create({
                       type: 'OA' as DocumentType,
-                      title: `Opportunity Assessment: ${status.context.issue.title}`,
-                      summary: resultD.opportunityAssessment.recommendationReasoning || 'Opportunity assessment',
+                      title: docs.clampTitle(`Opportunity Assessment: ${status.context.issue.title}`, '(OA)'),
+                      summary: docs.clampSummary(resultD.opportunityAssessment.recommendationReasoning, `Opportunity assessment for issue: ${status.context.issue.title}`),
                       content: JSON.stringify(resultD.opportunityAssessment),
                       createdBy: 'orchestrator-workflow-d',
                     });
@@ -420,10 +425,11 @@ export class GovernanceOS {
                 if (resultE.success) {
                   // Create WG proposal document
                   if (resultE.wgProposal) {
-                    const doc = await this.documentRegistry.documents.create({
+                    const docs = this.documentRegistry.documents;
+                    const doc = await docs.create({
                       type: 'WGP' as DocumentType,
-                      title: `Working Group Proposal: ${resultE.wgProposal.name}`,
-                      summary: resultE.wgProposal.purpose || 'Working group proposal',
+                      title: docs.clampTitle(`Working Group Proposal: ${resultE.wgProposal.name}`, '(WGP)'),
+                      summary: docs.clampSummary(resultE.wgProposal.purpose, `Working group proposal: ${resultE.wgProposal.name}`),
                       content: JSON.stringify(resultE.wgProposal),
                       createdBy: 'orchestrator-workflow-e',
                     });
@@ -431,10 +437,11 @@ export class GovernanceOS {
                   }
                   // Create status report document
                   if (resultE.statusReport) {
-                    const doc = await this.documentRegistry.documents.create({
+                    const docs = this.documentRegistry.documents;
+                    const doc = await docs.create({
                       type: 'SR' as DocumentType,
-                      title: `WG Status Report: ${resultE.statusReport.workingGroupId}`,
-                      summary: resultE.statusReport.executiveSummary || 'Working group status update',
+                      title: docs.clampTitle(`WG Status Report: ${resultE.statusReport.workingGroupId}`, '(SR)'),
+                      summary: docs.clampSummary(resultE.statusReport.executiveSummary, `Status report for working group ${resultE.statusReport.workingGroupId}`),
                       content: JSON.stringify(resultE.statusReport),
                       createdBy: 'orchestrator-workflow-e',
                     });
@@ -494,14 +501,24 @@ export class GovernanceOS {
           const p = params as {
             type: DocumentType;
             title: string;
+            // Callers (pipeline.ts) do compute a summary; omitting it here
+            // silently substituted the title, which is routinely shorter than
+            // minSummaryLength — so the pipeline's only document failed
+            // validation and was dropped without surfacing anywhere.
+            summary?: string;
             content: string;
             createdBy: string;
             metadata?: Record<string, unknown>;
           };
-          const doc = await this.documentRegistry.documents.create({
+          const documents = this.documentRegistry.documents;
+          const title = documents.clampTitle(p.title, `(${p.type})`);
+          const doc = await documents.create({
             type: p.type,
-            title: p.title,
-            summary: p.title,
+            title,
+            summary: documents.clampSummary(
+              p.summary,
+              `${p.type} document produced by the governance pipeline: ${title}`
+            ),
             content: p.content,
             createdBy: p.createdBy,
           });

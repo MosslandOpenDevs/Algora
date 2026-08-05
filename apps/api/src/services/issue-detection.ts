@@ -621,8 +621,11 @@ export class IssueDetectionService {
       // Create an RM (Risk Management) document for the issue
       const doc = await docRegistry.documents.create({
         type: 'RM', // Risk Management document
-        title: `Issue Report: ${title}`,
-        summary: `Detected issue in category ${pattern.category} with ${pattern.priority} priority`,
+        title: docRegistry.documents.clampTitle(`Issue Report: ${title}`, issueId.slice(0, 8)),
+        summary: docRegistry.documents.clampSummary(
+          `Detected issue in category ${pattern.category} with ${pattern.priority} priority`,
+          `Auto-detected by the ${pattern.name} pattern from collected signals (issue ${issueId.slice(0, 8)}).`
+        ),
         content: JSON.stringify({
           issueId,
           patternId: pattern.id,

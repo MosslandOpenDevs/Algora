@@ -338,6 +338,14 @@ export class GovernancePipeline {
           };
 
         } catch (error) {
+          // ctx.metadata.documentProduction is written but read nowhere, so a
+          // failure here used to be completely invisible: the stage returned
+          // normally, the pipeline reported success, and the issue advanced
+          // with zero documents. Log it so the next one is diagnosable.
+          console.error(
+            `[Pipeline] Decision Packet document creation failed for issue ${ctx.issueId} (pipeline continues):`,
+            error
+          );
           ctx.metadata.documentProduction = {
             status: 'failed',
             error: error instanceof Error ? error.message : 'Unknown error',
