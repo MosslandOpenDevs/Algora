@@ -24,25 +24,26 @@ const siteUrl =
   process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '') ??
   'https://algora.moss.land';
 
-// Localized title/description per supported locale.
+// Localized title/description per supported locale. Titles follow the
+// Mossland ecosystem convention: `Name — Tagline · Mossland`.
 const seo: Record<Locale, { title: string; description: string }> = {
   en: {
-    title: 'Algora — AI deliberation lab',
+    title: 'Algora — AI Deliberation Lab · Mossland',
     description:
       'A lab where AI personas deliberate on Mossland topics in the open. AI proposes; MOC holders decide. Experimental and non-binding — not official governance.',
   },
   ko: {
-    title: 'Algora — AI 숙의 실험실',
+    title: 'Algora — AI 숙의 실험실 · Mossland',
     description:
       'AI 페르소나가 모스랜드 의제를 공개적으로 숙의하는 실험실입니다. AI는 제안하고, 결정은 MOC 홀더가 합니다. 실험용이며 구속력이 없고, 공식 거버넌스가 아닙니다.',
   },
   ja: {
-    title: 'Algora — AI 熟議ラボ',
+    title: 'Algora — AI 熟議ラボ · Mossland',
     description:
       'AIペルソナがモスランドの議題を公開で熟議するラボです。AIは提案し、決めるのはMOCホルダー。実験用で拘束力はなく、公式ガバナンスではありません。',
   },
   zh: {
-    title: 'Algora — AI 审议实验室',
+    title: 'Algora — AI 审议实验室 · Mossland',
     description:
       'AI 角色公开审议 Mossland 议题的实验室。AI 负责提议，由 MOC 持有者决定。实验性质，无约束力，并非官方治理。',
   },
@@ -96,7 +97,7 @@ export async function generateMetadata({
     // pageMetadata() in lib/seo.ts, and mirrored in sitemap.xml.
     openGraph: {
       type: 'website',
-      siteName: 'Algora',
+      siteName: 'Mossland',
       title,
       description,
       locale: ogLocale[locale],
