@@ -24,6 +24,7 @@ import type { Task, TaskType, DifficultyLevel } from '@algora/model-router';
 // Import existing services for integration
 import { llmService } from './llm.js';
 import { GovernanceStorage } from './governance-storage.js';
+import { recordActivity } from '../activity/index.js';
 
 // ============================================
 // Types
@@ -639,23 +640,17 @@ export class GovernanceOSBridge extends EventEmitter {
 
       case 'human_review': {
         // Create a high-priority notification for human review
-        const notificationId = uuidv4();
-
-        this.db.prepare(`
-          INSERT INTO activity_log (id, type, severity, timestamp, message, details)
-          VALUES (?, ?, ?, CURRENT_TIMESTAMP, ?, ?)
-        `).run(
-          notificationId,
-          'HUMAN_REVIEW_REQUIRED',
-          'critical',
-          `Human review required: ${sessionData.title}`,
-          JSON.stringify({
+        recordActivity(this.db, {
+          type: 'HUMAN_REVIEW_REQUIRED',
+          severity: 'critical',
+          message: `Human review required: ${sessionData.title}`,
+          details: {
             escalationId,
             sessionId: sessionData.sessionId,
             issueId: sessionData.issueId,
             action: 'Governance committee review requested due to very low agent consensus.',
-          })
-        );
+          },
+        });
 
         // If there's a linked issue, update its status
         if (sessionData.issueId) {

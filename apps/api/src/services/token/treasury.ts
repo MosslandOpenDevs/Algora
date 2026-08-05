@@ -1,6 +1,12 @@
 import type Database from 'better-sqlite3';
 import { Server as SocketServer } from 'socket.io';
 import { ethers } from 'ethers';
+import { recordActivity } from '../../activity';
+
+type TreasuryActivityType =
+  | 'TREASURY_ALLOCATION_APPROVED'
+  | 'TREASURY_DISBURSED'
+  | 'TREASURY_TRANSACTION';
 
 export interface TreasuryBalance {
   tokenAddress: string;
@@ -672,13 +678,9 @@ export class TreasuryService {
 
   // === Helpers ===
 
-  private logActivity(type: string, description: string, metadata: any): void {
+  private logActivity(type: TreasuryActivityType, message: string, metadata: any): void {
     try {
-      const id = `act_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      this.db.prepare(`
-        INSERT INTO activity_log (id, type, description, metadata, timestamp)
-        VALUES (?, ?, ?, ?, datetime('now'))
-      `).run(id, type, description, JSON.stringify(metadata));
+      recordActivity(this.db, { type, severity: 'info', message, metadata });
     } catch (error) {
       console.error('[Treasury] Failed to log activity:', error);
     }
