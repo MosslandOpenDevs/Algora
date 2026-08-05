@@ -738,11 +738,15 @@ export class SchedulerService {
 
   /**
    * Schedule automatic proposal queue processing (hourly).
-   * Two-stage:
+   * Three-stage:
    *   1) draft → discussion (autoProgressProposals, after 24h with completed Agora)
    *   2) discussion → voting (autoPromoteDiscussions, after 24h soak)
+   *   3) voting → passed/rejected (resolveCompletedVotings, after voting_ends;
+   *      also resolves/reverts the linked issue)
    * Without (2), proposals pile up in discussion forever — the actual cause of
-   * the 3,000+ stuck-in-discussion backlog observed in production.
+   * the 3,000+ stuck-in-discussion backlog observed in production. Without
+   * (3), they pile up in voting instead and no issue ever reaches 'resolved':
+   * resolveCompletedVotings existed but had no caller until 2026-08-06.
    */
   private scheduleProposalQueueProcessing(): void {
     const interval = setInterval(async () => {
@@ -751,11 +755,12 @@ export class SchedulerService {
       try {
         const progressed = this.proposalService.autoProgressProposals();
         const promoted = this.proposalService.autoPromoteDiscussions();
-        if (progressed.progressed > 0 || promoted.promoted > 0) {
-          console.info(`[Scheduler] Proposal queue: ${progressed.progressed} draft→discussion, ${promoted.promoted} discussion→voting`);
+        const resolved = this.proposalService.resolveCompletedVotings();
+        if (progressed.progressed > 0 || promoted.promoted > 0 || resolved.resolved > 0) {
+          console.info(`[Scheduler] Proposal queue: ${progressed.progressed} draft→discussion, ${promoted.promoted} discussion→voting, ${resolved.resolved} voting resolved (${resolved.passed} passed / ${resolved.rejected} rejected)`);
           this.activityService.log('PROPOSAL_QUEUE', 'info',
-            `Proposal queue: ${progressed.progressed} progressed, ${promoted.promoted} promoted`, {
-              details: { progressed, promoted },
+            `Proposal queue: ${progressed.progressed} progressed, ${promoted.promoted} promoted, ${resolved.resolved} resolved`, {
+              details: { progressed, promoted, resolved },
             });
         }
       } catch (error) {

@@ -756,13 +756,16 @@ export class GovernanceOSBridge extends EventEmitter {
       return;
     }
 
-    // Check if proposal already exists for this issue
+    // Check if a live proposal already exists for this issue. Terminal
+    // 'rejected'/'cancelled' proposals do NOT block: a rejected vote reverts
+    // the issue to 'detected' for re-discussion (resolveCompletedVotings),
+    // and that re-discussion must be able to produce a fresh proposal.
     const existingProposal = this.db.prepare(
-      'SELECT id FROM proposals WHERE issue_id = ?'
+      "SELECT id FROM proposals WHERE issue_id = ? AND status NOT IN ('rejected', 'cancelled')"
     ).get(sessionData.issueId) as { id: string } | null;
 
     if (existingProposal) {
-      console.log(`[GovernanceOSBridge] Proposal already exists for issue ${sessionData.issueId.slice(0, 8)}, skipping`);
+      console.log(`[GovernanceOSBridge] Live proposal already exists for issue ${sessionData.issueId.slice(0, 8)}, skipping`);
       return;
     }
 
@@ -825,6 +828,22 @@ ${issue.evidence ? JSON.parse(issue.evidence).slice(0, 3).map((e: { source: stri
       );
 
       console.log(`[GovernanceOSBridge] Created proposal ${proposalId.slice(0, 8)} from Agora session ${sessionData.sessionId.slice(0, 8)}`);
+
+      // Park the linked issue in 'pending_vote' while its proposal walks the
+      // draft → discussion → voting pipeline (~4 days). The auto-expiry
+      // janitor never touches pending_vote, so the issue cannot be dismissed
+      // mid-governance; resolveCompletedVotings later moves it to 'resolved'
+      // (passed) or back to 'detected' (rejected).
+      this.db.prepare(`
+        UPDATE issues SET status = 'pending_vote', updated_at = CURRENT_TIMESTAMP
+        WHERE id = ?
+      `).run(sessionData.issueId);
+
+      this.io.emit('issue:updated', {
+        issueId: sessionData.issueId,
+        status: 'pending_vote',
+        reason: 'Proposal created from Agora deliberation',
+      });
 
       // Log activity
       this.db.prepare(`

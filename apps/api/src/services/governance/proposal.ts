@@ -488,20 +488,23 @@ export class ProposalService {
   autoProgressProposals(): { progressed: number; errors: string[] } {
     const result = { progressed: 0, errors: [] as string[] };
 
-    // Find draft proposals older than 24h with completed Agora sessions
+    // Find draft proposals older than 24h with completed Agora sessions.
+    // ISO-'T' timestamps must be compared against an ISO cutoff, not
+    // datetime('now', ...) — see resolveCompletedVotings for why.
+    const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
     const draftProposals = this.db.prepare(`
       SELECT p.id, p.title, p.issue_id, p.created_at,
         (SELECT MAX(s.current_round) FROM agora_sessions s WHERE s.issue_id = p.issue_id AND s.status = 'completed') as max_round
       FROM proposals p
       WHERE p.status = 'draft'
-        AND p.created_at < datetime('now', '-24 hours')
+        AND p.created_at < ?
         AND p.issue_id IS NOT NULL
         AND EXISTS (
           SELECT 1 FROM agora_sessions s
           WHERE s.issue_id = p.issue_id AND s.status = 'completed' AND s.current_round >= 3
         )
       LIMIT 20
-    `).all() as Array<{ id: string; title: string; issue_id: string; created_at: string; max_round: number }>;
+    `).all(cutoff) as Array<{ id: string; title: string; issue_id: string; created_at: string; max_round: number }>;
 
     for (const proposal of draftProposals) {
       try {
@@ -535,14 +538,17 @@ export class ProposalService {
     const limit = opts?.limit ?? 50;
     const result = { promoted: 0, errors: [] as string[] };
 
+    // ISO-'T' timestamps must be compared against an ISO cutoff, not
+    // datetime('now', ...) — see resolveCompletedVotings for why.
+    const soakCutoff = new Date(Date.now() - minHours * 60 * 60 * 1000).toISOString();
     const candidates = this.db.prepare(`
       SELECT p.id, p.title
       FROM proposals p
       WHERE p.status = 'discussion'
-        AND p.updated_at < datetime('now', ?)
+        AND p.updated_at < ?
       ORDER BY p.updated_at ASC
       LIMIT ?
-    `).all(`-${minHours} hours`, limit) as Array<{ id: string; title: string }>;
+    `).all(soakCutoff, limit) as Array<{ id: string; title: string }>;
 
     const now = new Date();
     const votingEnds = new Date(now.getTime() + votingHours * 60 * 60 * 1000).toISOString();
@@ -579,15 +585,19 @@ export class ProposalService {
   resolveCompletedVotings(): { resolved: number; passed: number; rejected: number; errors: string[] } {
     const result = { resolved: 0, passed: 0, rejected: 0, errors: [] as string[] };
 
-    // Find proposals whose voting period has ended
+    // Find proposals whose voting period has ended. Compare against a JS ISO
+    // timestamp, NOT datetime('now'): stored timestamps use the ISO 'T'
+    // separator while datetime('now') renders with a space, and in a string
+    // comparison 'T' (0x54) > ' ' (0x20) — so a same-day expiry would not be
+    // picked up until the date rolled over (up to ~24h late).
     const expiredVotings = this.db.prepare(`
       SELECT p.id, p.title, p.issue_id, p.voting_ends, p.tally
       FROM proposals p
       WHERE p.status = 'voting'
         AND p.voting_ends IS NOT NULL
-        AND p.voting_ends < datetime('now')
+        AND p.voting_ends < ?
       LIMIT 50
-    `).all() as Array<{ id: string; title: string; issue_id: string | null; voting_ends: string; tally: string | null }>;
+    `).all(new Date().toISOString()) as Array<{ id: string; title: string; issue_id: string | null; voting_ends: string; tally: string | null }>;
 
     for (const proposal of expiredVotings) {
       try {
