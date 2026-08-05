@@ -2,7 +2,7 @@
 
 import { useTranslations } from 'next-intl';
 import { formatDistanceToNow } from 'date-fns';
-import { safeFormatDate } from '@/lib/utils';
+import { safeFormatDate, stripMarkdown } from '@/lib/utils';
 import {
   AlertCircle,
   Radio,
@@ -130,7 +130,7 @@ export function IssueCard({ issue, index = 0, onClick }: IssueCardProps) {
                 {issue.title}
               </h3>
               <p className="mt-1 text-sm text-agora-muted line-clamp-2 break-words">
-                {issue.description}
+                {stripMarkdown(issue.description)}
               </p>
             </div>
 
