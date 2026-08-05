@@ -258,6 +258,17 @@ export class GovernanceOS {
   }
 
   /**
+   * Resume a pipeline that parked awaiting HIGH-risk approval.
+   *
+   * Returns null when no such pipeline is held — including after a restart, since
+   * pipeline contexts are not persisted yet.
+   */
+  async resumePipeline(contextId: string): Promise<PipelineResult | null> {
+    const services = this.createPipelineServices();
+    return this.pipeline.resume(contextId, services);
+  }
+
+  /**
    * Create pipeline services from subsystems.
    */
   private createPipelineServices(): PipelineServices {
@@ -269,13 +280,17 @@ export class GovernanceOS {
         createLockedAction: async (params: unknown) => {
           // Create lock using the lock manager
           const p = params as {
+            id?: string;
             actionType: string;
             description: string;
             riskLevel: RiskLevel;
             payload: Record<string, unknown>;
           };
-          // Generate a unique ID for the locked action
-          const id = `lock-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+          // Callers that already hold a correlation id (the dual-house approval)
+          // pass it in so the lock, the execution gate and the unlock event all
+          // key off one identifier. Without that, a lock-* id is stored and the
+          // hr-* id is emitted on unlock, and the two never meet.
+          const id = p.id || `lock-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
           this.stats.lockedActions++;
           this.emit('execution:locked', { actionId: id, reason: `${p.riskLevel}-risk action: ${p.description}` });
           return { id };
@@ -574,6 +589,9 @@ export class GovernanceOS {
         },
         getHighRiskApproval: async (id: string) => {
           return this.dualHouse.highRisk.getApproval(id);
+        },
+        getHighRiskApprovalByProposal: async (proposalId: string) => {
+          return this.dualHouse.highRisk.getApprovalByProposal(proposalId);
         },
       },
     };

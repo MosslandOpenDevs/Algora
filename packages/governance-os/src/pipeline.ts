@@ -72,6 +72,7 @@ export interface PipelineServices {
     getVoting: (id: string) => Promise<DualHouseVoting | null>;
     createHighRiskApproval: (params: unknown) => Promise<HighRiskApproval>;
     getHighRiskApproval: (id: string) => Promise<HighRiskApproval | null>;
+    getHighRiskApprovalByProposal: (proposalId: string) => Promise<HighRiskApproval | null>;
   };
 }
 
@@ -392,25 +393,43 @@ export class GovernancePipeline {
     this.stageHandlers.set('approval_routing', async (ctx, services) => {
       ctx.stage = 'approval_routing';
       if (ctx.riskLevel === 'HIGH') {
-        // Create locked action for HIGH risk
+        // Create the high-risk approval first, so the lock can adopt its id.
+        if (ctx.votingId) {
+          const proposalId = ctx.issueId || ctx.id;
+          try {
+            const approval = await services.dualHouse.createHighRiskApproval({
+              proposalId,
+              votingId: ctx.votingId,
+              actionDescription: `Execute pipeline ${ctx.id}`,
+              actionType: 'pipeline_execution',
+            });
+            ctx.approvalId = approval.id;
+          } catch (error) {
+            // Re-running the pipeline for a proposal that already has an approval
+            // must adopt it — createHighRiskApproval rejects duplicates. If there is
+            // genuinely no approval to use, record why and let the execution gate
+            // block: an approval we could not obtain is an approval we do not have.
+            const existing = await services.dualHouse.getHighRiskApprovalByProposal(proposalId);
+            if (existing) {
+              ctx.approvalId = existing.id;
+            } else {
+              ctx.metadata.approvalRoutingError =
+                error instanceof Error ? error.message : String(error);
+            }
+          }
+        }
+
+        // Create locked action for HIGH risk, sharing the approval's id so that the
+        // persisted lock row can be found when the approval is later unlocked —
+        // the unlock event carries the approval id, not a separately minted one.
         const action = await services.safeAutonomy.createLockedAction({
+          id: ctx.approvalId,
           actionType: 'pipeline_execution',
           description: `Execute pipeline ${ctx.id}`,
           riskLevel: ctx.riskLevel,
           payload: ctx.metadata,
         });
         ctx.lockedActionId = action.id;
-
-        // Create high-risk approval
-        if (ctx.votingId) {
-          const approval = await services.dualHouse.createHighRiskApproval({
-            proposalId: ctx.issueId || ctx.id,
-            votingId: ctx.votingId,
-            actionDescription: `Execute pipeline ${ctx.id}`,
-            actionType: 'pipeline_execution',
-          });
-          ctx.approvalId = approval.id;
-        }
       }
       return ctx;
     });
@@ -424,9 +443,13 @@ export class GovernancePipeline {
         riskLevel: ctx.riskLevel,
       };
 
-      // Check if HIGH risk action needs approval
-      if (ctx.riskLevel === 'HIGH' && ctx.lockedActionId) {
-        const approval = await services.safeAutonomy.checkApproval(ctx.lockedActionId);
+      // Check if HIGH risk action needs approval.
+      // Ask about the dual-house approval (hr-*), not the lock (lock-*): approvals
+      // are stored under their own id, so checking the lock id never matches and
+      // execution stays blocked even after every house has signed off.
+      if (ctx.riskLevel === 'HIGH' && (ctx.approvalId || ctx.lockedActionId)) {
+        const approvalRef = ctx.approvalId || ctx.lockedActionId!;
+        const approval = await services.safeAutonomy.checkApproval(approvalRef);
 
         if (!approval.approved) {
           // Still locked, cannot proceed
@@ -434,8 +457,11 @@ export class GovernancePipeline {
           ctx.metadata.execution = {
             ...ctx.metadata.execution as Record<string, unknown>,
             status: 'blocked',
-            reason: 'Awaiting HIGH-risk approval',
+            reason: ctx.metadata.approvalRoutingError
+              ? `Approval unavailable: ${ctx.metadata.approvalRoutingError}`
+              : 'Awaiting HIGH-risk approval',
             lockedActionId: ctx.lockedActionId,
+            approvalId: ctx.approvalId,
           };
           return ctx;
         }
@@ -576,7 +602,10 @@ export class GovernancePipeline {
       riskLevel: params.riskLevel || 'LOW',
       startedAt: new Date(),
       completedStages: [],
-      metadata: params.metadata || {},
+      // Copied, not aliased: stages write run state (executionBlocked, execution,
+      // approvalRoutingError) into metadata, and a caller that reuses its metadata
+      // object would otherwise start the next run already carrying the last one's.
+      metadata: { ...params.metadata },
     };
   }
 
@@ -606,6 +635,12 @@ export class GovernancePipeline {
 
     try {
       for (const stage of stages) {
+        // A resumed run must not repeat work it already did: every stage here has
+        // side effects (documents, votings, locks, approvals) that are not idempotent.
+        if (currentContext.completedStages.includes(stage)) {
+          continue;
+        }
+
         this.emit('pipeline:stage_entered', { context: currentContext, stage });
 
         const handler = this.stageHandlers.get(stage);
@@ -616,10 +651,8 @@ export class GovernancePipeline {
           );
         }
 
-        currentContext.completedStages.push(stage);
-        this.emit('pipeline:stage_completed', { context: currentContext, stage });
-
-        // Check for blocking conditions
+        // Check for blocking conditions before marking the stage done — a stage that
+        // blocked awaiting approval has not completed, and resume() must re-run it.
         if (currentContext.metadata.executionBlocked) {
           this.emit('pipeline:blocked', {
             context: currentContext,
@@ -631,6 +664,9 @@ export class GovernancePipeline {
           this.emit('pipeline:completed', { result });
           return result;
         }
+
+        currentContext.completedStages.push(stage);
+        this.emit('pipeline:stage_completed', { context: currentContext, stage });
       }
 
       currentContext.completedAt = new Date();
@@ -650,7 +686,11 @@ export class GovernancePipeline {
       return result;
 
     } finally {
-      this.activePipelines.delete(context.id);
+      // Keep pipelines that are parked awaiting approval: dropping them here is what
+      // made resume() unable to find anything to resume. Everything else is terminal.
+      if (!context.metadata.executionBlocked) {
+        this.activePipelines.delete(context.id);
+      }
     }
   }
 
@@ -773,7 +813,8 @@ export class GovernancePipeline {
     contextId: string,
     services: PipelineServices
   ): Promise<PipelineResult | null> {
-    // In real implementation, would load from storage
+    // Only pipelines parked in this process can be resumed; contexts do not survive
+    // a restart until GovernanceOS is given a persistent store.
     const context = this.activePipelines.get(contextId);
     if (!context) {
       return null;
@@ -781,8 +822,10 @@ export class GovernancePipeline {
 
     // Clear blocked status
     context.metadata.executionBlocked = false;
+    delete context.metadata.approvalRoutingError;
 
-    // Continue from execution stage
+    // run() skips the stages already recorded in completedStages, so this picks up
+    // at the stage that blocked rather than replaying the whole pipeline.
     return this.run(context, services);
   }
 

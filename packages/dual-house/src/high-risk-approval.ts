@@ -190,6 +190,10 @@ export class HighRiskApprovalManager {
         'token_burn',
         'protocol_upgrade',
         'emergency_action',
+        // Raised by the GovernanceOS pipeline when a HIGH-risk run reaches
+        // approval routing. Without it every HIGH-risk pipeline fails to create
+        // its approval and the run errors out.
+        'pipeline_execution',
       ],
     };
   }
