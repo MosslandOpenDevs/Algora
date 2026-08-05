@@ -8,6 +8,54 @@ This file tracks the current development progress for continuity between session
 
 ---
 
+## Recent Work: Deliberation → Proposal → Resolution Loop Closed (2026-08-06)
+
+Once the 2026-08-05 stabilization work landed, the dormant creation side of
+the governance funnel woke up on its own: the hourly
+`backfillMissingProposals` job produced 7 draft proposals from completed
+Agora deliberations (its first successful run ever — the crash loop had
+always killed the API before the scheduler could do this). Tracing the
+funnel end-to-end then showed it dead-ended twice before any issue could
+ever reach `resolved`:
+
+- **`resolveCompletedVotings()` had no caller.** The voting → passed/
+  rejected transition (and the linked issue's `resolved`/`detected` update —
+  the only code path that ever resolves an issue) existed but was never
+  invoked from anywhere. It now runs as stage 3 of the hourly proposal
+  queue: draft → discussion → voting → **resolution**.
+- **Same-day timestamps never compared as expired.** The queue's three time
+  gates compared ISO-`'T'` timestamps against `datetime('now')`, which
+  renders with a space separator — and in a string comparison `'T'` (0x54)
+  sorts after `' '` (0x20), so a gate crossed at 10:00 was not recognized
+  until the *date* changed (up to ~24h lag per stage). All three queries now
+  compare against a JS ISO cutoff parameter.
+- **Issues were left expiry-exposed while their proposal was in flight.**
+  Proposal creation left the linked issue in `detected`, so the 7-day
+  auto-expiry janitor could dismiss it mid-pipeline (the pipeline itself
+  takes ~4 days). The bridge now parks the issue in `pending_vote` (never
+  auto-expired; reverted to `detected` on rejection by
+  `resolveCompletedVotings`, resolved on pass).
+- **Rejected proposals no longer block re-proposal.** The dedup guard
+  matched ANY existing proposal for the issue, including terminal
+  `rejected`/`cancelled` ones — but the rejection path deliberately reverts
+  the issue to `detected` "for re-discussion", which could then never
+  produce a new proposal. The guard now ignores terminal proposals.
+- **Tests.** New `governance/proposal.test.ts` (8 tests, in-memory SQLite)
+  pins the resolution semantics: passive pass on zero votes, tally
+  pass/reject, issue resolve/revert (only from in-flight statuses),
+  same-day-expiry regression, unparseable-tally fail-open, history logging,
+  and the soak-promotion path. Full api suite 62/62, `tsc` clean.
+
+The end-to-end cycle is now: signal → issue (detected) → Agora deliberation
+→ proposal (draft, issue → pending_vote) → discussion (24h soak) → voting
+(48h) → passed/rejected → issue resolved / reverted for re-discussion.
+Human sovereignty is preserved at every stage: proposals soak in
+discussion where holders can intervene, votes count when cast, and
+zero-vote passive approval only applies to agent-recommended,
+demo-labeled actions.
+
+---
+
 ## Recent Work: Auto-Deploy pm2 Config Bleed Fixed (2026-08-05)
 
 Prod `algora-api` was stopped and SIGKILLed every 5 minutes for ~2.5 hours
