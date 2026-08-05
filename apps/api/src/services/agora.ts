@@ -59,11 +59,27 @@ interface LLMRequest {
   reject: (error: Error) => void;
 }
 
+/**
+ * Requests are served at most one per `minDelayMs`, so an unbounded queue does not
+ * increase throughput — it only accumulates pending promises and pushes real work
+ * further behind a backlog nobody will ever wait for. Anything past this depth is
+ * rejected immediately so callers get an answer instead of a stalled request.
+ */
+export const LLM_QUEUE_MAX_DEPTH = 50;
+
+export class LLMQueueFullError extends Error {
+  constructor(depth: number) {
+    super(`LLM request queue is full (${depth} pending)`);
+    this.name = 'LLMQueueFullError';
+  }
+}
+
 class LLMRequestQueue {
   private queue: LLMRequest[] = [];
   private isProcessing: boolean = false;
   private minDelayMs: number = 10000; // Minimum 10 seconds between LLM calls
   private lastProcessedTime: number = 0;
+  private maxDepth: number = LLM_QUEUE_MAX_DEPTH;
   private processor: ((request: LLMRequest) => Promise<AgoraMessage | null>) | null = null;
 
   setProcessor(processor: (request: LLMRequest) => Promise<AgoraMessage | null>) {
@@ -74,7 +90,15 @@ class LLMRequestQueue {
     this.minDelayMs = delayMs;
   }
 
+  setMaxDepth(maxDepth: number) {
+    this.maxDepth = maxDepth;
+  }
+
   enqueue(sessionId: string, agentId: string): Promise<AgoraMessage | null> {
+    if (this.queue.length >= this.maxDepth) {
+      console.warn(`[LLM Queue] Rejecting request: queue full (${this.queue.length})`);
+      return Promise.reject(new LLMQueueFullError(this.queue.length));
+    }
     return new Promise((resolve, reject) => {
       this.queue.push({ sessionId, agentId, resolve, reject });
       console.log(`[LLM Queue] Added request for session ${sessionId.slice(0, 8)}... (queue size: ${this.queue.length})`);
@@ -127,8 +151,9 @@ class LLMRequestQueue {
   }
 }
 
-// Singleton instance for global rate limiting
-const globalLLMQueue = new LLMRequestQueue();
+// Singleton instance for global rate limiting. Exported so its depth and
+// admission policy can be observed and tested without driving a whole session.
+export const globalLLMQueue = new LLMRequestQueue();
 
 // Orchestrator configuration
 const ORCHESTRATOR_CONFIG = {
