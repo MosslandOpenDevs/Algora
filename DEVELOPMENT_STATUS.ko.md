@@ -8,6 +8,64 @@
 
 ---
 
+## 최근 작업: 자동 배포의 pm2 설정 전염 수정 (2026-08-05)
+
+첫 실제 자동 배포 직후부터 prod `algora-api`가 약 2.5시간(05:26–08:03
+UTC) 동안 5분마다 중지·SIGKILL당했습니다. 원인: pm2는 관리 중인
+프로세스의 설정을 자식 환경변수로 평탄화하므로, `algora-deploy` 크론
+프로세스(`cron_restart: '1-59/5 * * * *'`, `autorestart: false`) 안에서는
+해당 키들이 실제 env 변수로 존재합니다 — 그리고 `scripts/deploy.sh`의
+`pm2 restart --update-env`는 CLI의 환경을 대상 프로세스의 저장된 설정에
+병합합니다. 05:21 배포에서 `algora-api`가 배포 폴러의 5분 cron_restart를
+물려받았고, 이후 pm2가 매 틱마다 충실히 재시작했습니다. 서버에서 실증
+검증(pm2 7.0.3): 같은 오염된 환경에서도 플래그 없는 재시작은 전염되지
+않으며, `--update-env`는 `cron_restart`와 `autorestart: false`를 모두
+옮깁니다. 이 진단은 수정 검토 중에 실시간으로 재현되기까지 했습니다:
+서버에 아직 배포돼 있던 구버전 스크립트가 08:11 UTC에 PR #8(web 변경)을
+배포하며 `algora-web`을 같은 방식으로 오염시켰습니다.
+
+- **`--update-env` 제거** — `build_and_restart()`의 두 재시작 호출 모두에서
+  제거(rollback도 같은 경로 공유). 이 플래그에 의존하는 것은 없었습니다:
+  API는 부팅 시 dotenv로 `apps/api/.env`를 직접 읽고, web은 빌드 시점에
+  `NEXT_PUBLIC_*`을 굽고, ecosystem env 변경은 어차피 수동 재등록이
+  필요합니다(스크립트가 해당 경우 NOTE를 남김).
+- **환경 스크럽.** 스크립트 서두에서
+  `cron_restart`/`autorestart`/`watch`/`max_memory_restart`를 `unset`하므로,
+  미래에 `--update-env`가 재도입되거나 다른 env 병합형 pm2 호출이 생겨도
+  병합될 독성 키 자체가 없습니다.
+- **매 틱 실행되는 설정 전염 트립와이어.** `check_config_bleed()`가 매
+  5분 틱마다(외부 원인 대비) 그리고 스크립트 자신의 재시작 직후(즉시
+  감지) `pm2 jlist`를 파싱해, `algora-api`/`algora-web`의 cron_restart
+  또는 비활성화된 autorestart(불리언/문자열 `"false"` 모두 — 전염의 나머지
+  절반으로, 크래시 복구를 조용히 꺼버리는 축)를 감지합니다. 실패 시
+  열림(fail-open — 검사 고장이 배포를 막으면 안 됨)이되 시끄럽게:
+  `pm2 jlist`가 파싱 불가면 깨끗한 통과로 위장하지 않고 자체 WARN을
+  남깁니다. 픽스처 하니스로 검증(정상 로스터, 각 전염 형태, 배너 오염
+  jlist, node 부재).
+- **복구 안내 교정.** ECOSYSTEM_CHANGED NOTE가 권하던 `pm2 restart
+  ecosystem.config.cjs --update-env && pm2 save`는 오염된 키를 지울 수
+  없고(pm2는 병합만 하고 제거하지 않음 — 7.0.3에선 명시적
+  `--cron-restart 0`도 실패), 뒤따르는 `pm2 save`는 오염을 재부팅 후까지
+  영속화했을 것입니다. NOTE와 트립와이어 WARNING 모두 유일하게 신뢰할 수
+  있는 형태를 안내합니다:
+  `pm2 delete <app> && pm2 start ecosystem.config.cjs --only <app> && pm2 save`.
+- **알림 웹훅 등록 강화.** `ecosystem.config.cjs`가 루트 `.env`에서
+  `DEPLOY_ALERT_WEBHOOK`을 읽습니다(`ALGORA_AUTO_DEPLOY` 게이트와 같은
+  최소 파싱). 웹훅 설정이 폴러를 등록한 셸에 변수가 export돼 있었는지에
+  더 이상 좌우되지 않습니다. (서버에 웹훅은 아직 미설정 — 설정 전까지
+  알림은 로그 전용입니다.)
+- **서버 상태 정리:** `algora-api`와 `algora-web`을 delete 후
+  `ecosystem.config.cjs`에서 재등록(새 pm2 id 44/47, 로그는
+  `api-*-44.log`/`web-*-47.log`로 회전), `pm2 save` 재실행. cron 없음,
+  `autorestart: true` 유지, 이후 폴러 틱을 넘겨도 정상임을 확인했습니다.
+- **같은 서버의 타 프로젝트에도 같은 병:** pm2 로그에서 형제 프로젝트
+  앱들(예: `oracle-web`)이 :00초에 크론 재시작되는 증상이 보입니다 — 이
+  스크립트의 원본인 moss-ao 계열 배포 폴러들도 같은 `--update-env` 버그를
+  가진 것으로 보입니다. 각자 리포지토리에서 처리하도록 표시(여기 범위
+  밖).
+
+---
+
 ## 최근 작업: 무의미한 거버넌스 제안 감지 수정 (2026-08-05)
 
 L1 이슈 감지 서비스의 키워드 패턴 조건이 `${signal.description}
