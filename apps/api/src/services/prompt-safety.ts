@@ -22,7 +22,7 @@ export function sanitizeForPrompt(text: unknown, maxLen: number = DEFAULT_MAX_LE
   const s = typeof text === 'string' ? text : String(text);
   return s
     .replace(/<\/?untrusted_context[^>]*>/gi, '')
-    .replace(/\u0000/g, '')
+    .replaceAll('\u0000', '')
     .replace(/[\r\t]+/g, ' ')
     .replace(/\n{3,}/g, '\n\n')
     .trim()

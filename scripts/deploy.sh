@@ -54,11 +54,17 @@
 # Configuration (env, all optional):
 #   DEPLOY_BRANCH          branch to track                     (default: main)
 #   DEPLOY_REMOTE          git remote                          (default: origin)
-#   DEPLOY_REQUIRE_CI      1 = only deploy CI-green commits    (default: 0 —
-#                          this repo has no GitHub Actions yet; flip to 1 when
-#                          CI lands. Needs GITHUB_TOKEN on a box whose
-#                          unauthenticated GitHub quota is consumed by the
-#                          Algora collectors.)
+#   DEPLOY_REQUIRE_CI      1 = only deploy CI-green commits    (default: 1)
+#                          Fail-closed: failure, no checks reported, and an
+#                          unreachable GitHub API all hold the deploy. Needs
+#                          GITHUB_TOKEN on a box whose unauthenticated GitHub
+#                          quota is consumed by the Algora collectors —
+#                          without it the status reads unavailable and nothing
+#                          ships. Use --force for a commit the gate will not
+#                          pass (e.g. one predating .github/workflows/ci.yml).
+#                          NOTE: pm2 stores env at registration, so changing
+#                          this default does not reach a poller already
+#                          registered with DEPLOY_REQUIRE_CI=0 — re-register it.
 #   DEPLOY_GITHUB_REPO     owner/name used for the CI query
 #   DEPLOY_CI_TIMEOUT_MIN  minutes a pending CI may hold deploys before the
 #                          gate assumes a stuck check-run, warns and proceeds
@@ -92,7 +98,7 @@ cd "${REPO_ROOT}"
 
 DEPLOY_BRANCH=${DEPLOY_BRANCH:-main}
 DEPLOY_REMOTE=${DEPLOY_REMOTE:-origin}
-DEPLOY_REQUIRE_CI=${DEPLOY_REQUIRE_CI:-0}
+DEPLOY_REQUIRE_CI=${DEPLOY_REQUIRE_CI:-1}
 DEPLOY_GITHUB_REPO=${DEPLOY_GITHUB_REPO:-MosslandOpenDevs/Algora}
 DEPLOY_CI_TIMEOUT_MIN=${DEPLOY_CI_TIMEOUT_MIN:-30}
 DEPLOY_API_URL=${DEPLOY_API_URL:-http://127.0.0.1:3201}
@@ -362,8 +368,14 @@ ci_gate() {  # 0 = proceed, 1 = hold this tick (logged)
       rm -f "${pending_file}" 2>/dev/null || true
       ;;
     none)
-      log "CI: no checks reported for this commit -- proceeding"
-      rm -f "${pending_file}" 2>/dev/null || true
+      # Fail closed. "No checks" is indistinguishable from "the workflow never
+      # ran", which is exactly the state an unverified commit is in — treating it
+      # as green made DEPLOY_REQUIRE_CI=1 gate nothing. A commit that predates
+      # .github/workflows/ci.yml has to be deployed with --force.
+      log "CI: no checks reported for ${TARGET:0:8} -- deferring to next tick"
+      log "CI: (a commit predating .github/workflows/ci.yml needs --force)"
+      alert_once "ci-none-${TARGET}" "Algora deploy held: no CI checks reported for ${TARGET:0:8} (${SUBJECT})"
+      return 1
       ;;
     pending)
       # A check-run stuck in_progress (runner died, workflow wedged) must not

@@ -76,7 +76,7 @@ describe('E2E Governance Pipeline', () => {
       const docRegistry = governanceOS.getDocumentRegistry();
 
       const doc = await docRegistry.documents.create({
-        type: 'DECISION_PACKET',
+        type: 'DP',
         title: 'Test Decision Packet',
         summary: 'This is a test summary for document creation that meets the minimum length requirement of 50 characters.',
         content: JSON.stringify({ test: true }),
@@ -85,7 +85,7 @@ describe('E2E Governance Pipeline', () => {
 
       expect(doc).toBeDefined();
       expect(doc.id).toBeDefined();
-      expect(doc.type).toBe('DECISION_PACKET');
+      expect(doc.type).toBe('DP');
       expect(doc.state).toBe('draft');
     });
 
@@ -93,7 +93,7 @@ describe('E2E Governance Pipeline', () => {
       const docRegistry = governanceOS.getDocumentRegistry();
 
       const doc = await docRegistry.documents.create({
-        type: 'RESEARCH_DIGEST',
+        type: 'ER',
         title: 'Weekly AI Research Digest',
         summary: 'This is a comprehensive summary of the latest AI developments and research findings for this week.',
         content: JSON.stringify({ papers: [] }),
@@ -115,7 +115,7 @@ describe('E2E Governance Pipeline', () => {
 
       // Create multiple documents
       await docRegistry.documents.create({
-        type: 'GOVERNANCE_PROPOSAL',
+        type: 'GP',
         title: 'Proposal 1',
         summary: 'This is a test governance proposal summary that contains enough characters to meet the validation requirement.',
         content: '{}',
@@ -123,7 +123,7 @@ describe('E2E Governance Pipeline', () => {
       });
 
       await docRegistry.documents.create({
-        type: 'GOVERNANCE_PROPOSAL',
+        type: 'GP',
         title: 'Proposal 2',
         summary: 'This is another test governance proposal summary with sufficient length to pass the validation checks.',
         content: '{}',
@@ -131,7 +131,7 @@ describe('E2E Governance Pipeline', () => {
       });
 
       const result = await docRegistry.documents.query({
-        type: 'GOVERNANCE_PROPOSAL',
+        type: 'GP',
       });
 
       expect(result.documents.length).toBeGreaterThanOrEqual(2);
