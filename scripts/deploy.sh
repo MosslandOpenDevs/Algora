@@ -60,11 +60,15 @@
 #                          GITHUB_TOKEN on a box whose unauthenticated GitHub
 #                          quota is consumed by the Algora collectors —
 #                          without it the status reads unavailable and nothing
-#                          ships. Use --force for a commit the gate will not
+#                          ships (it alerts when that happens). Put the token in
+#                          the repo-root .env or apps/api/.env — both this script
+#                          and ecosystem.config.cjs look in those two places, so
+#                          it works without re-registering the poller.
+#                          Read from .env, NOT from the inherited environment:
+#                          pm2 freezes env at registration, and a stale
+#                          DEPLOY_REQUIRE_CI=0 would otherwise keep the gate off
+#                          forever. Use --force for a commit the gate will not
 #                          pass (e.g. one predating .github/workflows/ci.yml).
-#                          NOTE: pm2 stores env at registration, so changing
-#                          this default does not reach a poller already
-#                          registered with DEPLOY_REQUIRE_CI=0 — re-register it.
 #   DEPLOY_GITHUB_REPO     owner/name used for the CI query
 #   DEPLOY_CI_TIMEOUT_MIN  minutes a pending CI may hold deploys before the
 #                          gate assumes a stuck check-run, warns and proceeds
@@ -96,9 +100,31 @@ SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 REPO_ROOT=$(cd -- "${SCRIPT_DIR}/.." && pwd)
 cd "${REPO_ROOT}"
 
+# Read one KEY=value out of an env file. Quiet failure when the file or key is
+# absent, so callers can chain fallbacks.
+env_file_value() {  # $1 = key, $2 = file
+  [ -f "$2" ] || return 1
+  local line
+  line=$(grep -m1 -E "^$1=" "$2" 2>/dev/null) || return 1
+  line=${line#*=}
+  line=${line%$'\r'}
+  [ -n "${line}" ] || return 1
+  printf '%s' "${line}"
+}
+
 DEPLOY_BRANCH=${DEPLOY_BRANCH:-main}
 DEPLOY_REMOTE=${DEPLOY_REMOTE:-origin}
-DEPLOY_REQUIRE_CI=${DEPLOY_REQUIRE_CI:-1}
+
+# The CI gate is configured from the repo-root .env, NOT from the inherited
+# environment, and that asymmetry is deliberate. pm2 captures env at
+# registration, so a poller registered before this gate existed carries
+# DEPLOY_REQUIRE_CI=0 forever: `${VAR:-1}` never fires on an explicitly-set
+# value, so no code deploy could turn the gate on and it would sit silently
+# disabled until someone re-registered the process by hand. Reading the file
+# that this deploy just updated makes the setting follow the code instead of the
+# process table. To deploy one commit past the gate use --force; to disable it
+# deliberately, set DEPLOY_REQUIRE_CI=0 in .env.
+DEPLOY_REQUIRE_CI=$(env_file_value DEPLOY_REQUIRE_CI "${REPO_ROOT}/.env" || printf '1')
 DEPLOY_GITHUB_REPO=${DEPLOY_GITHUB_REPO:-MosslandOpenDevs/Algora}
 DEPLOY_CI_TIMEOUT_MIN=${DEPLOY_CI_TIMEOUT_MIN:-30}
 DEPLOY_API_URL=${DEPLOY_API_URL:-http://127.0.0.1:3201}
@@ -121,6 +147,18 @@ DEPLOY_BACKUP_DIR=${DEPLOY_BACKUP_DIR:-${REPO_ROOT}/.deploy-backup}
 
 PM2_BIN=${PM2_BIN:-pm2}
 PNPM_BIN=${PNPM_BIN:-pnpm}
+
+# Resolve the token here as well as in ecosystem.config.cjs, so it reaches a
+# poller that was registered before either read existed — an already-running
+# poller has an empty GITHUB_TOKEN baked in and only re-registration would
+# change that. Prefer the repo root, then apps/api/.env, where it usually
+# already lives for the GitHub signal collector.
+if [ -z "${GITHUB_TOKEN:-}" ]; then
+  GITHUB_TOKEN=$(env_file_value GITHUB_TOKEN "${REPO_ROOT}/.env" \
+    || env_file_value GITHUB_TOKEN "${REPO_ROOT}/apps/api/.env" \
+    || printf '')
+  export GITHUB_TOKEN
+fi
 
 # pm2 flattens the managed process's own config into its child environment, so
 # under the algora-deploy cron this shell literally has cron_restart,
@@ -408,7 +446,12 @@ ci_gate() {  # 0 = proceed, 1 = hold this tick (logged)
       return 1
       ;;
     *)
+      # Deferring here is correct, but silence is not: the usual cause is a
+      # missing GITHUB_TOKEN exhausting this box's unauthenticated quota (the
+      # collectors share it), and with the gate fail-closed that stops deploys
+      # indefinitely with nothing in the channel to say so.
       log "CI: status unavailable (network/API) -- deferring to next tick"
+      alert_once "ci-unavailable-${TARGET}" "Algora deploy held: cannot read CI status for ${TARGET:0:8} -- check GITHUB_TOKEN / GitHub API quota"
       return 1
       ;;
   esac
@@ -788,7 +831,9 @@ deps=${DEPS_CHANGED} ecosystem=${ECOSYSTEM_CHANGED})"
 
   if [ "${ECOSYSTEM_CHANGED}" = "1" ]; then
     log "NOTE ecosystem.config.cjs changed -- process definitions (cron, env) are"
-    log "     NOT re-registered automatically. Run on the server, per changed app:"
+    log "     NOT re-registered automatically. Deploy settings that must survive"
+    log "     this are read from .env instead (DEPLOY_REQUIRE_CI, GITHUB_TOKEN),"
+    log "     so those need nothing. For anything else, run on the server:"
     log "     pm2 delete <app> && pm2 start ecosystem.config.cjs --only <app> && pm2 save"
     log "     (pm2 restart --update-env merges but never clears keys -- it cannot"
     log "     remove a cron_restart or revert autorestart; delete+start is the"

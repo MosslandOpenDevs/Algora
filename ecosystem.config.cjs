@@ -5,6 +5,7 @@
 // `pm2 start ecosystem.config.cjs`. Minimal .env read, no dotenv dep at root.
 let AUTO_DEPLOY = false;
 let ALERT_WEBHOOK = '';
+let GITHUB_TOKEN = '';
 try {
   const env = require('fs').readFileSync(`${__dirname}/.env`, 'utf8');
   AUTO_DEPLOY = /^ALGORA_AUTO_DEPLOY=1\s*$/m.test(env);
@@ -14,8 +15,31 @@ try {
   // alerts — the deploy tripwire's webhook path relies on this).
   const webhook = env.match(/^DEPLOY_ALERT_WEBHOOK=(\S+)\s*$/m);
   if (webhook) ALERT_WEBHOOK = webhook[1];
+  // And for the GitHub token, for the same reason but with sharper teeth: the
+  // CI gate is fail-closed, so an unexported token does not merely lose alerts,
+  // it exhausts the box's unauthenticated quota (the collectors share it), the
+  // check status reads unavailable, and deploys stop. This app has no env_file,
+  // so without this read there is nowhere to put the token but the shell.
+  const token = env.match(/^GITHUB_TOKEN=(\S+)\s*$/m);
+  if (token) GITHUB_TOKEN = token[1];
 } catch {
   // no .env — auto-deploy stays off
+}
+
+// The token usually already exists for the GitHub signal collector, which reads
+// it from apps/api/.env (algora-api runs with cwd ./apps/api, so both its
+// env_file and dotenv resolve there) — while .env.example documents it at the
+// repo root. Rather than make anyone keep the same secret in two files, fall
+// back to the API's copy. Deliberately token-only: ALGORA_AUTO_DEPLOY stays a
+// root-level, per-machine opt-in.
+if (!GITHUB_TOKEN) {
+  try {
+    const apiEnv = require('fs').readFileSync(`${__dirname}/apps/api/.env`, 'utf8');
+    const token = apiEnv.match(/^GITHUB_TOKEN=(\S+)\s*$/m);
+    if (token) GITHUB_TOKEN = token[1];
+  } catch {
+    // no apps/api/.env — the gate will report the missing token via alert
+  }
 }
 
 module.exports = {
@@ -115,12 +139,14 @@ module.exports = {
       env: {
         NODE_ENV: 'production',
         DEPLOY_BRANCH: process.env.DEPLOY_BRANCH || 'main',
-        // Fail-closed: only CI-green commits ship. Overriding this to '0' turns
-        // auto-deploy back into "whatever is on main", which is how untested
-        // commits reached production before .github/workflows/ci.yml existed.
-        DEPLOY_REQUIRE_CI: process.env.DEPLOY_REQUIRE_CI || '1',
+        // DEPLOY_REQUIRE_CI is deliberately NOT passed here. pm2 freezes env at
+        // registration, so a value set here can only be changed by re-registering
+        // the process — which is how a stale DEPLOY_REQUIRE_CI=0 would have kept
+        // the CI gate off no matter what shipped. deploy.sh reads it from the
+        // repo-root .env instead (defaulting to 1, fail-closed), so the setting
+        // travels with the code.
         DEPLOY_ALERT_WEBHOOK: process.env.DEPLOY_ALERT_WEBHOOK || ALERT_WEBHOOK,
-        GITHUB_TOKEN: process.env.GITHUB_TOKEN || '',
+        GITHUB_TOKEN: process.env.GITHUB_TOKEN || GITHUB_TOKEN,
       },
       error_file: './logs/deploy-error.log',
       out_file: './logs/deploy-out.log',
