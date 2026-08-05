@@ -30,10 +30,12 @@ same way.
   it: the API reads `apps/api/.env` itself via dotenv at boot, web bakes
   `NEXT_PUBLIC_*` at build time, and ecosystem env changes already require
   manual re-registration (the script logs a NOTE for that case).
-- **Environment scrub.** The script prologue now `unset`s
-  `cron_restart`/`autorestart`/`watch`/`max_memory_restart`, so even a
-  future reintroduction of `--update-env` (or any other env-merging pm2
-  call) has nothing poisonous to merge.
+- **Environment scrub.** The script prologue now `unset`s the flattened
+  pm2 config keys (`cron_restart`, `autorestart`, `watch`, `instances`,
+  `exec_mode`, `max_memory_restart`, `node_args`, `name`, `namespace` —
+  list kept in sync with the sibling pollers' fix, agentic-orchestrator
+  PR #2949), so even a future reintroduction of `--update-env` (or any
+  other env-merging pm2 call) has nothing poisonous to merge.
 - **Config-bleed tripwire, every tick.** `check_config_bleed()` parses
   `pm2 jlist` on every 5-minute tick (external causes) and again right
   after the script's own restarts (immediate detection), flagging a
