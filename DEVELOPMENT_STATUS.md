@@ -59,6 +59,14 @@ proposal. The sweep now preserves harvest-eligible sessions until a 6-hour
 escape hatch, so the harvest bound is meaningful and a permanently failing
 session still gets closed.
 
+**Third finding: hourly maintenance lost an hour on every restart.**
+`setInterval` only fires after a full period, so each auto-deploy restart
+bought 60 minutes with no proposal-queue or stale-session maintenance —
+and with eight deploys on 08-05, deploys landing under an hour apart would
+mean those jobs effectively never run. Both now also run once ~3 minutes
+after boot (`scheduleBootKick`), which matters most for the stale sweep:
+a restart is precisely what orphans in-flight sessions.
+
 - Tests: `utils/time.test.ts` pins the trap itself (both `<` and `>`
   directions, skipping the vacuous just-after-midnight case) and
   `services/agora-stale.test.ts` covers the sweep/harvest interaction
