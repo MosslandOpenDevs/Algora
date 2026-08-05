@@ -8,6 +8,37 @@ This file tracks the current development progress for continuity between session
 
 ---
 
+## Recent Work: Vacuous Governance-Proposal Detections Fixed (2026-08-05)
+
+Keyword pattern conditions in the L1 issue-detection service evaluated
+against `${signal.description} ${signal.source}`, so any signal whose
+*source name* contains a pattern keyword satisfied the condition regardless
+of content. The seeded source `github:ethereum/EIPs` (category `protocol`)
+contains `EIP`, so every housekeeping event from that repo (`eth-bot
+performed IssueCommentEvent`, ~630 signals per 7 days) fully matched the
+`governance-proposal` pattern — **616 junk `[New Governance Proposal]`
+issues** on prod, still ~8/day after the flood-dedup fix. Prod's
+keyword-named social sources (`HN Governance`, `Uniswap Governance`) had the
+same exposure.
+
+- **Keyword haystack = description only.** `evaluateCondition` no longer
+  folds `signal.source` into keyword matching; source matching is what the
+  dedicated `source` condition type is for (`fear-extreme` and
+  `mossland-update` use it deliberately). This also de-fangs keyword-named
+  sources without renaming them.
+- **Bot severity floor.** GitHub collector events by bot actors (`*[bot]`
+  suffix, `eth-bot`, `dependabot`, `renovate`) are floored to `low` severity
+  in `formatEvent` — they stay in the activity feed but can no longer
+  escalate severity-gated detection patterns.
+- **Unit tests.** New `apps/api/src/services/issue-detection.test.ts` runs
+  `matchPattern`/`evaluateCondition` against the real pattern config
+  (`IssueDetectionService.PATTERNS`, now a static): the EIPs bot-comment
+  regression, true positives (real EIP/governance content still matches),
+  category gating, source-condition behavior, and the bot floor.
+- Verified: 10 new tests, full api suite 54/54, `tsc` build clean.
+
+---
+
 ## Recent Work: API Crash-Loop Fix (2026-08-05)
 
 Prod `algora-api` crashed ~57x/day on 2026-08-04, every time with the same

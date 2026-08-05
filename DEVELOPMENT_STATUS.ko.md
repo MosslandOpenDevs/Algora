@@ -8,6 +8,35 @@
 
 ---
 
+## 최근 작업: 무의미한 거버넌스 제안 감지 수정 (2026-08-05)
+
+L1 이슈 감지 서비스의 키워드 패턴 조건이 `${signal.description}
+${signal.source}`를 대상으로 평가되어, *소스 이름*에 패턴 키워드가 포함된
+시그널은 내용과 무관하게 조건을 만족했습니다. 시드된 소스
+`github:ethereum/EIPs`(카테고리 `protocol`)는 `EIP`를 포함하므로 해당
+레포의 모든 하우스키핑 이벤트(`eth-bot performed IssueCommentEvent`, 7일간
+~630개 시그널)가 `governance-proposal` 패턴에 완전 매치 — 프로덕션에 **정크
+`[New Governance Proposal]` 이슈 616개**, 플러딩 중복 방지 수정 이후에도
+하루 ~8개씩 생성되고 있었습니다. 프로덕션의 키워드성 이름을 가진 소셜
+소스(`HN Governance`, `Uniswap Governance`)도 같은 노출이 있었습니다.
+
+- **키워드 대상 = description만.** `evaluateCondition`이 키워드 매칭에
+  `signal.source`를 더 이상 포함하지 않습니다. 소스 매칭은 전용 `source`
+  조건 타입의 역할입니다(`fear-extreme`, `mossland-update`가 의도적으로
+  사용). 이로써 키워드성 이름의 소스도 이름 변경 없이 무해화됩니다.
+- **봇 severity 하한.** GitHub 수집기에서 봇 액터(`*[bot]` 접미사,
+  `eth-bot`, `dependabot`, `renovate`)의 이벤트는 `formatEvent`에서
+  severity가 `low`로 고정됩니다 — 활동 피드에는 남되 severity 게이트가 있는
+  감지 패턴을 더 이상 격상시키지 못합니다.
+- **단위 테스트.** 새 `apps/api/src/services/issue-detection.test.ts`가
+  실제 패턴 설정(`IssueDetectionService.PATTERNS`, 이제 static)을 대상으로
+  `matchPattern`/`evaluateCondition`을 검증합니다: EIPs 봇 코멘트 회귀,
+  진짜 양성(실제 EIP/거버넌스 내용은 여전히 매치), 카테고리 게이트,
+  source 조건 동작, 봇 severity 하한.
+- 검증: 신규 테스트 10개, api 전체 스위트 54/54, `tsc` 빌드 클린.
+
+---
+
 ## 최근 작업: API 크래시 루프 수정 (2026-08-05)
 
 prod `algora-api`가 2026-08-04 하루에 ~57회 크래시했고, 매번 동일한 스택
