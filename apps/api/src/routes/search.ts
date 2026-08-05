@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import type Database from 'better-sqlite3';
+import { stripMarkdown } from '@algora/core';
 
 export const searchRouter: Router = Router();
 
@@ -29,14 +30,16 @@ searchRouter.get('/', (req, res) => {
   try {
     // Search agents
     if (!type || type === 'agent') {
+      // The agents table has no description column (the roster schema uses
+      // persona fields) -- selecting one made every /api/search request 500.
       const agents = db.prepare(`
-        SELECT id, name, display_name, description, group_name
+        SELECT id, name, display_name, expertise, speaking_style, group_name
         FROM agents
         WHERE is_active = 1
         AND (
           LOWER(name) LIKE ?
           OR LOWER(display_name) LIKE ?
-          OR LOWER(description) LIKE ?
+          OR LOWER(COALESCE(expertise, '')) LIKE ?
           OR LOWER(group_name) LIKE ?
         )
         LIMIT ?
@@ -44,7 +47,8 @@ searchRouter.get('/', (req, res) => {
         id: string;
         name: string;
         display_name: string;
-        description: string;
+        expertise: string | null;
+        speaking_style: string | null;
         group_name: string;
       }>;
 
@@ -53,7 +57,7 @@ searchRouter.get('/', (req, res) => {
           id: agent.id,
           type: 'agent',
           title: agent.display_name,
-          description: agent.description?.substring(0, 100),
+          description: (agent.expertise || agent.speaking_style || agent.group_name)?.substring(0, 100),
           url: `/agents/${agent.id}`,
         });
       }
@@ -80,7 +84,7 @@ searchRouter.get('/', (req, res) => {
           id: proposal.id,
           type: 'proposal',
           title: proposal.title,
-          description: proposal.description?.substring(0, 100),
+          description: proposal.description ? stripMarkdown(proposal.description).substring(0, 100) : undefined,
           status: proposal.status,
           createdAt: proposal.created_at,
           url: `/proposals/${proposal.id}`,
@@ -110,7 +114,7 @@ searchRouter.get('/', (req, res) => {
           id: issue.id,
           type: 'issue',
           title: issue.title,
-          description: issue.description?.substring(0, 100),
+          description: issue.description ? stripMarkdown(issue.description).substring(0, 100) : undefined,
           status: `${issue.priority} - ${issue.status}`,
           createdAt: issue.created_at,
           url: `/issues/${issue.id}`,
@@ -120,29 +124,32 @@ searchRouter.get('/', (req, res) => {
 
     // Search signals
     if (!type || type === 'signal') {
+      // Signals have no title/summary columns -- the headline lives in
+      // description, alongside source/category/severity.
       const signals = db.prepare(`
-        SELECT id, title, summary, source, source_type, timestamp
+        SELECT id, description, source, category, severity, timestamp
         FROM signals
-        WHERE LOWER(title) LIKE ?
-        OR LOWER(summary) LIKE ?
+        WHERE LOWER(description) LIKE ?
+        OR LOWER(source) LIKE ?
         ORDER BY timestamp DESC
         LIMIT ?
       `).all(searchTerm, searchTerm, searchLimit) as Array<{
         id: string;
-        title: string;
-        summary: string;
+        description: string;
         source: string;
-        source_type: string;
+        category: string;
+        severity: string;
         timestamp: string;
       }>;
 
       for (const signal of signals) {
+        const headline = signal.description ? stripMarkdown(signal.description) : '';
         results.push({
           id: signal.id,
           type: 'signal',
-          title: signal.title,
-          description: signal.summary?.substring(0, 100),
-          status: signal.source_type,
+          title: headline.substring(0, 80) || signal.source,
+          description: `${signal.source} · ${signal.category}`,
+          status: signal.severity,
           createdAt: signal.timestamp,
           url: `/signals/${signal.id}`,
         });

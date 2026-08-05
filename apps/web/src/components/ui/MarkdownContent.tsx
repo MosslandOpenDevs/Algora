@@ -1,6 +1,7 @@
 'use client';
 
 import ReactMarkdown from 'react-markdown';
+import remarkBreaks from 'remark-breaks';
 import remarkGfm from 'remark-gfm';
 
 import { cn } from '@/lib/utils';
@@ -235,12 +236,14 @@ const componentsBySize: Record<MarkdownSize, ReturnType<typeof buildComponents>>
 /**
  * Render markdown text (issue descriptions, agent output, disclosure
  * reports, etc.) with theme-aware styling. GFM extensions (tables,
- * strikethrough, task lists) are enabled.
+ * strikethrough, task lists) are enabled, and single newlines become
+ * hard breaks (GitHub-comment style) so line-per-item metadata and
+ * legacy plain-text descriptions keep their line structure.
  */
 export function MarkdownContent({ content, className, size = 'compact' }: MarkdownContentProps) {
   return (
     <div className={cn('min-w-0', className)}>
-      <ReactMarkdown remarkPlugins={[remarkGfm]} components={componentsBySize[size]}>
+      <ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks]} components={componentsBySize[size]}>
         {content}
       </ReactMarkdown>
     </div>

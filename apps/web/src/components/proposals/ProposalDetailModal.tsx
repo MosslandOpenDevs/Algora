@@ -58,6 +58,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { safeFormatDate } from '@/lib/utils';
 import { useDialogA11y } from '@/hooks/useDialogA11y';
+import { MarkdownContent } from '@/components/ui/MarkdownContent';
 
 interface Proposal {
   id: string;
@@ -587,23 +588,7 @@ export function ProposalDetailModal({ proposal, onClose }: ProposalDetailModalPr
                     <FileText className="h-4 w-4" />
                     <span>{tDetail('proposalContent')}</span>
                   </div>
-                  <div className="text-agora-text leading-relaxed prose prose-sm max-w-none">
-                    {proposal.summary.split('\n').map((paragraph, idx) => {
-                      if (paragraph.startsWith('## ')) {
-                        return <h3 key={idx} className="text-lg font-semibold text-agora-text mt-4 mb-2">{paragraph.slice(3)}</h3>;
-                      }
-                      if (paragraph.startsWith('### ')) {
-                        return <h4 key={idx} className="text-base font-semibold text-agora-text mt-3 mb-1">{paragraph.slice(4)}</h4>;
-                      }
-                      if (paragraph.startsWith('- ') || paragraph.startsWith('* ')) {
-                        return <li key={idx} className="text-agora-text ml-4">{paragraph.slice(2)}</li>;
-                      }
-                      if (paragraph.trim() === '') {
-                        return <br key={idx} />;
-                      }
-                      return <p key={idx} className="text-agora-text mb-2">{paragraph}</p>;
-                    })}
-                  </div>
+                  <MarkdownContent content={proposal.summary} />
                 </div>
               )}
 
@@ -1363,7 +1348,7 @@ export function ProposalDetailModal({ proposal, onClose }: ProposalDetailModalPr
                     </div>
                     <div>
                       <span className="text-xs text-agora-muted">{tDetail('issueDescription')}</span>
-                      <p className="text-sm text-agora-muted whitespace-pre-wrap">{relatedIssue.description}</p>
+                      <MarkdownContent content={relatedIssue.description} />
                     </div>
                     <div className="flex gap-4 text-sm">
                       <div>
