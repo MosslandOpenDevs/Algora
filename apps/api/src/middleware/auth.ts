@@ -20,14 +20,27 @@ function timingSafeEqual(a: string, b: string): boolean {
   return diff === 0;
 }
 
+/**
+ * True when `provided` is the configured admin key.
+ *
+ * Shared with the Socket.IO handshake so both transports check one credential
+ * the same way; sockets cannot use the Express middleware directly.
+ * Returns false — never throws — when ADMIN_API_KEY is unset, so an
+ * unconfigured server grants nothing.
+ */
+export function verifyAdminKey(provided: string | undefined): boolean {
+  const adminKey = process.env.ADMIN_API_KEY;
+  if (!adminKey || !provided) return false;
+  return timingSafeEqual(provided, adminKey);
+}
+
 export function requireAdmin(req: Request, res: Response, next: NextFunction): void {
   const adminKey = process.env.ADMIN_API_KEY;
   if (!adminKey) {
     res.status(503).json({ error: 'Admin API not configured. Set ADMIN_API_KEY.' });
     return;
   }
-  const provided = extractKey(req);
-  if (!provided || !timingSafeEqual(provided, adminKey)) {
+  if (!verifyAdminKey(extractKey(req))) {
     res.status(401).json({ error: 'Unauthorized' });
     return;
   }

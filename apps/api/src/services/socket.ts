@@ -2,27 +2,36 @@ import { Server as SocketServer, Socket } from 'socket.io';
 import type Database from 'better-sqlite3';
 import { AgoraService } from './agora';
 import { SummoningService } from './summoning';
+import { verifyAdminKey } from '../middleware/auth';
 import type { GovernanceOSBridge } from './governance-os-bridge';
 
 // Store service references for socket handlers
 let agoraService: AgoraService | null = null;
 let summoningService: SummoningService | null = null;
 
-// Per-socket token bucket rate limiter. 30 messages per 10s window covers
-// normal chat + participant actions with plenty of headroom; bursts beyond
-// that are almost certainly automated.
+// Token bucket rate limiter. 30 messages per 10s window covers normal chat +
+// participant actions with plenty of headroom; bursts beyond that are almost
+// certainly automated. Keyed by remote address rather than by socket object —
+// per-socket state let one client multiply its allowance by reconnecting.
 const RL_WINDOW_MS = 10_000;
 const RL_MAX_MSGS = 30;
 const MAX_MESSAGE_CHARS = 4_000;
 
 interface RateState { count: number; windowStart: number; }
-const rateBuckets = new WeakMap<Socket, RateState>();
+const rateBuckets = new Map<string, RateState>();
+
+function rateKey(socket: Socket): string {
+  const forwarded = socket.handshake.headers['x-forwarded-for'];
+  const first = Array.isArray(forwarded) ? forwarded[0] : forwarded?.split(',')[0]?.trim();
+  return first || socket.handshake.address || socket.id;
+}
 
 function allowMessage(socket: Socket): boolean {
   const now = Date.now();
-  const state = rateBuckets.get(socket);
+  const key = rateKey(socket);
+  const state = rateBuckets.get(key);
   if (!state || now - state.windowStart > RL_WINDOW_MS) {
-    rateBuckets.set(socket, { count: 1, windowStart: now });
+    rateBuckets.set(key, { count: 1, windowStart: now });
     return true;
   }
   state.count++;
@@ -33,6 +42,31 @@ function allowMessage(socket: Socket): boolean {
     return false;
   }
   return true;
+}
+
+// Drop buckets whose window has long expired so a churn of client addresses
+// cannot grow this map without bound.
+const RL_SWEEP_MS = 60_000;
+setInterval(() => {
+  const cutoff = Date.now() - RL_WINDOW_MS * 2;
+  for (const [key, state] of rateBuckets) {
+    if (state.windowStart < cutoff) rateBuckets.delete(key);
+  }
+}, RL_SWEEP_MS).unref();
+
+/**
+ * Events that change server state. Their REST twins were put behind requireAdmin
+ * in 0f91601; the socket path was left open, so the same operations were
+ * reachable with no credential at all. Connections stay anonymous — the public
+ * feed is broadcast-only — but these five require the admin key.
+ */
+function requireAdminSocket(socket: Socket, event: string): boolean {
+  if (socket.data.isAdmin === true) return true;
+  socket.emit('error:unauthorized', {
+    event,
+    error: 'This action requires an admin credential.',
+  });
+  return false;
 }
 
 export function initializeSocketServices(
@@ -107,6 +141,7 @@ export function setupSocketHandlers(
     // Request agent response in agora
     socket.on('agora:requestResponse', async (data: { sessionId: string; agentId: string }) => {
       if (!allowMessage(socket)) return;
+      if (!requireAdminSocket(socket, 'agora:requestResponse')) return;
       if (agoraService && data?.sessionId && data?.agentId) {
         try {
           const message = await agoraService.generateAgentResponse(data.sessionId, data.agentId);
@@ -120,6 +155,7 @@ export function setupSocketHandlers(
     // Start automated discussion
     socket.on('agora:startAutomated', (data: { sessionId: string; intervalMs?: number }) => {
       if (!allowMessage(socket)) return;
+      if (!requireAdminSocket(socket, 'agora:startAutomated')) return;
       if (agoraService && data?.sessionId) {
         agoraService.startAutomatedDiscussion(data.sessionId, data.intervalMs || 15000);
         socket.emit('agora:automatedStarted', { sessionId: data.sessionId });
@@ -129,6 +165,7 @@ export function setupSocketHandlers(
     // Stop automated discussion
     socket.on('agora:stopAutomated', (data: { sessionId: string }) => {
       if (!allowMessage(socket)) return;
+      if (!requireAdminSocket(socket, 'agora:stopAutomated')) return;
       if (agoraService && data?.sessionId) {
         agoraService.stopAutomatedDiscussion(data.sessionId);
         socket.emit('agora:automatedStopped', { sessionId: data.sessionId });
@@ -138,6 +175,7 @@ export function setupSocketHandlers(
     // Handle agent summon request
     socket.on('agent:summon', async (data: { sessionId?: string; agentId: string; reason?: string }) => {
       if (!allowMessage(socket)) return;
+      if (!requireAdminSocket(socket, 'agent:summon')) return;
       if (summoningService && data?.agentId) {
         try {
           const agent = await summoningService.summonAgent(data.agentId, data.sessionId);
@@ -160,6 +198,7 @@ export function setupSocketHandlers(
     // Handle agent dismiss request
     socket.on('agent:dismiss', (data: { sessionId?: string; agentId: string }) => {
       if (!allowMessage(socket)) return;
+      if (!requireAdminSocket(socket, 'agent:dismiss')) return;
       if (summoningService && data?.agentId) {
         const success = summoningService.dismissAgent(data.agentId);
 
@@ -192,10 +231,18 @@ export function setupSocketHandlers(
     });
   });
 
-  // Middleware for authentication (if needed in the future)
+  // Connections are deliberately NOT rejected here: the live showcase is a
+  // broadcast-only client that must be able to connect anonymously. What this
+  // establishes is whether the connection carries the admin credential, which
+  // the state-changing handlers above then require.
   io.use((socket, next) => {
-    // For now, allow all connections
-    // In production, add token verification here
+    const auth = socket.handshake.auth as { token?: unknown } | undefined;
+    const header = socket.handshake.headers['x-admin-key'];
+    const provided =
+      (typeof auth?.token === 'string' ? auth.token : undefined) ??
+      (typeof header === 'string' ? header : undefined);
+
+    socket.data.isAdmin = verifyAdminKey(provided);
     next();
   });
 }
