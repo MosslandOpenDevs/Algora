@@ -25,6 +25,15 @@ interface GitHubEvent {
   created_at: string;
 }
 
+// Machine accounts without the standard GitHub App '[bot]' login suffix
+// (eth-bot alone posts hundreds of housekeeping comments per week on
+// ethereum/EIPs).
+const BOT_ACTOR_NAMES = new Set(['eth-bot', 'dependabot', 'renovate']);
+
+export function isBotActor(login: string): boolean {
+  return login.endsWith('[bot]') || BOT_ACTOR_NAMES.has(login.toLowerCase());
+}
+
 export class GitHubCollectorService {
   private db: Database.Database;
   private io: SocketServer;
@@ -531,6 +540,12 @@ export class GitHubCollectorService {
 
       default:
         description = `${actor} performed ${event.type}`;
+    }
+
+    // Bot events stay in the feed but must never escalate severity-gated
+    // detection patterns.
+    if (isBotActor(actor)) {
+      severity = 'low';
     }
 
     return { description, severity };

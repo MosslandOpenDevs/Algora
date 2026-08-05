@@ -7,7 +7,7 @@ import type { GovernanceOSBridge } from './governance-os-bridge';
 import { wrapUntrustedList, UNTRUSTED_CONTEXT_NOTICE } from './prompt-safety';
 
 // Issue detection patterns
-interface DetectionPattern {
+export interface DetectionPattern {
   id: string;
   name: string;
   description: string;
@@ -17,14 +17,14 @@ interface DetectionPattern {
   cooldownMinutes: number; // Prevent duplicate detection
 }
 
-interface PatternCondition {
+export interface PatternCondition {
   type: 'keyword' | 'severity' | 'frequency' | 'source' | 'category';
   operator: 'contains' | 'equals' | 'gte' | 'lte' | 'in';
   value: string | number | string[];
   timeWindowMinutes?: number;
 }
 
-interface Signal {
+export interface Signal {
   id: string;
   original_id: string;
   source: string;
@@ -92,8 +92,8 @@ export class IssueDetectionService {
     return days;
   }
 
-  // Predefined detection patterns
-  private patterns: DetectionPattern[] = [
+  // Predefined detection patterns (static so unit tests exercise the real config)
+  static readonly PATTERNS: DetectionPattern[] = [
     // Security patterns
     {
       id: 'security-breach',
@@ -346,7 +346,7 @@ export class IssueDetectionService {
   private async runPatternDetection(): Promise<void> {
     const now = new Date();
 
-    for (const pattern of this.patterns) {
+    for (const pattern of IssueDetectionService.PATTERNS) {
       // Check cooldown
       const lastTrigger = this.lastPatternTrigger.get(pattern.id);
       if (lastTrigger) {
@@ -380,7 +380,10 @@ export class IssueDetectionService {
 
     switch (condition.type) {
       case 'keyword':
-        fieldValue = `${signal.description} ${signal.source}`.toLowerCase();
+        // Content only — including signal.source here made keyword patterns
+        // self-match on source names alone (github:ethereum/EIPs contains
+        // 'EIP'); source matching is what the 'source' condition type is for.
+        fieldValue = signal.description.toLowerCase();
         break;
       case 'severity':
         fieldValue = signal.severity;
