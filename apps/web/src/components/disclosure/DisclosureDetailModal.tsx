@@ -3,8 +3,6 @@
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { format, formatDistanceToNow } from 'date-fns';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
 import {
   X,
   FileText,
@@ -23,6 +21,7 @@ import {
 import type { DisclosureReportType, DisclosureReportStatus } from '@/lib/api';
 import { safeFormatDate } from '@/lib/utils';
 import { useDialogA11y } from '@/hooks/useDialogA11y';
+import { MarkdownContent } from '@/components/ui/MarkdownContent';
 
 interface DisclosureReport {
   id: string;
@@ -111,130 +110,6 @@ const statusConfig: Record<DisclosureReportStatus, {
     bg: 'bg-gray-500/10',
     label: 'Draft',
   },
-};
-
-// Custom components for markdown rendering
-const MarkdownComponents = {
-  h1: ({ children }: { children?: React.ReactNode }) => (
-    <h1 className="text-2xl font-bold text-agora-text mt-6 mb-4 pb-2 border-b border-agora-border">
-      {children}
-    </h1>
-  ),
-  h2: ({ children }: { children?: React.ReactNode }) => (
-    <h2 className="text-xl font-semibold text-agora-text mt-5 mb-3 pb-1 border-b border-agora-border/50">
-      {children}
-    </h2>
-  ),
-  h3: ({ children }: { children?: React.ReactNode }) => (
-    <h3 className="text-lg font-semibold text-agora-text mt-4 mb-2">
-      {children}
-    </h3>
-  ),
-  h4: ({ children }: { children?: React.ReactNode }) => (
-    <h4 className="text-base font-semibold text-agora-text mt-3 mb-2">
-      {children}
-    </h4>
-  ),
-  p: ({ children }: { children?: React.ReactNode }) => (
-    <p className="text-slate-700 leading-relaxed mb-3">
-      {children}
-    </p>
-  ),
-  ul: ({ children }: { children?: React.ReactNode }) => (
-    <ul className="list-disc list-inside space-y-1 mb-3 text-slate-700">
-      {children}
-    </ul>
-  ),
-  ol: ({ children }: { children?: React.ReactNode }) => (
-    <ol className="list-decimal list-inside space-y-1 mb-3 text-slate-700">
-      {children}
-    </ol>
-  ),
-  li: ({ children }: { children?: React.ReactNode }) => (
-    <li className="text-slate-700">
-      {children}
-    </li>
-  ),
-  strong: ({ children }: { children?: React.ReactNode }) => (
-    <strong className="font-semibold text-agora-text">
-      {children}
-    </strong>
-  ),
-  em: ({ children }: { children?: React.ReactNode }) => (
-    <em className="italic text-slate-600">
-      {children}
-    </em>
-  ),
-  blockquote: ({ children }: { children?: React.ReactNode }) => (
-    <blockquote className="border-l-4 border-agora-primary pl-4 my-3 text-slate-600 italic">
-      {children}
-    </blockquote>
-  ),
-  code: ({ className, children }: { className?: string; children?: React.ReactNode }) => {
-    const isInline = !className;
-    if (isInline) {
-      return (
-        <code className="bg-agora-card px-1.5 py-0.5 rounded text-sm font-mono text-agora-primary">
-          {children}
-        </code>
-      );
-    }
-    return (
-      <code className="block bg-agora-card p-4 rounded-lg text-sm font-mono overflow-x-auto my-3">
-        {children}
-      </code>
-    );
-  },
-  pre: ({ children }: { children?: React.ReactNode }) => (
-    <pre className="bg-agora-card p-4 rounded-lg overflow-x-auto my-3 text-sm">
-      {children}
-    </pre>
-  ),
-  table: ({ children }: { children?: React.ReactNode }) => (
-    <div className="overflow-x-auto my-4">
-      <table className="w-full border-collapse border border-agora-border rounded-lg">
-        {children}
-      </table>
-    </div>
-  ),
-  thead: ({ children }: { children?: React.ReactNode }) => (
-    <thead className="bg-agora-card">
-      {children}
-    </thead>
-  ),
-  tbody: ({ children }: { children?: React.ReactNode }) => (
-    <tbody className="divide-y divide-agora-border">
-      {children}
-    </tbody>
-  ),
-  tr: ({ children }: { children?: React.ReactNode }) => (
-    <tr className="hover:bg-agora-card/50 transition-colors">
-      {children}
-    </tr>
-  ),
-  th: ({ children }: { children?: React.ReactNode }) => (
-    <th className="px-4 py-2 text-left text-sm font-semibold text-agora-text border-b border-agora-border">
-      {children}
-    </th>
-  ),
-  td: ({ children }: { children?: React.ReactNode }) => (
-    <td className="px-4 py-2 text-sm text-slate-700 border-b border-agora-border/50">
-      {children}
-    </td>
-  ),
-  hr: () => (
-    <hr className="my-6 border-agora-border" />
-  ),
-  a: ({ href, children }: { href?: string; children?: React.ReactNode }) => (
-    <a
-      href={href}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="text-agora-primary hover:text-agora-primary/80 underline"
-    >
-      {children}
-    </a>
-  ),
 };
 
 export function DisclosureDetailModal({ report, onClose, onDownload }: DisclosureDetailModalProps) {
@@ -374,14 +249,7 @@ Report ID: ${report.id}
           <div className="flex-1 overflow-y-auto p-4 sm:p-6 min-h-0">
             {/* If we have markdown content, render it */}
             {isMarkdownContent && report.content ? (
-              <div className="prose prose-slate max-w-none">
-                <ReactMarkdown
-                  remarkPlugins={[remarkGfm]}
-                  components={MarkdownComponents}
-                >
-                  {report.content}
-                </ReactMarkdown>
-              </div>
+              <MarkdownContent content={report.content} size="document" />
             ) : (
               <>
                 {/* Report Type Description */}
