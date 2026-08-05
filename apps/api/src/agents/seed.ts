@@ -690,11 +690,26 @@ const AGENT_DEFINITIONS: AgentDefinition[] = [
 ];
 
 export function seedAgents(db: Database.Database): void {
+  // Targeted upsert: refresh only the roster-definition columns. INSERT OR
+  // REPLACE would rewrite the whole row and, now that seeding runs on every
+  // API boot, silently reset operator-managed columns the seed does not own
+  // (is_active, expertise, avatar_url, created_at).
   const insertAgent = db.prepare(`
-    INSERT OR REPLACE INTO agents (
+    INSERT INTO agents (
       id, name, display_name, group_name, persona_prompt, speaking_style,
       idle_messages, summoning_tags, tier_preference, is_operative, color
     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(id) DO UPDATE SET
+      name = excluded.name,
+      display_name = excluded.display_name,
+      group_name = excluded.group_name,
+      persona_prompt = excluded.persona_prompt,
+      speaking_style = excluded.speaking_style,
+      idle_messages = excluded.idle_messages,
+      summoning_tags = excluded.summoning_tags,
+      tier_preference = excluded.tier_preference,
+      is_operative = excluded.is_operative,
+      color = excluded.color
   `);
 
   const insertState = db.prepare(`

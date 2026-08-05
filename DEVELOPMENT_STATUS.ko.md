@@ -8,6 +8,35 @@
 
 ---
 
+## 최근 작업: API 크래시 루프 수정 (2026-08-05)
+
+prod `algora-api`가 2026-08-04 하루에 ~57회 크래시했고, 매번 동일한 스택
+(`AgoraService.addMessage`의 `SqliteError: FOREIGN KEY constraint failed`,
+`handleRoundTimeout` 경유)이었습니다. 원인 체인: 오케스트레이터가 라운드 요약
+메시지를 `bridge-moderator`(`ORCHESTRATOR_CONFIG.orchestratorAgentId`) 명의로
+삽입하는데, `seedAgents()`가 수동 `pnpm db:init`에서만 실행돼 prod의
+`agents` 테이블은 `bridge-moderator` 이전의 구버전 로스터에 머물러 있었음 →
+FK 실패 → catch 없는 `setInterval(() => checkTimeouts())`에서 unhandled
+rejection → Node 22가 프로세스 종료 → pm2 재시작. (2026-08-05 03:09 UTC에
+로스터가 수동 재시드되면서 크래시는 멈춘 상태.) 적용한 하드닝:
+
+- **세션 타이머 가드.** 30초 타임아웃 체커 인터벌이 rejection을 catch해
+  로그로 남기고, 3회 연속 실패 시 세션을 강제 완료하고 타이머를 중지합니다
+  (지속 실패가 LLM을 호출하는 타임아웃 핸들러를 30초마다 무한 재실행하면 안
+  되므로). 라운드 타이머는 핸들러 본문 이전에 리셋해, 중간 실패가 다음 틱에
+  같은 라운드 요약을 중복 게시하지 못하게 했습니다.
+- **부팅 시 로스터 시딩.** `seedAgents(db)`가 매 API 기동 시 targeted
+  upsert(`ON CONFLICT(id) DO UPDATE`, 정의 컬럼만 갱신)로 실행돼 DB 로스터가
+  코드 로스터를 따라가되, 운영자 관리 컬럼(`is_active`, `expertise`,
+  `avatar_url`, `created_at`)은 재시작에도 보존됩니다.
+- **프로세스 레벨 핸들러.** `unhandledRejection` → 로그 + 서비스 지속;
+  `uncaughtException` → 로그 + exit(1)로 마커를 남기고 pm2 재시작.
+- 검증: tsc 빌드 + 테스트 44/44; 적대적 멀티에이전트 리뷰(11개 에이전트)가
+  초안의 실제 문제 2건(REPLACE 시딩의 운영 컬럼 클로버링, catch가 크래시를
+  무한 30초 LLM 재시도 루프로 바꾸는 문제)을 확인 — 위와 같이 모두 수정.
+
+---
+
 ## 최근 작업: 이슈 플러딩 정리 + 라이프사이클 수정 (2026-08-05)
 
 L1 이슈 감지 서비스가 프로덕션에 **영구히 열려 있는 이슈 4,956개**를

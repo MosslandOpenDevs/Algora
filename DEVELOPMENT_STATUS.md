@@ -8,6 +8,38 @@ This file tracks the current development progress for continuity between session
 
 ---
 
+## Recent Work: API Crash-Loop Fix (2026-08-05)
+
+Prod `algora-api` crashed ~57x/day on 2026-08-04, every time with the same
+stack: `SqliteError: FOREIGN KEY constraint failed` in
+`AgoraService.addMessage` via `handleRoundTimeout`. Root cause chain: the
+orchestrator inserts round-summary messages as `bridge-moderator`
+(`ORCHESTRATOR_CONFIG.orchestratorAgentId`), but `seedAgents()` only ran on
+manual `pnpm db:init`, so prod's `agents` table kept a pre-`bridge-moderator`
+roster while the code moved on → FK failure → unhandled rejection from the
+unguarded `setInterval(() => checkTimeouts())` → Node 22 kills the process →
+pm2 restart. (Crashes stopped 2026-08-05 03:09 UTC when the roster was
+manually reseeded.) Hardening shipped:
+
+- **Guarded session timer.** The 30s timeout-checker interval catches and
+  logs instead of leaking rejections; 3 consecutive failures force-complete
+  the session and stop its timer (a persistent failure must not re-run the
+  LLM-calling timeout handlers every 30s forever). The round timer now
+  resets before the handler body, so a mid-flight failure can't re-post the
+  same round summary on the next tick.
+- **Roster seeding at boot.** `seedAgents(db)` runs on every API start via a
+  targeted upsert (`ON CONFLICT(id) DO UPDATE` of definition columns only),
+  so the DB roster tracks the code roster while operator-managed columns
+  (`is_active`, `expertise`, `avatar_url`, `created_at`) survive restarts.
+- **Process-level handlers.** `unhandledRejection` → log + keep serving;
+  `uncaughtException` → log + exit(1) for a clean pm2 restart with a marker.
+- Verified: tsc build + 44/44 tests; adversarial multi-agent review (11
+  agents) confirmed 2 real issues in the first draft — REPLACE-based seeding
+  clobbering operator columns, and the catch converting the crash into an
+  unbounded 30s LLM retry loop — both fixed as above.
+
+---
+
 ## Recent Work: Issue-Flood Cleanup + Lifecycle Fixes (2026-08-05)
 
 The L1 issue-detection service had accumulated **4,956 permanently-open
