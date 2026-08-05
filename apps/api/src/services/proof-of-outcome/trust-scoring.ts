@@ -314,11 +314,6 @@ export class TrustScoringService {
       UPDATE agent_trust_scores SET overall_score = ? WHERE agent_id = ?
     `).run(boundedScore, agentId);
 
-    // Also update the agent's trust_score in the agents table
-    this.db.prepare(`
-      UPDATE agents SET trust_score = ? WHERE id = ?
-    `).run(boundedScore, agentId);
-
     this.io.emit('trust:score_updated', { agentId, score: boundedScore });
   }
 
