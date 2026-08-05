@@ -1,6 +1,7 @@
 import type Database from 'better-sqlite3';
 import { Server as SocketServer } from 'socket.io';
 import { v4 as uuidv4 } from 'uuid';
+import { isoDaysAgo } from '../../utils/time';
 
 // Proposal status workflow
 export type ProposalStatus =
@@ -468,8 +469,8 @@ export class ProposalService {
     `).get() as { count: number };
     const recentlyPassed = this.db.prepare(`
       SELECT COUNT(*) as count FROM proposals
-      WHERE status = 'passed' AND updated_at > datetime('now', '-7 days')
-    `).get() as { count: number };
+      WHERE status = 'passed' AND updated_at > ?
+    `).get(isoDaysAgo(7)) as { count: number };
 
     return {
       total: total.count,

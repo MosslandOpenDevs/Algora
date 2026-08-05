@@ -5,6 +5,7 @@ import { llmService } from './llm';
 import { SummoningService } from './summoning';
 import type { GovernanceOSBridge } from './governance-os-bridge';
 import { wrapUntrustedList, sanitizeForPrompt, UNTRUSTED_CONTEXT_NOTICE } from './prompt-safety';
+import { isoMinutesAgo } from '../utils/time';
 
 interface Agent {
   id: string;
@@ -1748,17 +1749,50 @@ Recommendation:`,
    *
    * Returns the number of sessions cleaned up.
    */
-  cleanupStaleSessions(opts?: { maxIdleMinutes?: number; limit?: number }): { cleaned: number; ids: string[] } {
+  cleanupStaleSessions(opts?: {
+    maxIdleMinutes?: number;
+    limit?: number;
+    /** Leave sessions with real deliberation for harvestStaleSessions() until they age past hardCloseAfterMinutes. */
+    preserveHarvestable?: { minMessages: number; hardCloseAfterMinutes: number };
+  }): { cleaned: number; ids: string[] } {
     const maxIdleMinutes = opts?.maxIdleMinutes ?? 90; // 60min session limit + 30min grace
     const limit = opts?.limit ?? 500;
 
-    const stale = this.db.prepare(`
-      SELECT id FROM agora_sessions
-      WHERE status = 'active'
-        AND updated_at < datetime('now', ?)
-      ORDER BY updated_at ASC
-      LIMIT ?
-    `).all(`-${maxIdleMinutes} minutes`, limit) as Array<{ id: string }>;
+    // Sessions worth salvaging are left for harvestStaleSessions(), which is
+    // bounded per run — without this the sweep would cheap-close everything
+    // that did not fit in the current harvest batch, making the bound
+    // pointless. hardCloseAfterMinutes is the escape hatch: a session that
+    // keeps failing to harvest still gets closed eventually.
+    const preserve = opts?.preserveHarvestable;
+
+    // updated_at is ISO-'T'; comparing it to datetime('now') matched nothing
+    // until the UTC date rolled over, so stale sessions survived all day and
+    // were swept in one 72-session batch after midnight (see utils/time.ts).
+    const stale = preserve
+      ? this.db.prepare(`
+          SELECT s.id FROM agora_sessions s
+          WHERE s.status = 'active'
+            AND s.updated_at < ?
+            AND (
+              s.updated_at < ?
+              OR (SELECT COUNT(*) FROM agora_messages m
+                  WHERE m.session_id = s.id AND m.message_type = 'agent') < ?
+            )
+          ORDER BY s.updated_at ASC
+          LIMIT ?
+        `).all(
+          isoMinutesAgo(maxIdleMinutes),
+          isoMinutesAgo(preserve.hardCloseAfterMinutes),
+          preserve.minMessages,
+          limit
+        ) as Array<{ id: string }>
+      : this.db.prepare(`
+          SELECT id FROM agora_sessions
+          WHERE status = 'active'
+            AND updated_at < ?
+          ORDER BY updated_at ASC
+          LIMIT ?
+        `).all(isoMinutesAgo(maxIdleMinutes), limit) as Array<{ id: string }>;
 
     if (stale.length === 0) return { cleaned: 0, ids: [] };
 
@@ -1787,6 +1821,66 @@ Recommendation:`,
 
     console.log(`[Orchestrator] Cleaned up ${stale.length} stale active session(s) idle > ${maxIdleMinutes}m`);
     return { cleaned: stale.length, ids: stale.map((r) => r.id) };
+  }
+
+  /**
+   * Salvage stale sessions that actually deliberated.
+   *
+   * cleanupStaleSessions() only flips status to 'completed' — no summary, no
+   * decision packet, no governance integration — so a session swept that way
+   * is a dead end for the proposal pipeline. That was the norm rather than
+   * the exception: prod had 2,176 completed sessions but only 20 decision
+   * packets, because in-memory round timers do not survive an API restart
+   * and every orphaned session fell to the cheap sweep.
+   *
+   * This runs BEFORE the sweep and puts substantive orphans through the real
+   * completeSession() flow. It is deliberately bounded: completion calls the
+   * LLM three times (summary, decision packet, closing statement) behind a
+   * 10s-min-delay queue, so a large batch would stall the scheduler.
+   * Whatever is not harvested this hour is either harvested next hour or
+   * cheap-closed by the sweep once it has nothing worth salvaging.
+   */
+  async harvestStaleSessions(opts?: {
+    maxIdleMinutes?: number;
+    minMessages?: number;
+    limit?: number;
+  }): Promise<{ harvested: number; failed: number; ids: string[] }> {
+    const maxIdleMinutes = opts?.maxIdleMinutes ?? 90;
+    const minMessages = opts?.minMessages ?? 5; // completeSession's own decision-packet threshold
+    const limit = opts?.limit ?? 3;
+
+    const candidates = this.db.prepare(`
+      SELECT s.id
+      FROM agora_sessions s
+      WHERE s.status = 'active'
+        AND s.updated_at < ?
+        AND (SELECT COUNT(*) FROM agora_messages m
+             WHERE m.session_id = s.id AND m.message_type = 'agent') >= ?
+      ORDER BY s.updated_at ASC
+      LIMIT ?
+    `).all(isoMinutesAgo(maxIdleMinutes), minMessages, limit) as Array<{ id: string }>;
+
+    const harvested: string[] = [];
+    let failed = 0;
+
+    for (const { id } of candidates) {
+      try {
+        console.log(`[Orchestrator] Harvesting stale session ${id.slice(0, 8)} (idle > ${maxIdleMinutes}m, has deliberation)`);
+        await this.completeSession(id);
+        harvested.push(id);
+      } catch (err) {
+        // A failed harvest must not block the others or the sweep that
+        // follows; the session stays active and the cheap sweep closes it.
+        failed++;
+        console.error(`[Orchestrator] Harvest failed for session ${id.slice(0, 8)}:`, err);
+      }
+    }
+
+    if (harvested.length > 0 || failed > 0) {
+      console.log(`[Orchestrator] Stale harvest: ${harvested.length} completed with full flow, ${failed} failed`);
+    }
+
+    return { harvested: harvested.length, failed, ids: harvested };
   }
 
   // Complete a session with full closing flow

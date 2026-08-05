@@ -1,5 +1,6 @@
 import type Database from 'better-sqlite3';
 import { Server as SocketServer } from 'socket.io';
+import { isoHoursAgo } from '../../utils/time';
 
 export interface GovernanceMetrics {
   totalProposals: number;
@@ -343,8 +344,8 @@ export class AnalyticsService {
         COUNT(CASE WHEN type LIKE 'OUTCOME%' THEN 1 END) as outcomes,
         COUNT(CASE WHEN type LIKE 'TRUST%' THEN 1 END) as trustUpdates
       FROM activity_log
-      WHERE timestamp > datetime('now', '-24 hours')
-    `).get() as any;
+      WHERE timestamp > ?
+    `).get(isoHoursAgo(24)) as any;
 
     return {
       governance,

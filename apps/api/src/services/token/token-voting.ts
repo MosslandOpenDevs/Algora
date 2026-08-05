@@ -1,6 +1,7 @@
 import type Database from 'better-sqlite3';
 import { Server as SocketServer } from 'socket.io';
 import { TokenService } from './token';
+import { isoNow } from '../../utils/time';
 
 export interface TokenVote {
   id: string;
@@ -394,8 +395,8 @@ export class TokenVotingService {
 
     const activeVoting = this.db.prepare(`
       SELECT COUNT(*) as count FROM token_proposal_voting
-      WHERE status = 'active' AND voting_ends_at > datetime('now')
-    `).get() as { count: number };
+      WHERE status = 'active' AND voting_ends_at > ?
+    `).get(isoNow()) as { count: number };
 
     const results = this.db.prepare(`
       SELECT

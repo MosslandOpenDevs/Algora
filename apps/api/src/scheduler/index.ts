@@ -40,7 +40,15 @@ export class SchedulerService {
   private reportGenerator: ReportGeneratorService | null = null;
   private passiveConsensusService: PassiveConsensusService | null = null;
   private proposalService: ProposalService | null = null;
-  private agoraService: { cleanupStaleSessions: (opts?: { maxIdleMinutes?: number; limit?: number }) => { cleaned: number; ids: string[] } } | null = null;
+  private agoraService: {
+    cleanupStaleSessions: (opts?: {
+      maxIdleMinutes?: number;
+      limit?: number;
+      preserveHarvestable?: { minMessages: number; hardCloseAfterMinutes: number };
+    }) => { cleaned: number; ids: string[] };
+    harvestStaleSessions?: (opts?: { maxIdleMinutes?: number; minMessages?: number; limit?: number }) =>
+      Promise<{ harvested: number; failed: number; ids: string[] }>;
+  } | null = null;
   private dataRetention: DataRetentionService;
   private budgetAlerts: BudgetAlertService;
   private kpiPersistence: KPIPersistenceService;
@@ -300,7 +308,15 @@ export class SchedulerService {
    * Set the Agora Service so the scheduler can run periodic stale-session
    * cleanup (orphaned 'active' sessions whose in-memory timer died).
    */
-  setAgoraService(service: { cleanupStaleSessions: (opts?: { maxIdleMinutes?: number; limit?: number }) => { cleaned: number; ids: string[] } }): void {
+  setAgoraService(service: {
+    cleanupStaleSessions: (opts?: {
+      maxIdleMinutes?: number;
+      limit?: number;
+      preserveHarvestable?: { minMessages: number; hardCloseAfterMinutes: number };
+    }) => { cleaned: number; ids: string[] };
+    harvestStaleSessions?: (opts?: { maxIdleMinutes?: number; minMessages?: number; limit?: number }) =>
+      Promise<{ harvested: number; failed: number; ids: string[] }>;
+  }): void {
     this.agoraService = service;
     console.info('[Scheduler] Agora Service connected');
   }
@@ -778,10 +794,28 @@ export class SchedulerService {
    * (e.g. process restart, hung LLM call, exception in the orchestrator).
    */
   private scheduleAgoraStaleCleanup(): void {
-    const interval = setInterval(() => {
+    const interval = setInterval(async () => {
       if (!this.isRunning || !this.agoraService) return;
       try {
-        const result = this.agoraService.cleanupStaleSessions({ maxIdleMinutes: 90 });
+        // Salvage first: sessions that actually deliberated go through the
+        // real completion flow (summary → decision packet → governance
+        // integration → proposal) instead of being silently discarded by the
+        // cheap sweep below. Bounded, so the rest wait for the next hour.
+        if (this.agoraService.harvestStaleSessions) {
+          const harvest = await this.agoraService.harvestStaleSessions({ maxIdleMinutes: 90 });
+          if (harvest.harvested > 0 || harvest.failed > 0) {
+            this.activityService.log('AGORA_STALE_HARVEST', 'info',
+              `Completed ${harvest.harvested} stale Agora session(s) with full flow`, { details: harvest });
+          }
+        }
+
+        // Anything the (bounded) harvest could not reach stays active until a
+        // later run, unless it has been stuck for 6h — then it is closed
+        // regardless so a permanently failing session cannot linger forever.
+        const result = this.agoraService.cleanupStaleSessions({
+          maxIdleMinutes: 90,
+          preserveHarvestable: { minMessages: 5, hardCloseAfterMinutes: 360 },
+        });
         if (result.cleaned > 0) {
           this.activityService.log('AGORA_STALE_CLEANUP', 'info',
             `Closed ${result.cleaned} stale Agora session(s)`, { details: result });

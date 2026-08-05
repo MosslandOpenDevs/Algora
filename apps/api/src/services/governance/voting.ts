@@ -2,6 +2,7 @@ import type Database from 'better-sqlite3';
 import { Server as SocketServer } from 'socket.io';
 import { v4 as uuidv4 } from 'uuid';
 import type { AuditService } from '../audit';
+import { isoNow, isoHoursAgo } from '../../utils/time';
 
 export type VoteChoice = 'for' | 'against' | 'abstain';
 
@@ -154,11 +155,13 @@ export class VotingService {
 
   private processDelegatedVotes(proposalId: string, delegate: string, choice: VoteChoice, reason?: string): void {
     // Get all active delegations to this voter
+    // expires_at is ISO-'T' — see utils/time.ts for why datetime('now')
+    // cannot be compared against it.
     const delegations = this.db.prepare(`
       SELECT * FROM delegations
       WHERE delegate = ? AND is_active = 1
-      AND (expires_at IS NULL OR expires_at > datetime('now'))
-    `).all(delegate) as Delegation[];
+      AND (expires_at IS NULL OR expires_at > ?)
+    `).all(delegate, isoNow()) as Delegation[];
 
     for (const delegation of delegations) {
       // Check if delegator hasn't voted directly
@@ -403,8 +406,8 @@ export class VotingService {
     const totalVotes = this.db.prepare('SELECT COUNT(*) as count FROM votes').get() as { count: number };
     const totalVoters = this.db.prepare('SELECT COUNT(DISTINCT voter) as count FROM votes').get() as { count: number };
     const recentVotes = this.db.prepare(`
-      SELECT COUNT(*) as count FROM votes WHERE created_at > datetime('now', '-24 hours')
-    `).get() as { count: number };
+      SELECT COUNT(*) as count FROM votes WHERE created_at > ?
+    `).get(isoHoursAgo(24)) as { count: number };
     const avgParticipation = this.db.prepare(`
       SELECT AVG(vote_count) as avg FROM (
         SELECT COUNT(*) as vote_count FROM votes GROUP BY proposal_id

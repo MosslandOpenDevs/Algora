@@ -3,6 +3,7 @@ import type Database from 'better-sqlite3';
 import { v4 as uuidv4 } from 'uuid';
 import { writeLimiter } from '../middleware/rate-limit';
 import { requireAdmin } from '../middleware/auth';
+import { isoHoursAgo, isoMinutesAgo, isoDaysAgo } from '../utils/time';
 
 export const signalsRouter: Router = Router();
 
@@ -139,8 +140,8 @@ signalsRouter.get('/stats', (req, res) => {
       last24h: (db.prepare(`
         SELECT COUNT(*) as count
         FROM signals
-        WHERE timestamp > datetime('now', '-24 hours')
-      `).get() as any).count,
+        WHERE timestamp > ?
+      `).get(isoHoursAgo(24)) as any).count,
     };
 
     res.json({ stats });
@@ -160,13 +161,13 @@ signalsRouter.get('/live-stats', (req, res) => {
       last10min: (db.prepare(`
         SELECT COUNT(*) as count
         FROM signals
-        WHERE timestamp > datetime('now', '-10 minutes')
-      `).get() as any).count,
+        WHERE timestamp > ?
+      `).get(isoMinutesAgo(10)) as any).count,
       lastHour: (db.prepare(`
         SELECT COUNT(*) as count
         FROM signals
-        WHERE timestamp > datetime('now', '-1 hour')
-      `).get() as any).count,
+        WHERE timestamp > ?
+      `).get(isoHoursAgo(1)) as any).count,
       today: (db.prepare(`
         SELECT COUNT(*) as count
         FROM signals
@@ -175,13 +176,13 @@ signalsRouter.get('/live-stats', (req, res) => {
       thisWeek: (db.prepare(`
         SELECT COUNT(*) as count
         FROM signals
-        WHERE timestamp > datetime('now', '-7 days')
-      `).get() as any).count,
+        WHERE timestamp > ?
+      `).get(isoDaysAgo(7)) as any).count,
       thisMonth: (db.prepare(`
         SELECT COUNT(*) as count
         FROM signals
-        WHERE timestamp > datetime('now', '-30 days')
-      `).get() as any).count,
+        WHERE timestamp > ?
+      `).get(isoDaysAgo(30)) as any).count,
       total: (db.prepare('SELECT COUNT(*) as count FROM signals').get() as any).count,
     };
 
@@ -191,10 +192,10 @@ signalsRouter.get('/live-stats', (req, res) => {
         strftime('%H', timestamp) as hour,
         COUNT(*) as count
       FROM signals
-      WHERE timestamp > datetime('now', '-24 hours')
+      WHERE timestamp > ?
       GROUP BY strftime('%H', timestamp)
       ORDER BY hour
-    `).all();
+    `).all(isoHoursAgo(24));
 
     // Recent signals per minute (last 10 minutes) for real-time pulse
     const minuteBreakdown = db.prepare(`
@@ -202,10 +203,10 @@ signalsRouter.get('/live-stats', (req, res) => {
         strftime('%H:%M', timestamp) as minute,
         COUNT(*) as count
       FROM signals
-      WHERE timestamp > datetime('now', '-10 minutes')
+      WHERE timestamp > ?
       GROUP BY strftime('%H:%M', timestamp)
       ORDER BY minute
-    `).all();
+    `).all(isoMinutesAgo(10));
 
     // Category breakdown for current period
     const categoryBreakdown = db.prepare(`
@@ -213,11 +214,11 @@ signalsRouter.get('/live-stats', (req, res) => {
         category,
         COUNT(*) as count
       FROM signals
-      WHERE timestamp > datetime('now', '-1 hour')
+      WHERE timestamp > ?
       GROUP BY category
       ORDER BY count DESC
       LIMIT 5
-    `).all();
+    `).all(isoHoursAgo(1));
 
     // Source breakdown for current period
     const sourceBreakdown = db.prepare(`
@@ -225,11 +226,11 @@ signalsRouter.get('/live-stats', (req, res) => {
         source,
         COUNT(*) as count
       FROM signals
-      WHERE timestamp > datetime('now', '-1 hour')
+      WHERE timestamp > ?
       GROUP BY source
       ORDER BY count DESC
       LIMIT 5
-    `).all();
+    `).all(isoHoursAgo(1));
 
     // Calculate rate (signals per minute in last 10 min)
     const ratePerMinute = timeStats.last10min / 10;
