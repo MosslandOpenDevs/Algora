@@ -1,3 +1,16 @@
+// Auto-deploy is opt-in per machine: the algora-deploy poller is only
+// registered when ALGORA_AUTO_DEPLOY=1 is present in .env. Without that gate
+// every checkout of this repo — a laptop, a staging clone — would start
+// fast-forwarding itself to origin/main as soon as someone ran
+// `pm2 start ecosystem.config.cjs`. Minimal .env read, no dotenv dep at root.
+let AUTO_DEPLOY = false;
+try {
+  const env = require('fs').readFileSync(`${__dirname}/.env`, 'utf8');
+  AUTO_DEPLOY = /^ALGORA_AUTO_DEPLOY=1\s*$/m.test(env);
+} catch {
+  // no .env — auto-deploy stays off
+}
+
 module.exports = {
   apps: [
     {
@@ -77,5 +90,31 @@ module.exports = {
       out_file: './logs/web-out.log',
       log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
     },
+    // Pull-based auto-deploy poller (see scripts/deploy.sh for why pull-based).
+    // One-shot on a cron tick, like algora-db-backup: a no-op unless
+    // origin/main moved. Minutes are staggered off moss-ao-deploy's
+    // :04/:09/... ticks since both repos share this box.
+    ...(AUTO_DEPLOY ? [{
+      name: 'algora-deploy',
+      script: 'scripts/deploy.sh',
+      interpreter: 'bash',
+      cwd: __dirname,
+      instances: 1,
+      exec_mode: 'fork',
+      autorestart: false,
+      watch: false,
+      max_memory_restart: '1G', // headroom for `pnpm build`
+      cron_restart: '1-59/5 * * * *',
+      env: {
+        NODE_ENV: 'production',
+        DEPLOY_BRANCH: process.env.DEPLOY_BRANCH || 'main',
+        DEPLOY_REQUIRE_CI: process.env.DEPLOY_REQUIRE_CI || '0',
+        DEPLOY_ALERT_WEBHOOK: process.env.DEPLOY_ALERT_WEBHOOK || '',
+        GITHUB_TOKEN: process.env.GITHUB_TOKEN || '',
+      },
+      error_file: './logs/deploy-error.log',
+      out_file: './logs/deploy-out.log',
+      log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
+    }] : []),
   ],
 };
