@@ -8,6 +8,55 @@
 
 ---
 
+## 최근 작업: 문서 검증이 제안을 삼키고 있었다 (2026-08-06)
+
+브리지가 드디어 연결된 뒤(이전 항목), 첫 스테일 세션 harvest가 숙의 3건을
+완료했는데 제안은 1건만 생성됐습니다. 나머지 둘은 아무도 안 보는 곳에서
+죽었습니다: `console.error`는 **stderr**로 나가므로, 다른 오케스트레이터
+로그가 전부 `api-out-<pmid>.log`에 있는 동안 실패는
+`api-error-<pmid>.log`에 있었습니다.
+
+```
+DocumentValidationError: Validation failed for summary: Must be at most 500 characters
+  at DocumentManager.validateSummary → AgoraService.integrateWithGovernanceOS
+```
+
+`integrateWithGovernanceOS()`는 결정 패킷 **문서**를 만든 뒤
+`handleAgoraSessionCompleted()`(이슈 갱신과 제안 생성을 담당)를 호출하는데,
+둘이 같은 try/catch 안에 있었습니다. 문서의 `summary`는 LLM이 생성한
+`decisionPacket.recommendation` 원본이었고, 500자를 넘으면 `create()`가
+던지면서 이후 전부가 건너뛰어져 제안이 사라졌습니다. **프로덕션 결정 패킷
+23개 중 12개(52%)의 recommendation이 500자를 초과**하므로, 전체 숙의의 약
+절반이 조용히 제안을 못 만들 상태였습니다.
+
+- **구조적 격리.** 문서 생성에 자체 try/catch를 뒀습니다. 문서는 숙의의
+  기록일 뿐이고, 거버넌스는 문서 없이도 진행돼야 합니다. 이것이 진짜 회귀
+  수정입니다 — 아래 클램핑이 방아쇠를 막는다면, 이건 그 *부류*를 막습니다.
+- **경계에서의 클램핑.** 한계를 소유한 `@algora/document-registry`에
+  `clampTitle`/`clampSummary`를 추가하고, validator가 쓰는 것과 같은 config를
+  읽도록 `DocumentManager` 메서드로 노출했습니다(양쪽이 어긋날 수 없음).
+  `apps/api`의 title/summary 14곳 전부에 적용. 공백 정규화, 예산 내 단어
+  경계 절단을 하며, 무엇보다 손으로 짠 `.substring(0, 500)`이 무시하던
+  **최소** 길이도 처리합니다: `minSummaryLength`가 50이라
+  `"Detected issue in category ai with low priority"`(46자)도 긴 것과
+  똑같이 검증에 실패했습니다.
+- **적대적 리뷰가 찾은 동일 결함 2건**(3렌즈 멀티에이전트, 두 검증자가 각각
+  종단 재현): 거버넌스 파이프라인의 `createDocument` 어댑터가 호출자의
+  summary를 **조용히 버리고** title로 대체하고 있어, 이슈 제목이 33자 미만이면
+  summary가 50자 미만이 되어 파이프라인의 유일한 문서가 사라졌습니다 —
+  그것도 저장소 어디에서도 읽지 않는 `ctx.metadata.documentProduction`으로.
+  또 워크플로 문서 폴백 7개(`'Research findings'`, `'Debate findings'` 등)가
+  전부 50자 미만이라, LLM 필드가 비면 검증 예외가 확정적으로 나면서 해당
+  워크플로의 남은 문서까지 전부 날아갔습니다. 둘 다 수정했고, 파이프라인은
+  이제 삼킨 에러를 로그로 남깁니다.
+- **테스트.** `governance-integration.test.ts`가 격리 자체를 고정하고(문서
+  생성이 던져도 핸들러가 실행됨 — 리뷰가 "행위 쪽 절반에 테스트가 없다"고
+  정확히 지적), registry 스위트가 실제 validator 대상 클램핑, 절단 지점의
+  서로게이트 쌍 분할(이모지), 공백 없는 한글, 비기본 config를 검증합니다.
+  api 76/76, document-registry 26/26, `tsc` 클린.
+
+---
+
 ## 최근 작업: 좀비 세션과 ISO-'T' 타임스탬프 함정 (2026-08-06)
 
 실시간 숙의 → 제안 경로가 발화하는지 확인하려다 상류에서 더 심각한 것을

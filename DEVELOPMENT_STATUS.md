@@ -8,6 +8,60 @@ This file tracks the current development progress for continuity between session
 
 ---
 
+## Recent Work: Document Validation Was Eating Proposals (2026-08-06)
+
+With the bridge finally wired (previous entry), the first stale-session
+harvest completed three deliberations — and only one produced a proposal.
+The other two died in a place nothing was watching: `console.error` writes to
+**stderr**, so the failure was in `api-error-<pmid>.log` while every other
+orchestrator line went to `api-out-<pmid>.log`.
+
+```
+DocumentValidationError: Validation failed for summary: Must be at most 500 characters
+  at DocumentManager.validateSummary → AgoraService.integrateWithGovernanceOS
+```
+
+`integrateWithGovernanceOS()` creates a Decision Packet **document** and then
+calls `handleAgoraSessionCompleted()` — which is what updates the issue and
+creates the proposal — inside a single try/catch. The document's `summary`
+was the raw LLM-generated `decisionPacket.recommendation`. Past 500
+characters, `create()` threw, the throw skipped everything after it, and the
+proposal was lost. **12 of 23 decision packets on prod (52%) have a
+recommendation over 500 characters**, so roughly half of all deliberations
+would have silently failed to produce a proposal.
+
+- **Structural isolation.** Document creation now has its own try/catch. A
+  document records the deliberation; governance has to advance without it.
+  This is the actual regression fix — the clamping below prevents the
+  trigger, this prevents the *class*.
+- **Clamping at the boundary.** New `clampTitle`/`clampSummary` in
+  `@algora/document-registry` (which owns the limits), exposed as
+  `DocumentManager` methods so they read the same config the validator uses
+  and cannot drift from it. Applied at all 14 title/summary sites across
+  `apps/api`. They normalize whitespace, truncate on a word boundary within
+  budget, and — importantly — also handle the **minimum** lengths that
+  hand-rolled `.substring(0, 500)` ignored: `minSummaryLength` is 50, so
+  `"Detected issue in category ai with low priority"` (46 chars) failed
+  validation exactly as a long one did.
+- **Two more instances found by adversarial review** (3-lens multi-agent,
+  both independently reproduced end-to-end): the governance pipeline's
+  `createDocument` adapter silently **discarded the caller's summary** and
+  substituted the title, so any issue title under 33 characters produced a
+  sub-50-character summary and the pipeline's only document was dropped —
+  into `ctx.metadata.documentProduction`, a key nothing in the repo reads.
+  And all seven workflow document fallbacks (`'Research findings'`,
+  `'Debate findings'`, …) are under 50 characters, so an empty LLM field
+  guaranteed a validation throw that unwound past every remaining document in
+  that workflow. Both fixed; the pipeline now also logs what it swallows.
+- **Tests.** `governance-integration.test.ts` pins the isolation itself (the
+  handler still runs when document creation throws — the review correctly
+  noted the behavioral half had no test), and the registry suite covers
+  clamping against the real validator, split surrogate pairs at the
+  truncation point (emoji), space-less Hangul, and non-default configs.
+  api 76/76, document-registry 26/26, `tsc` clean.
+
+---
+
 ## Recent Work: Zombie Sessions + the ISO-'T' Timestamp Trap (2026-08-06)
 
 Checking whether the live deliberation → proposal path had started firing

@@ -360,8 +360,11 @@ export class GovernanceOSBridge extends EventEmitter {
           const docRegistry = this.governanceOS.getDocumentRegistry();
           await docRegistry.documents.create({
             type: 'DP', // Decision Packet
-            title: `Decision Packet: ${sessionData.title}`,
-            summary: `Agora session completed with ${(sessionData.consensusScore * 100).toFixed(0)}% consensus after ${sessionData.totalRounds || 0} rounds.`,
+            title: docRegistry.documents.clampTitle(`Decision Packet: ${sessionData.title}`, sessionData.sessionId.slice(0, 8)),
+            summary: docRegistry.documents.clampSummary(
+              `Agora session completed with ${(sessionData.consensusScore * 100).toFixed(0)}% consensus after ${sessionData.totalRounds || 0} rounds.`,
+              `Decision packet for session ${sessionData.sessionId.slice(0, 8)} on "${sessionData.title}".`
+            ),
             content: JSON.stringify({
               sourceType: 'agora_session',
               sourceId: sessionData.sessionId,
@@ -385,8 +388,11 @@ export class GovernanceOSBridge extends EventEmitter {
           const docRegistry = this.governanceOS.getDocumentRegistry();
           const proposalDoc = await docRegistry.documents.create({
             type: 'PP', // Proposal Package
-            title: `Proposal: ${sessionData.title}`,
-            summary: sessionData.recommendation,
+            title: docRegistry.documents.clampTitle(`Proposal: ${sessionData.title}`, sessionData.sessionId.slice(0, 8)),
+            summary: docRegistry.documents.clampSummary(
+              sessionData.recommendation,
+              `Proposal package from Agora session ${sessionData.sessionId.slice(0, 8)} on "${sessionData.title}".`
+            ),
             content: JSON.stringify({
               sourceType: 'agora_session',
               sourceId: sessionData.sessionId,
@@ -991,8 +997,8 @@ ${issue.evidence ? JSON.parse(issue.evidence).slice(0, 3).map((e: { source: stri
       const docRegistry = this.governanceOS.getDocumentRegistry();
       await docRegistry.documents.create({
         type: 'GP', // Governance Proposal
-        title: `Governance Proposal: ${proposal.title}`,
-        summary: proposal.description?.substring(0, 500) || proposal.title,
+        title: docRegistry.documents.clampTitle(`Governance Proposal: ${proposal.title}`, String(proposal.id).slice(0, 8)),
+        summary: docRegistry.documents.clampSummary(proposal.description as string, `Governance proposal: ${proposal.title}.`),
         content: JSON.stringify({
           proposalId: proposal.id,
           proposalType: proposal.proposal_type,
@@ -1013,7 +1019,7 @@ ${issue.evidence ? JSON.parse(issue.evidence).slice(0, 3).map((e: { source: stri
         const voting = await this.createDualHouseVoting({
           proposalId: proposal.id,
           title: proposal.title,
-          summary: proposal.description?.substring(0, 500) || proposal.title,
+          summary: (proposal.description as string)?.substring(0, 500) || proposal.title,
           riskLevel,
           category: proposal.proposal_type || 'general',
           createdBy: 'governance-os-bridge',
@@ -1309,8 +1315,8 @@ ${issue.evidence ? JSON.parse(issue.evidence).slice(0, 3).map((e: { source: stri
 
     const doc = await docRegistry.documents.create({
       type: documentType,
-      title: proposal.title as string,
-      summary: ((proposal.description as string)?.substring(0, 500) || proposal.title) as string,
+      title: docRegistry.documents.clampTitle(proposal.title as string, String(proposal.id).slice(0, 8)),
+      summary: docRegistry.documents.clampSummary(proposal.description as string, `Governance proposal: ${proposal.title as string}.`),
       content: JSON.stringify({
         proposalId: proposal.id,
         title: proposal.title,

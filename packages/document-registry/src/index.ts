@@ -208,6 +208,12 @@ import { VersionManager } from './versioning.js';
 import { ProvenanceManager } from './provenance.js';
 import { AuditManager } from './audit.js';
 
+// ============================================
+// Field clamping
+// ============================================
+
+export { clampTitle, clampSummary } from './format.js';
+
 /**
  * Create a complete document registry system.
  */

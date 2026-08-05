@@ -15,6 +15,7 @@ import type {
   DocumentProvenance,
   AgentContribution,
 } from './types.js';
+import { clampTitle as clampTitleWith, clampSummary as clampSummaryWith } from './format.js';
 import {
   DEFAULT_DOCUMENT_REGISTRY_CONFIG,
   DOCUMENT_STATE_TRANSITIONS,
@@ -626,6 +627,22 @@ export class DocumentManager {
       this.validateSummary(input.summary);
     }
     this.validateContent(input.content);
+  }
+
+  /**
+   * Clamp a title into THIS manager's configured bounds.
+   *
+   * Prefer these over the module-level helpers: they read `this.config`, so
+   * clamping can never drift from the bounds `create()` actually validates
+   * against (the free functions assume the default config).
+   */
+  clampTitle(title: string, padding = ''): string {
+    return clampTitleWith(title, padding, this.config);
+  }
+
+  /** Clamp a summary into THIS manager's configured bounds. See clampTitle. */
+  clampSummary(summary: string | null | undefined, context = ''): string {
+    return clampSummaryWith(summary, context, this.config);
   }
 
   /**

@@ -1963,17 +1963,29 @@ Recommendation:`,
       return;
     }
 
+    // Each step below is isolated: a governance DOCUMENT is a record of the
+    // deliberation, while handleAgoraSessionCompleted is what actually
+    // advances governance (issue status, proposal creation). Letting the
+    // former abort the latter is how a single over-long LLM recommendation
+    // silently killed the deliberation → proposal path on 2026-08-05.
     try {
       // Create a governance document from the decision packet
       if (decisionPacket) {
+        try {
         console.log(`[Orchestrator] Creating governance document from decision packet ${decisionPacket.id.slice(0, 8)}...`);
 
-        // Create DP (Decision Packet) document in the registry
+        // Create DP (Decision Packet) document in the registry. Title and
+        // summary are built from LLM output, so they are clamped to the
+        // registry's bounds — an unclamped recommendation past 500 chars
+        // threw DocumentValidationError here in production.
         const docRegistry = this.governanceOSBridge.getGovernanceOS().getDocumentRegistry();
         const doc = await docRegistry.documents.create({
           type: 'DP', // Decision Packet
-          title: `Decision Packet: ${session.title}`,
-          summary: decisionPacket.recommendation,
+          title: docRegistry.documents.clampTitle(`Decision Packet: ${session.title}`, session.id.slice(0, 8)),
+          summary: docRegistry.documents.clampSummary(
+            decisionPacket.recommendation,
+            `Decision packet for Agora session ${session.id.slice(0, 8)} on "${session.title}".`
+          ),
           content: JSON.stringify({
             sessionId: session.id,
             title: session.title,
@@ -2005,6 +2017,11 @@ Recommendation:`,
           sessionId: session.id,
           timestamp: new Date().toISOString(),
         });
+        } catch (docError) {
+        // The document is a record of the deliberation; governance still has
+        // to advance without it.
+        console.error(`[Orchestrator] DP document creation failed for session ${session.id.slice(0, 8)} (continuing to governance integration):`, docError);
+       }
       }
 
       // If session has an associated issue, trigger the governance pipeline

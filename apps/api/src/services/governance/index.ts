@@ -72,8 +72,8 @@ export class GovernanceService {
 
       const doc = await docRegistry.documents.create({
         type: 'GP', // Governance Proposal
-        title: `Proposal: ${proposal.title}`,
-        summary: proposal.description?.substring(0, 500) || proposal.title,
+        title: docRegistry.documents.clampTitle(`Proposal: ${proposal.title}`, String(proposal.id).slice(0, 8)),
+        summary: docRegistry.documents.clampSummary(proposal.description, `Governance proposal: ${proposal.title}.`),
         content: JSON.stringify({
           proposalId: proposal.id,
           title: proposal.title,
