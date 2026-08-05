@@ -8,6 +8,41 @@ This file tracks the current development progress for continuity between session
 
 ---
 
+## Recent Work: Live Governance Integration Reconnected + LLM Context Fix (2026-08-06)
+
+Prompted by the operator's report that moss-ao's local-LLM deliberations
+were failing on large (16k-token) prompts, an audit of Algora's Ollama-only
+deliberation stack found two silent faults of the same family:
+
+- **The local LLM's effective context was ~2,048 tokens.** The Ollama call
+  set `num_predict` but never `num_ctx`, so the server default applied —
+  measured empirically at ~2048 by sending a 9k-word probe prompt
+  (`prompt_eval_count: 2051`). Ollama silently truncates anything longer,
+  so the final-summary prompt (~3.4k tokens: last 30 messages × 400-char
+  cap) was losing its head on every call — summaries "succeeded" while
+  reading only a fragment of the transcript. Every tier-1 call now requests
+  `num_ctx` explicitly (`LOCAL_LLM_NUM_CTX`, default 8192 — 2x headroom
+  over the largest current prompt; gemma3:4b supports 128k), and a
+  saturation check logs a WARN whenever `prompt_eval_count` fills the
+  window, so an outgrown prompt is a log line instead of a quality mystery.
+- **The live deliberation → governance path was never wired.**
+  `AgoraService` is constructed twice: socket.ts passes the GovernanceOS
+  bridge, but issue-detection.ts constructs its own instance *before the
+  bridge exists* — and that instance runs all auto-spawned deliberations.
+  Result: every completion logged "GovernanceOS Bridge not available,
+  skipping integration" (19× on 08-05 alone) — no DP documents, no
+  pipeline, no live proposal creation even at 95% consensus; the hourly
+  backfill was the only thing creating proposals. `AgoraService` now has a
+  `setGovernanceOSBridge()` setter and `IssueDetection.
+  setGovernanceOSBridge()` forwards the bridge to its internal
+  orchestrator, so completions integrate in real time.
+- Verified: api suite 62/62, `tsc` clean. Post-deploy, session completions
+  should log `[GovernanceOSBridge] Handling Agora session completion` and
+  strong-consensus (≥70%, ≥3 rounds, high/critical issue) completions
+  create proposals immediately instead of waiting for the backfill.
+
+---
+
 ## Recent Work: Deliberation → Proposal → Resolution Loop Closed (2026-08-06)
 
 Once the 2026-08-05 stabilization work landed, the dormant creation side of

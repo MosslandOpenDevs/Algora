@@ -267,7 +267,12 @@ export class IssueDetectionService {
    */
   setGovernanceOSBridge(bridge: GovernanceOSBridge): void {
     this.governanceOSBridge = bridge;
-    console.info('[IssueDetection] GovernanceOS Bridge connected');
+    // Forward to the internal AgoraService: it runs the auto-spawned
+    // deliberations, and without a bridge its completeSession() skipped
+    // every governance integration ("GovernanceOS Bridge not available"),
+    // so the live deliberation → proposal path never fired.
+    this.agoraService.setGovernanceOSBridge(bridge);
+    console.info('[IssueDetection] GovernanceOS Bridge connected (forwarded to Agora orchestrator)');
   }
 
   private initializeTables(): void {

@@ -233,6 +233,10 @@ export class AgoraService {
     this.io = io;
     this.summoningService = new SummoningService(db, io);
     this.governanceOSBridge = governanceOSBridge || null;
+    // NOTE: this class is constructed in two places (socket.ts with the
+    // bridge, issue-detection.ts without — the bridge doesn't exist yet
+    // there). The setter below lets boot wiring connect the bridge to
+    // instances created before it.
 
     // Store the latest instance for the queue processor
     AgoraService.instance = this;
@@ -261,6 +265,17 @@ export class AgoraService {
     } catch (err) {
       console.error('[Agora] Boot recovery failed:', err);
     }
+  }
+
+  /**
+   * Late-bind the GovernanceOS bridge for instances constructed before the
+   * bridge exists (issue-detection's internal orchestrator). Without it,
+   * completeSession() skips all governance integration — no documents, no
+   * pipeline, no live deliberation → proposal promotion.
+   */
+  setGovernanceOSBridge(bridge: GovernanceOSBridge): void {
+    this.governanceOSBridge = bridge;
+    console.info('[Orchestrator] GovernanceOS Bridge connected');
   }
 
   // Create a new Agora session
