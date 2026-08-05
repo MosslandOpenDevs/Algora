@@ -69,8 +69,10 @@ PNPM_BIN=${PNPM_BIN:-pnpm}
 # under the algora-deploy cron this shell literally has cron_restart,
 # autorestart etc. as env vars. Scrub them so no pm2 invocation from this
 # script can ever merge them into a target app's stored config (the 2026-08-05
-# `--update-env` incident class — see build_and_restart).
-unset cron_restart autorestart watch max_memory_restart
+# `--update-env` incident class — see build_and_restart). Key list kept in
+# sync with the sibling pollers' fix (agentic-orchestrator PR #2949).
+unset -v cron_restart autorestart watch instances exec_mode \
+  max_memory_restart node_args name namespace || true
 
 FORCE=0
 CHECK_ONLY=0

@@ -29,10 +29,12 @@ UTC) 동안 5분마다 중지·SIGKILL당했습니다. 원인: pm2는 관리 중
   API는 부팅 시 dotenv로 `apps/api/.env`를 직접 읽고, web은 빌드 시점에
   `NEXT_PUBLIC_*`을 굽고, ecosystem env 변경은 어차피 수동 재등록이
   필요합니다(스크립트가 해당 경우 NOTE를 남김).
-- **환경 스크럽.** 스크립트 서두에서
-  `cron_restart`/`autorestart`/`watch`/`max_memory_restart`를 `unset`하므로,
-  미래에 `--update-env`가 재도입되거나 다른 env 병합형 pm2 호출이 생겨도
-  병합될 독성 키 자체가 없습니다.
+- **환경 스크럽.** 스크립트 서두에서 평탄화된 pm2 설정 키(`cron_restart`,
+  `autorestart`, `watch`, `instances`, `exec_mode`, `max_memory_restart`,
+  `node_args`, `name`, `namespace` — 형제 폴러들의 수정본인
+  agentic-orchestrator PR #2949와 목록 동기화)를 `unset`하므로, 미래에
+  `--update-env`가 재도입되거나 다른 env 병합형 pm2 호출이 생겨도 병합될
+  독성 키 자체가 없습니다.
 - **매 틱 실행되는 설정 전염 트립와이어.** `check_config_bleed()`가 매
   5분 틱마다(외부 원인 대비) 그리고 스크립트 자신의 재시작 직후(즉시
   감지) `pm2 jlist`를 파싱해, `algora-api`/`algora-web`의 cron_restart
