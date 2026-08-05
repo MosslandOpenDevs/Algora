@@ -524,7 +524,14 @@ export class IssueDetectionService {
     );
 
     // Log activity
-    this.logActivity('ISSUE_DETECTED', pattern.priority, `New issue detected: ${title}`, {
+    // Issue priority and activity severity are different vocabularies — 'high',
+    // 'medium' and 'low' are not severities, and writing them here put values
+    // outside the Severity domain into the column the stats page filters on.
+    const severity = pattern.priority === 'critical' ? 'critical'
+      : pattern.priority === 'high' ? 'warning'
+      : 'info';
+
+    this.logActivity('ISSUE_DETECTED', severity, `New issue detected: ${title}`, {
       issueId,
       patternId: pattern.id,
       signalCount: signals.length,

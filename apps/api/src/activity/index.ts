@@ -32,9 +32,56 @@ export type ActivityType =
   | 'PROPOSAL_QUEUE'
   | 'VOTING_RESOLUTION'
   | 'AGORA_STALE_CLEANUP'
-  | 'AGORA_STALE_HARVEST';
+  | 'AGORA_STALE_HARVEST'
+  | 'TREASURY_ALLOCATION_APPROVED'
+  | 'TREASURY_DISBURSED'
+  | 'TREASURY_TRANSACTION'
+  | 'TOKEN_VOTE_CAST'
+  | 'TOKEN_VOTING_FINALIZED';
 
 export type Severity = 'info' | 'warning' | 'error' | 'critical';
+
+export interface ActivityRecordInput {
+  type: ActivityType;
+  severity: Severity;
+  message: string;
+  agentId?: string;
+  details?: Record<string, unknown>;
+  metadata?: Record<string, unknown>;
+}
+
+/**
+ * Write one row to activity_log.
+ *
+ * This is the single place that names activity_log's columns. Services used to
+ * compose this INSERT themselves and three of them drifted from the schema —
+ * writing `description`, or `source`/`level` — so every record they produced was
+ * rejected at prepare() time and swallowed by the surrounding catch. Call this
+ * instead of writing the statement again.
+ */
+export function recordActivity(
+  db: Database.Database,
+  input: ActivityRecordInput
+): { id: string; timestamp: string } {
+  const id = uuidv4();
+  const timestamp = new Date().toISOString();
+
+  db.prepare(`
+    INSERT INTO activity_log (id, type, severity, timestamp, message, agent_id, details, metadata)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(
+    id,
+    input.type,
+    input.severity,
+    timestamp,
+    input.message,
+    input.agentId ?? null,
+    input.details ? JSON.stringify(input.details) : null,
+    input.metadata ? JSON.stringify(input.metadata) : null
+  );
+
+  return { id, timestamp };
+}
 
 export interface ActivityEvent {
   id: string;
@@ -67,31 +114,25 @@ export class ActivityService {
       metadata?: Record<string, unknown>;
     }
   ): ActivityEvent {
-    const event: ActivityEvent = {
-      id: uuidv4(),
+    const { id, timestamp } = recordActivity(this.db, {
       type,
       severity,
-      timestamp: new Date().toISOString(),
+      message,
+      agentId: options?.agentId,
+      details: options?.details,
+      metadata: options?.metadata,
+    });
+
+    const event: ActivityEvent = {
+      id,
+      type,
+      severity,
+      timestamp,
       message,
       agentId: options?.agentId,
       details: options?.details,
       metadata: options?.metadata,
     };
-
-    // Store in database
-    this.db.prepare(`
-      INSERT INTO activity_log (id, type, severity, timestamp, message, agent_id, details, metadata)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(
-      event.id,
-      event.type,
-      event.severity,
-      event.timestamp,
-      event.message,
-      event.agentId || null,
-      event.details ? JSON.stringify(event.details) : null,
-      event.metadata ? JSON.stringify(event.metadata) : null
-    );
 
     // Broadcast via Socket.IO
     this.io.emit('activity:event', event);

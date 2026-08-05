@@ -2,6 +2,7 @@ import { Router } from 'express';
 import type Database from 'better-sqlite3';
 import { writeLimiter } from '../middleware/rate-limit';
 import { requireAdmin } from '../middleware/auth';
+import { recordActivity } from '../activity';
 
 export const agentsRouter: Router = Router();
 
@@ -135,16 +136,13 @@ agentsRouter.post('/:id/summon', writeLimiter, (req, res) => {
     }
 
     // Log activity
-    const activityId = `summon-${id}-${Date.now()}`;
-    db.prepare(`
-      INSERT INTO activity_log (id, type, message, severity, timestamp, agent_id, metadata)
-      VALUES (?, 'AGENT_SUMMONED', ?, 'info', datetime('now'), ?, ?)
-    `).run(
-      activityId,
-      `${agent.display_name || agent.name} has been summoned`,
-      id,
-      JSON.stringify({ action: 'summon', agentName: agent.name })
-    );
+    recordActivity(db, {
+      type: 'AGENT_SUMMONED',
+      severity: 'info',
+      message: `${agent.display_name || agent.name} has been summoned`,
+      agentId: id,
+      metadata: { action: 'summon', agentName: agent.name },
+    });
 
     // Emit socket events
     io.emit('agent:state_changed', { agentId: id, status: 'active', currentActivity: 'Summoned to participate' });
@@ -188,16 +186,13 @@ agentsRouter.post('/:id/dismiss', writeLimiter, (req, res) => {
     }
 
     // Log activity
-    const activityId = `dismiss-${id}-${Date.now()}`;
-    db.prepare(`
-      INSERT INTO activity_log (id, type, message, severity, timestamp, agent_id, metadata)
-      VALUES (?, 'AGENT_DISMISSED', ?, 'info', datetime('now'), ?, ?)
-    `).run(
-      activityId,
-      `${agent.display_name || agent.name} has been dismissed`,
-      id,
-      JSON.stringify({ action: 'dismiss', agentName: agent.name })
-    );
+    recordActivity(db, {
+      type: 'AGENT_DISMISSED',
+      severity: 'info',
+      message: `${agent.display_name || agent.name} has been dismissed`,
+      agentId: id,
+      metadata: { action: 'dismiss', agentName: agent.name },
+    });
 
     // Emit socket events
     io.emit('agent:state_changed', { agentId: id, status: 'idle', currentActivity: null });

@@ -2,6 +2,9 @@ import type Database from 'better-sqlite3';
 import { Server as SocketServer } from 'socket.io';
 import { TokenService } from './token';
 import { isoNow } from '../../utils/time';
+import { recordActivity } from '../../activity';
+
+type TokenVotingActivityType = 'TOKEN_VOTE_CAST' | 'TOKEN_VOTING_FINALIZED';
 
 export interface TokenVote {
   id: string;
@@ -419,13 +422,9 @@ export class TokenVotingService {
 
   // === Helpers ===
 
-  private logActivity(type: string, description: string, metadata: any): void {
+  private logActivity(type: TokenVotingActivityType, message: string, metadata: any): void {
     try {
-      const id = `act_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      this.db.prepare(`
-        INSERT INTO activity_log (id, type, description, metadata, timestamp)
-        VALUES (?, ?, ?, ?, datetime('now'))
-      `).run(id, type, description, JSON.stringify(metadata));
+      recordActivity(this.db, { type, severity: 'info', message, metadata });
     } catch (error) {
       console.error('[TokenVoting] Failed to log activity:', error);
     }

@@ -1,6 +1,7 @@
 import type Database from 'better-sqlite3';
 import { Server as SocketServer } from 'socket.io';
 import { v4 as uuidv4 } from 'uuid';
+import { recordActivity } from '../../activity';
 
 // ===========================================
 // Social Media Signal Collector for Algora
@@ -505,19 +506,15 @@ export class SocialCollectorService {
 
   private logActivity(sourceName: string, count: number): void {
     try {
-      this.db.prepare(`
-        INSERT INTO activity_log (id, source, level, message, details, created_at)
-        VALUES (?, ?, ?, ?, ?, ?)
-      `).run(
-        uuidv4(),
-        'SOCIAL_COLLECTOR',
-        'info',
-        `Collected ${count} signals from ${sourceName}`,
-        JSON.stringify({ source: sourceName, signalCount: count }),
-        new Date().toISOString()
-      );
-    } catch {
-      // Activity log is optional
+      // Same shape the RSS and GitHub collectors record.
+      recordActivity(this.db, {
+        type: 'COLLECTOR',
+        severity: 'info',
+        message: `Social: ${sourceName} collected ${count} signals`,
+        details: { source: 'social', sourceName, count },
+      });
+    } catch (error) {
+      console.error('[SocialCollector] Failed to log activity:', error);
     }
   }
 
