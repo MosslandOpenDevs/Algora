@@ -765,27 +765,49 @@ export class SchedulerService {
    * resolveCompletedVotings existed but had no caller until 2026-08-06.
    */
   private scheduleProposalQueueProcessing(): void {
-    const interval = setInterval(async () => {
-      if (!this.isRunning || !this.proposalService) return;
-
-      try {
-        const progressed = this.proposalService.autoProgressProposals();
-        const promoted = this.proposalService.autoPromoteDiscussions();
-        const resolved = this.proposalService.resolveCompletedVotings();
-        if (progressed.progressed > 0 || promoted.promoted > 0 || resolved.resolved > 0) {
-          console.info(`[Scheduler] Proposal queue: ${progressed.progressed} draft→discussion, ${promoted.promoted} discussion→voting, ${resolved.resolved} voting resolved (${resolved.passed} passed / ${resolved.rejected} rejected)`);
-          this.activityService.log('PROPOSAL_QUEUE', 'info',
-            `Proposal queue: ${progressed.progressed} progressed, ${promoted.promoted} promoted, ${resolved.resolved} resolved`, {
-              details: { progressed, promoted, resolved },
-            });
-        }
-      } catch (error) {
-        console.error('[Scheduler] Proposal queue processing failed:', error);
-      }
-    }, 60 * 60 * 1000); // Every hour
+    const interval = setInterval(() => { void this.runProposalQueue(); }, 60 * 60 * 1000); // Every hour
 
     this.intervals.set('proposalQueue', interval);
+    this.scheduleBootKick('proposalQueue', () => this.runProposalQueue());
     console.info('[Scheduler] Proposal queue processing scheduled (every hour)');
+  }
+
+  private async runProposalQueue(): Promise<void> {
+    if (!this.isRunning || !this.proposalService) return;
+
+    try {
+      const progressed = this.proposalService.autoProgressProposals();
+      const promoted = this.proposalService.autoPromoteDiscussions();
+      const resolved = this.proposalService.resolveCompletedVotings();
+      if (progressed.progressed > 0 || promoted.promoted > 0 || resolved.resolved > 0) {
+        console.info(`[Scheduler] Proposal queue: ${progressed.progressed} draft→discussion, ${promoted.promoted} discussion→voting, ${resolved.resolved} voting resolved (${resolved.passed} passed / ${resolved.rejected} rejected)`);
+        this.activityService.log('PROPOSAL_QUEUE', 'info',
+          `Proposal queue: ${progressed.progressed} progressed, ${promoted.promoted} promoted, ${resolved.resolved} resolved`, {
+            details: { progressed, promoted, resolved },
+          });
+      }
+    } catch (error) {
+      console.error('[Scheduler] Proposal queue processing failed:', error);
+    }
+  }
+
+  /**
+   * Run an hourly maintenance job once shortly after boot.
+   *
+   * setInterval only fires after a full period, so every restart bought an
+   * hour with no maintenance — and this API restarts on every auto-deploy
+   * (eight times on 2026-08-05). Deploys landing under an hour apart would
+   * mean these jobs effectively never run. The delay keeps the kick clear of
+   * boot-time collector and roster work.
+   */
+  private scheduleBootKick(name: string, run: () => Promise<void>): void {
+    const timer = setTimeout(() => {
+      this.intervals.delete(`${name}:boot`);
+      void run();
+    }, 3 * 60 * 1000);
+    if (typeof timer.unref === 'function') timer.unref();
+    // Tracked so stop() clears a pending kick along with the intervals.
+    this.intervals.set(`${name}:boot`, timer as unknown as NodeJS.Timeout);
   }
 
   /**
@@ -794,38 +816,43 @@ export class SchedulerService {
    * (e.g. process restart, hung LLM call, exception in the orchestrator).
    */
   private scheduleAgoraStaleCleanup(): void {
-    const interval = setInterval(async () => {
-      if (!this.isRunning || !this.agoraService) return;
-      try {
-        // Salvage first: sessions that actually deliberated go through the
-        // real completion flow (summary → decision packet → governance
-        // integration → proposal) instead of being silently discarded by the
-        // cheap sweep below. Bounded, so the rest wait for the next hour.
-        if (this.agoraService.harvestStaleSessions) {
-          const harvest = await this.agoraService.harvestStaleSessions({ maxIdleMinutes: 90 });
-          if (harvest.harvested > 0 || harvest.failed > 0) {
-            this.activityService.log('AGORA_STALE_HARVEST', 'info',
-              `Completed ${harvest.harvested} stale Agora session(s) with full flow`, { details: harvest });
-          }
-        }
-
-        // Anything the (bounded) harvest could not reach stays active until a
-        // later run, unless it has been stuck for 6h — then it is closed
-        // regardless so a permanently failing session cannot linger forever.
-        const result = this.agoraService.cleanupStaleSessions({
-          maxIdleMinutes: 90,
-          preserveHarvestable: { minMessages: 5, hardCloseAfterMinutes: 360 },
-        });
-        if (result.cleaned > 0) {
-          this.activityService.log('AGORA_STALE_CLEANUP', 'info',
-            `Closed ${result.cleaned} stale Agora session(s)`, { details: result });
-        }
-      } catch (error) {
-        console.error('[Scheduler] Agora stale cleanup failed:', error);
-      }
-    }, 60 * 60 * 1000); // every hour
+    const interval = setInterval(() => { void this.runAgoraStaleMaintenance(); }, 60 * 60 * 1000); // every hour
     this.intervals.set('agoraStaleCleanup', interval);
+    // A restart orphans every in-flight session (round timers are in-memory),
+    // so this is exactly the job that must not wait a full hour after boot.
+    this.scheduleBootKick('agoraStaleCleanup', () => this.runAgoraStaleMaintenance());
     console.info('[Scheduler] Agora stale cleanup scheduled (every hour, idle > 90m)');
+  }
+
+  private async runAgoraStaleMaintenance(): Promise<void> {
+    if (!this.isRunning || !this.agoraService) return;
+    try {
+    // Salvage first: sessions that actually deliberated go through the
+    // real completion flow (summary → decision packet → governance
+    // integration → proposal) instead of being silently discarded by the
+    // cheap sweep below. Bounded, so the rest wait for the next hour.
+    if (this.agoraService.harvestStaleSessions) {
+      const harvest = await this.agoraService.harvestStaleSessions({ maxIdleMinutes: 90 });
+      if (harvest.harvested > 0 || harvest.failed > 0) {
+        this.activityService.log('AGORA_STALE_HARVEST', 'info',
+          `Completed ${harvest.harvested} stale Agora session(s) with full flow`, { details: harvest });
+      }
+    }
+
+    // Anything the (bounded) harvest could not reach stays active until a
+    // later run, unless it has been stuck for 6h — then it is closed
+    // regardless so a permanently failing session cannot linger forever.
+    const result = this.agoraService.cleanupStaleSessions({
+      maxIdleMinutes: 90,
+      preserveHarvestable: { minMessages: 5, hardCloseAfterMinutes: 360 },
+    });
+    if (result.cleaned > 0) {
+      this.activityService.log('AGORA_STALE_CLEANUP', 'info',
+        `Closed ${result.cleaned} stale Agora session(s)`, { details: result });
+    }
+    } catch (error) {
+      console.error('[Scheduler] Agora stale cleanup failed:', error);
+    }
   }
 
   /**
