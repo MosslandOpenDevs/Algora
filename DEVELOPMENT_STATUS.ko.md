@@ -2,9 +2,50 @@
 
 이 파일은 세션 간 개발 연속성을 위해 현재 개발 진행 상황을 추적합니다.
 
-**최종 업데이트**: 2026-06-29
+**최종 업데이트**: 2026-08-05
 **현재 버전**: 0.13.1
 **프로덕션 URL**: https://algora.moss.land
+
+---
+
+## 최근 작업: 이슈 플러딩 정리 + 라이프사이클 수정 (2026-08-05)
+
+L1 이슈 감지 서비스가 프로덕션에 **영구히 열려 있는 이슈 4,956개**를
+누적시켰고(2026-06-17부터 하루 ~100–200개), 그 부작용으로 **Agora LLM 토론
+세션 2,163개**가 자동 생성되었습니다(토큰 비용). 근본 원인 세 가지: 이슈를
+닫는 코드 경로가 아예 없었고; threshold 알림 중복 체크가 와일드카드
+임계값에 대해 `category = '%'` 등호 비교(절대 매치 안 됨)를 사용했으며;
+패턴 중복 방지가 pm2 재시작마다 리셋되는 인메모리 쿨다운에만 의존했습니다
+(algora-api는 자주 재시작됨).
+
+- **Threshold 알림 중복 체크 수정.** 깨진 category 비교 대신, 같은 임계값의
+  이슈가 열려 있고 최근(제목 접두사 매치, 6시간 re-arm 바운드)인 동안만
+  알림을 건너뜁니다 — 이 바운드 덕분에 오래된 open 알림 하나가 새로운 별개
+  급증을 무한정 억누르지 못합니다.
+- **패턴 이슈 중복 방지.** 같은 패턴의 최근 이슈가 열려 있는 동안(re-arm
+  윈도우: critical/high 6시간, medium/low 24시간) 새 매치는 새 이슈 대신
+  기존 이슈에 병합됩니다 — `issue_signals`, 비정규화된 `signal_ids` 컬럼(웹
+  UI 시그널 카운트, pipeline-health, orchestrator bridge가 직접 읽음),
+  `updated_at` 갱신 + `issue:updated` 이벤트 발행. 중복 Agora 세션과 문서
+  생성도 함께 차단됩니다.
+- **자동 만료 janitor.** 2분 감지 사이클마다 `updated_at` 기준으로
+  `ISSUE_AUTO_EXPIRE_DAYS`(기본 7일) 동안 변화 없는 `detected`/`confirmed`
+  이슈를 dismiss합니다; `in_progress`는 3배 horizon을 갖고, 거버넌스 진행
+  상태(`pending_vote`, `approved_for_action` 등)는 절대 자동 만료되지
+  않습니다. 명시적 `0`만 비활성화하며, 빈 값/잘못된 값은 경고와 함께 7일로
+  폴백해 설정 오타가 조용히 janitor를 끄지 못합니다. dismiss마다
+  `issue:updated`를 발행하고 `ISSUE_AUTO_EXPIRED`로 기록합니다.
+- **통계 수정.** `/api/stats`의 `openIssues`가 존재하지 않는 `'open'` 상태를
+  세고 있었음; 이제 `detected`/`confirmed`/`in_progress`를 셉니다.
+- **일회성 프로덕션 정리.** `algora.db` 온라인 백업
+  (`data/algora.db.backup-issues-cleanup-20260805`) 후, 7일 초과 이슈
+  4,094개 + 최근 중복 852개를 dismiss → **10개만 open으로 유지**(패턴/알림
+  그룹별 최신 1건).
+- 검증: `apps/api` tsc 빌드 통과(워크스페이스 8개 패키지 전체), 테스트 44/44
+  통과; 적대적 멀티에이전트 리뷰(13개 에이전트)가 7건을 확인(별개 사건을
+  삼키는 dedup, 진행 중 거버넌스를 dismiss하는 janitor, `signal_ids` 불일치,
+  env 파싱 함정) — 위의 re-arm 바운드, `updated_at` 기준 staleness + 상태
+  스코핑, `signal_ids` 동기화, 엄격한 env 파싱으로 모두 해소.
 
 ---
 

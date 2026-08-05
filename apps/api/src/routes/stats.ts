@@ -20,7 +20,7 @@ statsRouter.get('/', (req, res) => {
           (SELECT COUNT(*) FROM agent_states WHERE status != 'idle' AND status IS NOT NULL) as activeAgents,
           (SELECT COUNT(*) FROM agora_sessions WHERE status = 'active') as activeSessions,
           (SELECT COUNT(*) FROM signals WHERE date(created_at) = date('now')) as signalsToday,
-          (SELECT COUNT(*) FROM issues WHERE status IN ('open', 'in_progress')) as openIssues,
+          (SELECT COUNT(*) FROM issues WHERE status IN ('detected', 'confirmed', 'in_progress')) as openIssues,
           -- Yesterday counts for trends
           (SELECT COUNT(*) FROM signals WHERE date(created_at) = date('now', '-1 day')) as signalsYesterday,
           (SELECT COUNT(*) FROM agora_sessions WHERE date(created_at) = date('now')) as sessionsToday,
