@@ -466,6 +466,7 @@ async function bootstrap() {
     // Share the governance audit chain so treasury movements are recorded in the
     // same tamper-evident log as votes, rather than nowhere.
     tokenIntegration.treasury.setAuditService(governance.audit);
+    schedulerService.setTokenVotingService(tokenIntegration.voting);
     app.locals.tokenIntegration = tokenIntegration;
 
     // Initialize disclosure service

@@ -40,6 +40,7 @@ export class SchedulerService {
   private reportGenerator: ReportGeneratorService | null = null;
   private passiveConsensusService: PassiveConsensusService | null = null;
   private proposalService: ProposalService | null = null;
+  private tokenVotingService: { resolveExpiredVotings: (limit?: number) => Promise<{ resolved: number; errors: string[] }> } | null = null;
   private agoraService: {
     cleanupStaleSessions: (opts?: {
       maxIdleMinutes?: number;
@@ -301,6 +302,15 @@ export class SchedulerService {
    */
   setProposalService(service: ProposalService): void {
     this.proposalService = service;
+  }
+
+  /**
+   * Token voting is a separate implementation from the governance proposal vote,
+   * and nothing closed its expired windows — an expired voting stayed 'active'
+   * indefinitely.
+   */
+  setTokenVotingService(service: { resolveExpiredVotings: (limit?: number) => Promise<{ resolved: number; errors: string[] }> }): void {
+    this.tokenVotingService = service;
     console.info('[Scheduler] Proposal Service connected');
   }
 
@@ -865,6 +875,13 @@ export class SchedulerService {
 
       try {
         const result = this.proposalService.resolveCompletedVotings();
+        if (this.tokenVotingService) {
+          const tokenResult = await this.tokenVotingService.resolveExpiredVotings();
+          if (tokenResult.resolved > 0) {
+            console.info(`[Scheduler] Token voting resolution: ${tokenResult.resolved} closed`);
+          }
+          for (const err of tokenResult.errors) console.warn(`[Scheduler] Token voting resolve failed: ${err}`);
+        }
         if (result.resolved > 0) {
           console.info(`[Scheduler] Voting resolution: ${result.resolved} resolved (${result.passed} passed, ${result.rejected} rejected)`);
           this.activityService.log('VOTING_RESOLUTION', 'info',

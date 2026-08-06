@@ -486,7 +486,7 @@ GITHUB_TOKEN=
 TWITTER_BEARER_TOKEN=
 
 # 블록체인
-RPC_URL=https://eth-mainnet.g.alchemy.com/v2/...
+ETHEREUM_RPC_URL=https://eth-mainnet.g.alchemy.com/v2/...
 CHAIN_ID=1
 MOC_TOKEN_ADDRESS=0x8bbfe65e31b348cd823c62e02ad8c19a84dd0dab
 
