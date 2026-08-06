@@ -463,6 +463,9 @@ async function bootstrap() {
 
     // Initialize token integration service
     const tokenIntegration = new TokenIntegrationService(db, io);
+    // Share the governance audit chain so treasury movements are recorded in the
+    // same tamper-evident log as votes, rather than nowhere.
+    tokenIntegration.treasury.setAuditService(governance.audit);
     app.locals.tokenIntegration = tokenIntegration;
 
     // Initialize disclosure service
