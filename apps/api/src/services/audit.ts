@@ -12,7 +12,8 @@ export type AuditEventType =
   | 'DELEGATION_CREATED'
   | 'DELEGATION_REVOKED'
   | 'HIGH_RISK_APPROVED'
-  | 'BUDGET_EXCEEDED';
+  | 'BUDGET_EXCEEDED'
+  | 'TREASURY_DISBURSED';
 
 export interface AuditEvent {
   type: AuditEventType;

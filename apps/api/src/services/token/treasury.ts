@@ -2,11 +2,32 @@ import type Database from 'better-sqlite3';
 import { Server as SocketServer } from 'socket.io';
 import { ethers } from 'ethers';
 import { recordActivity } from '../../activity';
+import type { AuditService } from '../audit';
 
 type TreasuryActivityType =
   | 'TREASURY_ALLOCATION_APPROVED'
   | 'TREASURY_DISBURSED'
   | 'TREASURY_TRANSACTION';
+
+/** Proposal states that authorise spending against the proposal. */
+const SPENDABLE_PROPOSAL_STATUSES = ['passed', 'executed'];
+
+/** One spending limit per (category, token). */
+function spendingLimitId(category: string, tokenAddress: string): string {
+  return `limit:${category}:${tokenAddress.toLowerCase()}`;
+}
+
+/**
+ * Parse a wei-scale decimal string. Amounts are stored as TEXT precisely because
+ * they do not fit a 64-bit integer; anything that cannot be read as one is a
+ * caller error rather than a zero to be summed silently.
+ */
+function toWei(amount: string, field = 'amount'): bigint {
+  if (typeof amount !== 'string' || !/^\d+$/.test(amount.trim())) {
+    throw new Error(`Invalid ${field}: expected a non-negative integer string, got ${JSON.stringify(amount)}`);
+  }
+  return BigInt(amount.trim());
+}
 
 export interface TreasuryBalance {
   tokenAddress: string;
@@ -57,6 +78,7 @@ export interface TreasuryConfig {
 export class TreasuryService {
   private db: Database.Database;
   private io: SocketServer;
+  private audit: AuditService | null = null;
   private provider: ethers.JsonRpcProvider | null = null;
   private config: TreasuryConfig;
 
@@ -77,6 +99,14 @@ export class TreasuryService {
     this.initializeTables();
     this.initializeProvider();
     console.log('[Treasury] Service initialized');
+  }
+
+  /**
+   * Attach the hash-chained audit log. The treasury money path appended nothing
+   * to it, so a spend left no tamper-evident trace at all.
+   */
+  setAuditService(audit: AuditService): void {
+    this.audit = audit;
   }
 
   private initializeTables(): void {
@@ -142,6 +172,27 @@ export class TreasuryService {
         created_at TEXT DEFAULT (datetime('now')),
         updated_at TEXT DEFAULT (datetime('now'))
       )
+    `);
+
+    // One limit per (category, token). There is no migration runner here, so an
+    // older database can already hold duplicates from when every setSpendingLimit
+    // inserted a new row; collapse those to the most recently updated one before
+    // the index can exist, or the CREATE fails and the constraint never lands.
+    this.db.exec(`
+      DELETE FROM treasury_spending_limits
+      WHERE rowid NOT IN (
+        SELECT rowid FROM (
+          SELECT rowid,
+                 ROW_NUMBER() OVER (
+                   PARTITION BY category, token_address
+                   ORDER BY updated_at DESC, rowid DESC
+                 ) AS rn
+          FROM treasury_spending_limits
+        ) WHERE rn = 1
+      );
+
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_treasury_limits_scope
+        ON treasury_spending_limits(category, token_address);
     `);
 
     // Create indexes
@@ -267,6 +318,18 @@ export class TreasuryService {
       throw new Error('Unsupported token');
     }
 
+    // A spend has to point at a real proposal. Nothing verified this, so an
+    // allocation could be bound to a fabricated id and still appear, publicly,
+    // as funded governance work.
+    if (!this.proposalExists(proposalId)) {
+      throw new Error(`Unknown proposal ${proposalId}: an allocation must reference an existing proposal`);
+    }
+
+    // Amount is validated here so a malformed value cannot reach the ledger and
+    // break every later BigInt sum.
+    toWei(options.amount);
+    this.assertWithinSpendingLimit(options.category, options.tokenAddress, options.amount);
+
     const id = `alloc_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
     this.db.prepare(`
@@ -289,6 +352,38 @@ export class TreasuryService {
     this.io.emit('treasury:allocation_created', allocation);
 
     return allocation;
+  }
+
+  /** Status of a proposal, or null when no such proposal exists. */
+  private proposalStatus(proposalId: string): string | null {
+    const row = this.db.prepare('SELECT status FROM proposals WHERE id = ?').get(proposalId) as
+      | { status: string }
+      | undefined;
+    return row?.status ?? null;
+  }
+
+  private proposalExists(proposalId: string): boolean {
+    return this.proposalStatus(proposalId) !== null;
+  }
+
+  /**
+   * Refuse a spend that breaches its configured limit.
+   *
+   * checkSpendingLimit already existed but had no caller on the money path — its
+   * only user was an advisory endpoint that answered a question and changed
+   * nothing, so configured limits constrained nobody.
+   */
+  private assertWithinSpendingLimit(category: string, tokenAddress: string, amount: string): void {
+    if (this.checkSpendingLimit(category, tokenAddress, amount)) return;
+
+    this.audit?.append({
+      type: 'BUDGET_EXCEEDED',
+      actor: 'treasury',
+      subjectId: `${category}:${tokenAddress.toLowerCase()}`,
+      payload: { category, tokenAddress: tokenAddress.toLowerCase(), amount },
+    });
+
+    throw new Error(`Spending limit exceeded for category '${category}'`);
   }
 
   getAllocation(allocationId: string): BudgetAllocation | null {
@@ -333,12 +428,39 @@ export class TreasuryService {
       throw new Error(`Cannot disburse allocation in ${allocation.status} status`);
     }
 
-    // Create transaction record
+    // The gate that matters: money may only follow a proposal the holders passed.
+    // Checked here rather than at creation so an allocation can be drafted while
+    // its proposal is still being decided.
+    const proposalStatus = this.proposalStatus(allocation.proposalId);
+    if (!proposalStatus) {
+      throw new Error(`Unknown proposal ${allocation.proposalId}: refusing to disburse`);
+    }
+    if (!SPENDABLE_PROPOSAL_STATUSES.includes(proposalStatus)) {
+      throw new Error(
+        `Proposal ${allocation.proposalId} is '${proposalStatus}', not passed: refusing to disburse`
+      );
+    }
+
+    // Re-checked at disbursement, not only at creation: the window between the
+    // two is exactly where an approved backlog can add up past the limit.
+    this.assertWithinSpendingLimit(allocation.category, allocation.tokenAddress, allocation.amount);
+
+    // Without a transaction hash there is nothing to evidence a transfer, and
+    // recording one anyway is how the ledger came to claim settled payments that
+    // never happened.
+    if (!txHash) {
+      throw new Error('A transaction hash is required to disburse: nothing else evidences the transfer');
+    }
+
+    // Create transaction record. Deliberately 'pending', not 'confirmed': the hash
+    // is caller-supplied and nothing here reads the chain, so claiming confirmation
+    // would put a green settled badge and a live explorer link on an unverified
+    // claim. Confirmation belongs to whatever later reconciles against the chain.
     const txId = `tx_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     this.db.prepare(`
       INSERT INTO treasury_transactions
         (id, type, token_address, token_symbol, amount, from_address, to_address, proposal_id, tx_hash, status, description)
-      VALUES (?, 'transfer', ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      VALUES (?, 'transfer', ?, ?, ?, ?, ?, ?, ?, 'pending', ?)
     `).run(
       txId,
       allocation.tokenAddress,
@@ -347,8 +469,7 @@ export class TreasuryService {
       this.config.treasuryAddress,
       allocation.recipient,
       allocation.proposalId,
-      txHash || null,
-      txHash ? 'confirmed' : 'pending',
+      txHash,
       `Disbursement for allocation ${allocationId}`
     );
 
@@ -363,6 +484,22 @@ export class TreasuryService {
 
     this.io.emit('treasury:allocation_disbursed', { allocation: updated, transactionId: txId });
     this.logActivity('TREASURY_DISBURSED', `Allocation ${allocationId} disbursed`, { allocationId, txId });
+
+    // A spend is exactly the kind of decision the hash chain exists for.
+    this.audit?.append({
+      type: 'TREASURY_DISBURSED',
+      actor: 'treasury',
+      subjectId: allocation.proposalId,
+      payload: {
+        allocationId,
+        transactionId: txId,
+        txHash,
+        amount: allocation.amount,
+        tokenSymbol: allocation.tokenSymbol,
+        recipient: allocation.recipient,
+        category: allocation.category,
+      },
+    });
 
     return updated;
   }
@@ -537,7 +674,10 @@ export class TreasuryService {
       requiresProposal?: boolean;
     }
   ): void {
-    const id = `limit_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    // Derived from the pair this limit applies to, not random: with a fresh id
+    // per call INSERT OR REPLACE never found a row to replace, so limits piled up
+    // and the read kept returning the oldest one — tightening a limit did nothing.
+    const id = spendingLimitId(category, tokenAddress);
 
     this.db.prepare(`
       INSERT OR REPLACE INTO treasury_spending_limits
@@ -613,14 +753,22 @@ export class TreasuryService {
         break;
     }
 
-    const result = this.db.prepare(`
-      SELECT COALESCE(SUM(CAST(amount AS INTEGER)), 0) as total
+    // Summed as BigInt, not by SQLite. Amounts are wei-scale decimal strings, and
+    // SUM(CAST(amount AS INTEGER)) raises "integer overflow" the moment the total
+    // for a window passes 2^63-1 wei — 9.223 tokens at 18 decimals — which threw
+    // out of checkSpendingLimit rather than returning an answer.
+    const rows = this.db.prepare(`
+      SELECT amount
       FROM budget_allocations
       WHERE category = ? AND token_address = ? AND status = 'disbursed'
         AND disbursed_at > ${dateClause}
-    `).get(category, tokenAddress.toLowerCase()) as { total: number };
+    `).all(category, tokenAddress.toLowerCase()) as Array<{ amount: string }>;
 
-    return result.total.toString();
+    let total = 0n;
+    for (const row of rows) {
+      total += toWei(row.amount);
+    }
+    return total.toString();
   }
 
   // === Stats ===
