@@ -3,6 +3,7 @@ import { Server as SocketServer } from 'socket.io';
 import { ethers } from 'ethers';
 import { recordActivity } from '../../activity';
 import type { AuditService } from '../audit';
+import { resolveChainConfig, providerOptions } from './chain-config';
 
 type TreasuryActivityType =
   | 'TREASURY_ALLOCATION_APPROVED'
@@ -205,16 +206,18 @@ export class TreasuryService {
   }
 
   private initializeProvider(): void {
-    try {
-      if (this.config.rpcUrl && !this.config.rpcUrl.includes('your-project-id')) {
-        this.provider = new ethers.JsonRpcProvider(this.config.rpcUrl);
-        console.log('[Treasury] Provider initialized');
-      } else {
-        console.log('[Treasury] Running in mock mode (no RPC URL configured)');
-      }
-    } catch (error) {
-      console.error('[Treasury] Failed to initialize provider:', error);
+    const chain = resolveChainConfig();
+    if (!chain.live) {
+      console.warn('[Treasury] No chain configured — balances are read from cache or fabricated.');
+      return;
     }
+    // Same reasoning as TokenService: no catch that falls through to mock.
+    this.provider = new ethers.JsonRpcProvider(
+      chain.rpcUrl!,
+      chain.chainId,
+      providerOptions(chain.chainId)
+    );
+    console.info(`[Treasury] Reading balances from chain ${chain.chainId}`);
   }
 
   // === Balance Management ===

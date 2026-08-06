@@ -117,6 +117,15 @@ export class TokenVotingService {
       passThreshold = 50, // 50% to pass
     } = options;
 
+    // A vote has to be about something. Nothing checked this, so production
+    // carried an 'active' token voting on a proposal id that never existed.
+    const proposal = this.db
+      .prepare('SELECT id FROM proposals WHERE id = ?')
+      .get(proposalId) as { id: string } | undefined;
+    if (!proposal) {
+      throw new Error(`Unknown proposal ${proposalId}: cannot open token voting`);
+    }
+
     // Check if already initialized
     const existing = this.getProposalVoting(proposalId);
     if (existing) {
@@ -382,6 +391,44 @@ export class TokenVotingService {
     }
 
     return { updated, errors };
+  }
+
+  /**
+   * Close token votings whose window has passed.
+   *
+   * Nothing did this: finalizeVoting was only reachable from an admin HTTP call,
+   * so an expired voting stayed 'active' indefinitely — production carried one
+   * six days past its deadline, still counted as open by getStats.
+   *
+   * Deliberately separate from the governance-side resolveCompletedVotings: that
+   * one closes `proposals` on a recorded tally, this one closes
+   * `token_proposal_voting` on snapshot-weighted votes. They share the shape of
+   * the bug, not the data.
+   */
+  async resolveExpiredVotings(limit = 50): Promise<{ resolved: number; errors: string[] }> {
+    const result = { resolved: 0, errors: [] as string[] };
+
+    // Both sides ISO-8601: voting_ends_at is written with toISOString(), and a
+    // SQLite datetime('now') renders with a space, which sorts below 'T' and
+    // would skip same-day expiries.
+    const expired = this.db
+      .prepare(
+        `SELECT proposal_id FROM token_proposal_voting
+         WHERE status = 'active' AND voting_ends_at < ?
+         LIMIT ?`
+      )
+      .all(isoNow(), limit) as Array<{ proposal_id: string }>;
+
+    for (const row of expired) {
+      try {
+        await this.finalizeVoting(row.proposal_id);
+        result.resolved++;
+      } catch (error) {
+        result.errors.push(`${row.proposal_id}: ${String(error)}`);
+      }
+    }
+
+    return result;
   }
 
   // === Stats ===

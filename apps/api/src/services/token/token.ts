@@ -1,6 +1,7 @@
 import type Database from 'better-sqlite3';
 import { Server as SocketServer } from 'socket.io';
 import { ethers } from 'ethers';
+import { resolveChainConfig, providerOptions, type ChainConfig } from './chain-config';
 import { isoNow } from '../../utils/time';
 
 // MOC Token ERC-20 ABI (minimal for balance checking)
@@ -46,14 +47,16 @@ export class TokenService {
   private provider: ethers.JsonRpcProvider | null = null;
   private tokenContract: ethers.Contract | null = null;
   private config: TokenConfig;
+  private chain: ChainConfig;
 
   constructor(db: Database.Database, io: SocketServer, config?: Partial<TokenConfig>) {
     this.db = db;
     this.io = io;
+    this.chain = resolveChainConfig();
     this.config = {
-      contractAddress: process.env.MOC_TOKEN_ADDRESS || '0x0000000000000000000000000000000000000000',
-      rpcUrl: process.env.ETHEREUM_RPC_URL || 'https://mainnet.infura.io/v3/your-project-id',
-      chainId: parseInt(process.env.CHAIN_ID || '1'),
+      contractAddress: this.chain.contractAddress || '0x0000000000000000000000000000000000000000',
+      rpcUrl: this.chain.rpcUrl || '',
+      chainId: this.chain.chainId,
       minBalanceForVoting: process.env.MIN_BALANCE_FOR_VOTING || '1000000000000000000', // 1 token
       snapshotBlockDelay: parseInt(process.env.SNAPSHOT_BLOCK_DELAY || '10'),
       ...config,
@@ -131,21 +134,30 @@ export class TokenService {
   }
 
   private initializeProvider(): void {
-    try {
-      if (this.config.rpcUrl && !this.config.rpcUrl.includes('your-project-id')) {
-        this.provider = new ethers.JsonRpcProvider(this.config.rpcUrl);
-        this.tokenContract = new ethers.Contract(
-          this.config.contractAddress,
-          MOC_TOKEN_ABI,
-          this.provider
-        );
-        console.log('[TokenService] Provider initialized');
-      } else {
-        console.log('[TokenService] Running in mock mode (no RPC URL configured)');
-      }
-    } catch (error) {
-      console.error('[TokenService] Failed to initialize provider:', error);
+    if (!this.chain.live) {
+      console.warn(
+        '[TokenService] No chain configured — balances are FABRICATED and must not be treated as voting power. ' +
+          'Set ETHEREUM_RPC_URL and MOC_TOKEN_ADDRESS to read real balances.'
+      );
+      return;
     }
+
+    // Deliberately not wrapped in a catch that falls through to mock: a process
+    // configured for real balances must never quietly resume fabricating them.
+    this.provider = new ethers.JsonRpcProvider(
+      this.chain.rpcUrl!,
+      this.chain.chainId,
+      providerOptions(this.chain.chainId)
+    );
+    this.tokenContract = new ethers.Contract(
+      this.chain.contractAddress!,
+      MOC_TOKEN_ABI,
+      this.provider
+    );
+    console.info(
+      `[TokenService] Reading balances from chain ${this.chain.chainId} ` +
+        `(rpc via ${this.chain.source.rpcUrl}, token via ${this.chain.source.contractAddress})`
+    );
   }
 
   // === Wallet Verification ===
@@ -326,7 +338,8 @@ export class TokenService {
 
   async getTokenBalance(walletAddress: string): Promise<string> {
     if (!this.tokenContract) {
-      // Mock mode: return random balance for testing
+      // Only reachable with no chain configured at all; resolveChainConfig()
+      // rejects a half-configured process at startup.
       return this.getMockBalance(walletAddress);
     }
 
@@ -334,8 +347,12 @@ export class TokenService {
       const balance = await this.tokenContract.balanceOf(walletAddress);
       return balance.toString();
     } catch (error) {
-      console.error('[TokenService] Failed to get balance:', error);
-      return '0';
+      // Rethrow rather than returning '0'. Callers persist what they get, so a
+      // transient RPC outage used to overwrite a genuine holder's balance — and
+      // their voting power — with zero, silently and permanently.
+      throw new Error(
+        `Could not read the on-chain balance for ${walletAddress}: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
   }
 
