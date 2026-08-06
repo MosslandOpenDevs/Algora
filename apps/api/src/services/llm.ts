@@ -18,10 +18,12 @@ export interface LLMConfig {
     // largest prompt + num_predict.
     //
     // This value is also a COORDINATION value, not just a ceiling. The Ollama
-    // host is shared with MOSS.AO, and it serves one model instance at a time
-    // — a request at a num_ctx other than the resident one forces a full
-    // unload/reload. Both services must therefore request the SAME number or
-    // each alternation costs a reload. Do not change it unilaterally.
+    // host is shared with MOSS.AO, and for a given model name it keeps ONE
+    // runner: a request at a num_ctx other than the resident one replaces it,
+    // forcing a full unload/reload. Both services must therefore request the
+    // SAME number or each alternation costs a reload. Do not change it
+    // unilaterally. (Distinct models do coexist and run in parallel — it is
+    // only same-model/different-options that thrashes.)
     numCtx: number;
   };
   tier2: {
@@ -449,9 +451,9 @@ export class LLMService extends EventEmitter {
         stream: false,
         think: isThinking ? false : undefined,
         // Keep the model resident. A cold load measured 4.3–4.5s on the shared
-        // host (2026-08-06) — not the ~60s this comment used to claim — but the
-        // host holds one instance at a time, so staying resident is also what
-        // keeps us from evicting MOSS.AO's runner between our calls.
+        // host (2026-08-06) — not the ~60s this comment used to claim — and
+        // since the host keeps one runner per model name, staying resident is
+        // also what keeps us from evicting MOSS.AO between our calls.
         keep_alive: '15m',
         options: {
           temperature: request.temperature ?? 0.7,

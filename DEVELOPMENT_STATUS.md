@@ -32,17 +32,18 @@ request — showed no stall at all: MOSS.AO's call returned in **11.2s**
 So the cost of divergent `num_ctx` is a few seconds per alternation, not an
 indefinite hang.
 
-**What the memo got right, and what it missed.** The structural claim holds: the
-host keeps **one instance and serves one request at a time**. Confirmed twice —
-a second context size never coexists (`/api/ps` shows one entry after
-alternating), and a small call fired 8s into a 16.5s generation returned at
-16.6s, i.e. it waited. Two consequences the memo did not draw:
+**What the memo got right, and what it missed.** The structural claim holds, at
+the right scope: the host keeps **one runner per model name**, and that runner
+**serves one request at a time**. Confirmed twice — a second context size for
+the same model never coexists (`/api/ps` shows one entry after alternating), and
+a small call fired 8s into a 16.5s generation returned at 16.6s, i.e. it waited.
+Two consequences the memo did not draw:
 
-- Its "~5 GB free, so this is not capacity" framing implies a second instance
-  *could* load. It cannot, at any amount of free VRAM. Converging `num_ctx`
-  removes reload thrash but **not** head-of-line blocking; if MOSS.AO stalls
-  again, the lever is `OLLAMA_NUM_PARALLEL` on the host, not an env var in
-  either app.
+- Its "~5 GB free, so this is not capacity" framing implies a second *instance
+  of the same model at another `num_ctx`* could load. It cannot, at any amount
+  of free VRAM. Converging `num_ctx` removes reload thrash but **not**
+  head-of-line blocking; the lever for that is `OLLAMA_NUM_PARALLEL` on the
+  host, not an env var in either app.
 - Polling `/api/ps` after the fix caught a **third** `num_ctx` in rotation
   (4096), evicting the agreed 16384 runner. Source:
   `IdeaScorer.SCORING_NUM_CTX = 4096` in MOSS.AO's own scoring path — a
@@ -59,10 +60,42 @@ our declines. The host has since held `gemma3:4b ctx=16384` across a continuous
 2-minute poll with no flips — one instance, one context size, both services on
 it.
 
-**Open, and owned by neither of us:** serialization. `OLLAMA_NUM_PARALLEL` sits
-on 192.168.1.65, which neither project can reach from the ao box, so the request
-goes to the host admin jointly. Draft in
-`docs/ollama-host-parallelism-request.md`.
+**Correction, from the host itself.** `ollama ps` run on the Windows box showed
+`gemma3:4b` (ctx 16384) *and* `gemma3:1b` (ctx 4096) resident together — so
+"one instance at a time", which we had generalised from same-model tests, was
+too broad. Re-measured: a `gemma3:1b` call fired 8s into a 17.3s `gemma3:4b`
+generation returned in **0.59s**. **Distinct models get distinct runners and
+execute in parallel; only same-model/different-`num_ctx` thrashes, and only
+same-runner requests serialize.** The `num_ctx` convergence work is unaffected
+and still correct. What changes is the remedy — and it means MOSS.AO's first
+suggestion (a smaller model for our high-frequency path) was right in principle
+and our rejection of it was wrong. Reopened as a decision below.
+
+The host's own startup config confirms the rest, and it is all default rather
+than deliberate — `$env:OLLAMA_NUM_PARALLEL` is unset:
+
+```
+OLLAMA_NUM_PARALLEL:1   OLLAMA_MAX_LOADED_MODELS:0 (auto)   OLLAMA_MAX_QUEUE:512
+OLLAMA_KEEP_ALIVE:5m0s  OLLAMA_FLASH_ATTENTION:false        OLLAMA_KV_CACHE_TYPE: (f16)
+NVIDIA GeForce RTX 5060 — total 8.0 GiB, available 6.9 GiB
+```
+
+Residency is 2.89 GB (`4b`) + 0.88 GB (`1b`) ≈ 3.8 of 6.9 GiB.
+
+**Open — two independent levers, both cheap:**
+
+1. **`OLLAMA_NUM_PARALLEL=2` on the host** (`setx`, then restart Ollama).
+   Measured cost ~10 MB, because two 16384 slots allocate the KV of a 32768
+   window: 2.90 GB vs 2.89 GB. Fixes same-model contention for both services at
+   once. Written up in `docs/ollama-host-parallelism-request.md`.
+2. **Move the chatter scheduler to `gemma3:1b`** — Algora-side, no admin needed.
+   Chatter is the constant 2/min cadence that does the blocking, and it is the
+   least quality-sensitive traffic we have (`maxTokens: 100`, 200-char cap,
+   static fallback on failure). It would get its own runner and stop queueing
+   against MOSS.AO entirely. Note this must **not** be applied to `complexity:
+   'fast'` as a whole: 4 of the 7 `fast` call sites are live deliberation paths
+   in `agora.ts`, where model quality is user-visible. Needs a decision on
+   chatter text quality before doing it.
 
 Their two optional suggestions were **declined with measurements**: moving our
 small `fast` calls to `gemma3:1b`, and shortening `keep_alive`, would each put a

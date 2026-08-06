@@ -11,14 +11,33 @@
 
 Two services share this host. We have already fixed everything fixable from our
 side — both now request the identical model and context size, so the host holds
-a single `gemma3:4b` instance and no longer reloads between our calls.
+a single `gemma3:4b` runner and no longer reloads between our calls.
 
-What remains is not a configuration either of us owns: the host serves **one
-request at a time**, so our two workloads queue behind each other. One short
-call arriving during a long generation waits for that generation to finish.
+What remains is not a configuration either of us owns: **a single runner serves
+one request at a time**, and since both services use `gemma3:4b`, our two
+workloads queue behind each other. One short call arriving during a long
+generation waits for that generation to finish.
 
 Raising `OLLAMA_NUM_PARALLEL` to 2 resolves it, and we measured the cost: it is
 **0.01 GB**.
+
+> **Scope note.** This is a per-runner limit, not a host-wide one. Distinct
+> models already load side by side and execute in parallel here — measured: a
+> `gemma3:1b` call fired 8s into a 17.3s `gemma3:4b` generation returned in
+> **0.59s**. The gap is only between requests sharing one model.
+
+Confirmed against the server's own startup config (`server.log`, run of
+2026-08-04, current):
+
+```
+OLLAMA_NUM_PARALLEL:1            <-- the setting this request is about
+OLLAMA_MAX_LOADED_MODELS:0       <-- 0 = auto; already fine, leave it
+OLLAMA_MAX_QUEUE:512
+OLLAMA_KEEP_ALIVE:5m0s           <-- our per-call keep_alive overrides this
+OLLAMA_FLASH_ATTENTION:false
+OLLAMA_KV_CACHE_TYPE:            <-- empty = f16
+OLLAMA_VULKAN:true
+```
 
 ## What we already did
 
@@ -34,8 +53,9 @@ held one instance at `ctx=16384` across continuous polling, with no flips.
 
 ## The remaining problem, measured
 
-Serialization. A 3,000-token generation was started, and a trivial "say OK"
-request was fired 8 seconds into it:
+Serialization **within the shared `gemma3:4b` runner**. A 3,000-token generation
+was started, and a trivial "say OK" request to the same model was fired 8
+seconds into it:
 
 ```
 long generation   ..................................... done at 16.55s
@@ -72,26 +92,48 @@ host by loading each window and reading `size_vram` from `/api/ps`:
 near-flat in the context length — the footprint is dominated by the Q4_K_M
 weights. Doubling the slots costs ~10 MB, not a doubling.
 
-We have not been able to read the card's total capacity ourselves (no shell on
-this host). The figure we have been working from is ~8 GB, against ~2.9 GB
-resident — if that is right, headroom is not the constraint here.
+Against the card, per the server's own probe at startup:
+
+```
+NVIDIA GeForce RTX 5060, discrete, CUDA 12.0, driver 13.1
+total="8.0 GiB"  available="6.9 GiB"
+```
+
+Current residency is `gemma3:4b` at 2.89 GB plus `gemma3:1b` at 0.88 GB — about
+**3.8 of 6.9 GiB**, leaving ~3.1 GiB free. The ~10 MB this change adds is
+comfortably inside that.
 
 ## Exact change requested
 
+On the Windows host, as the user Ollama runs under:
+
+```powershell
+setx OLLAMA_NUM_PARALLEL 2
 ```
-OLLAMA_NUM_PARALLEL=2
+
+then restart Ollama (quit from the tray icon and relaunch) so the new value is
+read at startup. Verify with:
+
+```powershell
+Select-String -Path "$env:LOCALAPPDATA\Ollama\server.log" -Pattern "server config" | Select-Object -Last 1
 ```
 
 Left deliberately alone:
 
-- **`OLLAMA_MAX_LOADED_MODELS`** — please keep this at 1. We want one shared
-  instance; letting a second model load is what caused the thrash we just spent
-  a day removing.
-- **`OLLAMA_KEEP_ALIVE`** — Algora requests `keep_alive: 15m` per call and
-  MOSS.AO calls often enough to hold it; no server-side change needed.
+- **`OLLAMA_MAX_LOADED_MODELS`** — currently `0` (auto), which is correct.
+  Distinct models already coexist and that is working well; no change wanted.
+- **`OLLAMA_KEEP_ALIVE`** — server default `5m`, but Algora sends
+  `keep_alive: 15m` per call and MOSS.AO calls often enough to hold it. No
+  server-side change needed.
 
 If 2 proves comfortable, 3 would give each service a slot with one spare, at a
 similar marginal cost. We would rather start at 2 and measure.
+
+**Optional, unrelated to this request:** `OLLAMA_FLASH_ATTENTION` is `false` and
+`OLLAMA_KV_CACHE_TYPE` is empty (f16). Enabling flash attention usually lowers
+KV-cache memory and improves throughput, and would then allow a quantised KV
+cache (`q8_0`) if headroom ever gets tight. Worth a try, but it is a separate
+change and we have not measured it here.
 
 ## How we will verify
 
