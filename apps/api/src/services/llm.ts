@@ -16,6 +16,12 @@ export interface LLMConfig {
     // truncates any prompt that exceeds it — the summary prompt (~3.4k
     // tokens) was losing its head every time. Must comfortably exceed the
     // largest prompt + num_predict.
+    //
+    // This value is also a COORDINATION value, not just a ceiling. The Ollama
+    // host is shared with MOSS.AO, and it serves one model instance at a time
+    // — a request at a num_ctx other than the resident one forces a full
+    // unload/reload. Both services must therefore request the SAME number or
+    // each alternation costs a reload. Do not change it unilaterally.
     numCtx: number;
   };
   tier2: {
@@ -131,10 +137,14 @@ export class LLMService extends EventEmitter {
           quality: process.env.LOCAL_LLM_MODEL_QUALITY || 'gemma3:4b',
         },
         timeout: parseInt(process.env.LLM_TIER1_TIMEOUT_MS || '180000', 10), // 3 min default
-        // 8192 covers the largest current prompt (~3.4k tokens) with 2x
-        // headroom; gemma3:4b supports 128k, and its KV cache at 8k is
-        // negligible on the serving host. Raise via env if prompts grow.
-        numCtx: parseInt(process.env.LOCAL_LLM_NUM_CTX || '8192', 10),
+        // 16384 is the value agreed with MOSS.AO for the shared host (see the
+        // coordination note on LLMConfig.tier1.numCtx). It costs us nothing:
+        // measured on the serving host, gemma3:4b resident at 16384 reports
+        // 2.89 GB VRAM vs 3.03 GB at 8192 — sliding-window attention keeps the
+        // KV cache flat — and decode time scales with tokens actually emitted
+        // (ours are 19–27), not with the window. Our largest real prompt is
+        // ~4.5k tokens, so 8192 was already sufficient on headroom alone.
+        numCtx: parseInt(process.env.LOCAL_LLM_NUM_CTX || '16384', 10),
       },
       tier2: {
         // Model ids are env-configurable: the previous hard-coded
@@ -438,7 +448,11 @@ export class LLMService extends EventEmitter {
           : request.prompt,
         stream: false,
         think: isThinking ? false : undefined,
-        keep_alive: '15m', // keep model resident — cold loads cost ~60s
+        // Keep the model resident. A cold load measured 4.3–4.5s on the shared
+        // host (2026-08-06) — not the ~60s this comment used to claim — but the
+        // host holds one instance at a time, so staying resident is also what
+        // keeps us from evicting MOSS.AO's runner between our calls.
+        keep_alive: '15m',
         options: {
           temperature: request.temperature ?? 0.7,
           num_predict: maxTokens,

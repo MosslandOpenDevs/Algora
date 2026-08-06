@@ -2,9 +2,68 @@
 
 This file tracks the current development progress for continuity between sessions.
 
-**Last Updated**: 2026-08-05
+**Last Updated**: 2026-08-06
 **Current Version**: 0.13.1
 **Production URL**: https://algora.moss.land
+
+---
+
+## Recent Work: Shared-Ollama `num_ctx` Coordination (2026-08-06)
+
+MOSS.AO sent a memo asking Algora to move `LOCAL_LLM_NUM_CTX` from 8192 to
+16384, because the two services share the Ollama host at `192.168.1.65:11434`
+and were requesting the same model at different context sizes.
+
+**We made the change.** It is right in direction and free for us. But the memo's
+supporting numbers did not survive re-measurement against the host
+(Ollama 0.32.5, 2026-08-06), and three of them were wrong in ways that matter
+for MOSS.AO's own debugging:
+
+| Claim | Measured |
+|---|---|
+| Non-resident `num_ctx` "does not complete" (40s timeouts) | Completes. 4.38s at 16384, 4.64s back at 8192 |
+| Model load ~60s | **4.3–4.5s** (our own code comment was the stale source) |
+| 16384 costs ~+0.15 GB VRAM | **2.89 GB** at 16384 vs **3.03 GB** at 8192 — flat-to-lower |
+| Algora calls arrive every ~90s | Every ~30s (2/min) + a `/api/tags` health probe each 60s |
+
+A realistic reproduction — our production cadence against a 3,170-token/16384
+request — showed no stall at all: MOSS.AO's call returned in **11.2s**
+(`done_reason: stop`), and exactly one of our six calls paid a **4.45s** reload.
+So the cost of divergent `num_ctx` is a few seconds per alternation, not an
+indefinite hang.
+
+**What the memo got right, and what it missed.** The structural claim holds: the
+host keeps **one instance and serves one request at a time**. Confirmed twice —
+a second context size never coexists (`/api/ps` shows one entry after
+alternating), and a small call fired 8s into a 16.5s generation returned at
+16.6s, i.e. it waited. Two consequences the memo did not draw:
+
+- Its "~5 GB free, so this is not capacity" framing implies a second instance
+  *could* load. It cannot, at any amount of free VRAM. Converging `num_ctx`
+  removes reload thrash but **not** head-of-line blocking; if MOSS.AO stalls
+  again, the lever is `OLLAMA_NUM_PARALLEL` on the host, not an env var in
+  either app.
+- Polling `/api/ps` after the fix caught a **third** `num_ctx` in rotation
+  (4096), evicting the agreed 16384 runner. Source:
+  `IdeaScorer.SCORING_NUM_CTX = 4096` in MOSS.AO's own scoring path — a
+  hard-coded per-call override added as a workaround for this very problem.
+  Their idea-triage timeouts are self-inflicted, and the two-party agreement
+  they proposed cannot hold until that override is removed.
+
+Their two optional suggestions were **declined with measurements**: moving our
+small `fast` calls to `gemma3:1b`, and shortening `keep_alive`, would each put a
+second entry in the host's single instance slot and convert a fixed 4.4s load
+into continuous thrash. On a one-instance host, staying resident is what makes
+us a good neighbour — which is also why `apps/api/.env` already consolidated all
+three tiers onto `gemma3:4b`.
+
+**Changes:** `LOCAL_LLM_NUM_CTX=16384` in prod `apps/api/.env` (backup at
+`.env.bak.numctx.20260806`) with `algora-api` restarted and verified serving at
+`context_length: 16384`; the code default raised to match; and the coordination
+constraint documented at both use sites and in `.env.example` so the number is
+not changed unilaterally again. The stale `keep_alive` comment claiming "cold
+loads cost ~60s" — which the memo cited back at us as authoritative — now
+carries the measured figure.
 
 ---
 
@@ -24,6 +83,11 @@ earlier the same day. After adding `num_ctx=16384`, MOSS.AO hit a second,
 infrastructural wall: each distinct `num_ctx` is a separate model instance, and
 the congested shared GPU hung every 16k load for ~30 minutes. Their own
 conclusion: *"that part is infra, not code."*
+
+> **Update 2026-08-06:** the "~30 minute hang" was never independently
+> verified and does not reproduce — a 16k load on that host now measures
+> **4.3–4.5s**. The single-instance constraint behind it is real. See
+> *Shared-Ollama `num_ctx` Coordination* above.
 
 Algora never reaches that wall. Reconstructing every prompt from the largest
 real production session and tokenizing them on the actual Ollama host:
