@@ -137,22 +137,26 @@ export class LLMService extends EventEmitter {
         numCtx: parseInt(process.env.LOCAL_LLM_NUM_CTX || '8192', 10),
       },
       tier2: {
+        // Model ids are env-configurable: the previous hard-coded
+        // claude-3-haiku-20240307 was retired 2026-04-19, so every Anthropic
+        // call would have 404'd and fallen silently through the provider
+        // chain the moment Tier 2 was switched on.
         anthropic: tier2Enabled && process.env.ANTHROPIC_API_KEY
           ? {
               apiKey: process.env.ANTHROPIC_API_KEY,
-              model: 'claude-3-haiku-20240307',
+              model: process.env.ANTHROPIC_MODEL || 'claude-haiku-4-5',
             }
           : undefined,
         openai: tier2Enabled && process.env.OPENAI_API_KEY
           ? {
               apiKey: process.env.OPENAI_API_KEY,
-              model: 'gpt-4o-mini',
+              model: process.env.OPENAI_MODEL || 'gpt-5.4-mini',
             }
           : undefined,
         gemini: tier2Enabled && process.env.GOOGLE_AI_API_KEY
           ? {
               apiKey: process.env.GOOGLE_AI_API_KEY,
-              model: 'gemini-1.5-flash',
+              model: process.env.GOOGLE_AI_MODEL || 'gemini-2.5-flash',
             }
           : undefined,
       },
@@ -322,14 +326,46 @@ export class LLMService extends EventEmitter {
     }
 
     // Try Tier 2 (External APIs) — skipped entirely when disableTier2 is set
+    let tier2Error: unknown;
     if (preferredTier >= 1 && !this.disableTier2) {
       try {
         const response = await this.generateTier2(request);
         return response;
       } catch (error) {
-        console.error('[LLM] Tier 2 failed:', error);
-        throw error;
+        tier2Error = error;
+        // A tier-2 request used to rethrow here, and every caller treats a
+        // throw as "no LLM" — Agora in particular substitutes a hard-coded
+        // template sentence and stores it as a real agent statement. An
+        // expired key or an exhausted budget would therefore fill the public
+        // feed with governance-sounding text no model produced. Degrade to
+        // the local model instead, and say so.
+        console.error('[LLM] Tier 2 failed, falling back to Tier 1 (Ollama):', error);
+        this.emit('tier2:fallback', { reason: error instanceof Error ? error.message : String(error) });
       }
+    }
+
+    // Tier-1 fallback for a tier-2 request: either Tier 2 is switched off, or
+    // it was tried above and failed.
+    if (preferredTier === 2) {
+      if (!this.tier1Available) {
+        await this.checkTier1Availability();
+      }
+      if (this.tier1Available) {
+        const { allowed, waitMs } = this.canCallTier1();
+        if (!allowed) await this.waitForCooldown(waitMs);
+        return await this.generateTier1WithRetry(request);
+      }
+      throw new Error('Tier 2 unavailable and Tier 1 (Ollama) is not reachable');
+    }
+
+    // A tier-1 request only gets here because Tier 1 itself failed and the
+    // Tier-2 attempt above also failed. Surface that instead of returning
+    // empty content: callers gate on `if (response.content)` and would
+    // otherwise swallow the failure with no log line.
+    if (preferredTier === 1) {
+      throw tier2Error instanceof Error
+        ? tier2Error
+        : new Error('Tier 1 failed and no Tier 2 provider is available');
     }
 
     // Tier 0 - No LLM, return empty
@@ -541,13 +577,14 @@ export class LLMService extends EventEmitter {
       throw new Error(`Anthropic error: ${error}`);
     }
 
-    const data = await response.json() as { content: { text?: string }[]; usage?: { output_tokens?: number } };
+    const data = await response.json() as { content: { text?: string }[]; usage?: { output_tokens?: number; input_tokens?: number } };
     const content = data.content[0]?.text || '';
 
     this.emit('generation', {
       tier: 2,
       model: config.model,
       tokensUsed: data.usage?.output_tokens,
+      inputTokens: data.usage?.input_tokens,
     });
 
     return {
@@ -591,13 +628,14 @@ export class LLMService extends EventEmitter {
       throw new Error(`OpenAI error: ${error}`);
     }
 
-    const data = await response.json() as { choices: { message?: { content?: string } }[]; usage?: { completion_tokens?: number } };
+    const data = await response.json() as { choices: { message?: { content?: string } }[]; usage?: { completion_tokens?: number; prompt_tokens?: number } };
     const content = data.choices[0]?.message?.content || '';
 
     this.emit('generation', {
       tier: 2,
       model: config.model,
       tokensUsed: data.usage?.completion_tokens,
+      inputTokens: data.usage?.prompt_tokens,
     });
 
     return {

@@ -8,6 +8,90 @@ This file tracks the current development progress for continuity between session
 
 ---
 
+## Recent Work: Deliberation Output Fixes + Tier-2 Readiness (2026-08-06)
+
+The operator asked whether Algora should move deliberation to a paid API, as
+MOSS.AO did. Measured against the real system, the premise did not transfer —
+and the investigation found that the visible quality problems were our own
+constants, not the model.
+
+**Why the MOSS.AO precedent does not apply.** Its CHANGELOG records the actual
+root cause: *"no Ollama request ever sent `num_ctx`, so the shared server
+loaded gemma3:4b at its own 4096 default … generation stopped at exactly
+`prompt_eval + eval == 4096` with `done_reason="length"` — which the provider
+then discarded, so nothing was ever logged."* That is the same bug fixed here
+earlier the same day. After adding `num_ctx=16384`, MOSS.AO hit a second,
+infrastructural wall: each distinct `num_ctx` is a separate model instance, and
+the congested shared GPU hung every 16k load for ~30 minutes. Their own
+conclusion: *"that part is infra, not code."*
+
+Algora never reaches that wall. Reconstructing every prompt from the largest
+real production session and tokenizing them on the actual Ollama host:
+agent statement 752 tokens, final summary 2,859, action items 3,910, and a
+synthetic worst case of **4,497 — 55% of the 8,192 window**. Every path is hard
+windowed (`slice(-5)`, `getMessages(50)`, `slice(-30)`) with a 400-char cap per
+message, so prompts cannot grow with rounds. Zero context-saturation warnings
+across all production logs.
+
+**What was actually broken (all local, all free to fix):**
+
+- **Action items were being lost silently, 29–46% of the time.**
+  `extractActionItems` ran at `maxTokens: 500`; larger sessions truncated the
+  JSON array mid-structure, the `\[[\s\S]*\]` regex then found no match, and
+  the function returned `[]` **with no log line** — only successes logged.
+  Production evidence: 66 round-advance events, 47 success lines, 0 failure
+  lines. Raised to 1,000 (uncapped runs peak at ~600) and the no-match branch
+  now warns.
+- **45.6% of agent statements were cut mid-word** — by our own
+  `cleanResponse().substring(0, 500)`, not by the model, which stops naturally
+  at ~80 tokens / 396–663 chars (`done_reason: 'stop'` in 16/16 samples). The
+  cap is now 800 and ends on a sentence boundary. `maxTokens: 200` was never
+  the binding constraint and is unchanged.
+- **`generateRoundSummary` was running within 9 tokens of its 400 cap** — raised
+  to 600 before it started failing the same way.
+- **One agent could take up to 5 speaking slots in a round** (39.2% of
+  round-slots had a repeat), because selection was uniform random over
+  participants. `pickSpeaker()` now excludes the recent speakers.
+- **16% of statements cited documents that do not exist** ("Section 3.2.1 of
+  Document Gamma-7" and similar, which then propagated into decision packets).
+  The Docs Librarian persona asked for "quotes documentation standards" while
+  no documents are in context; the persona is reworded and the system prompt
+  now forbids inventing document, section or protocol identifiers.
+
+**Tier 2 made genuinely usable (still off by default).** Enabling it was not a
+matter of flipping a flag — four things would have failed silently:
+
+- `claude-3-haiku-20240307` (retired 2026-04-19) was hard-coded, so every
+  Anthropic call would have 404'd and fallen through the provider chain. Model
+  ids for all three providers are now env-configurable.
+- The budget guard priced **output tokens only**, at a flat rate. Deliberation
+  runs ~7:1 input:output, so a nominal $10/day ceiling was really $25–41/day.
+  Input tokens are now billed, providers report them, and per-token prices are
+  env-configurable — including on existing deployments, where the
+  `INSERT OR IGNORE` seed had frozen them at whatever was seeded months ago.
+- **A Tier-2 failure did not fall back to Ollama.** It threw; Agora catches a
+  throw and substitutes a hard-coded template sentence, stored as a real agent
+  statement. An expired key or a spent budget would have filled the public feed
+  with governance-sounding text no model produced. Tier-2 requests now degrade
+  to the local model, and a Tier-1 request that fails outright throws instead of
+  returning empty content (which callers silently swallow).
+- **A global flag routes the wrong calls.** Seven of eight deliberation call
+  sites hard-code `tier: 1`, and the model-router classifier sends 83.5% of
+  debate turns to `critical` on bare substring matches for 'security'/'audit'.
+  Flipping the flag would have paid for agent chatter while leaving Decision
+  Packets local. Routing is now per-call-site via `AGORA_SYNTHESIS_TIER`,
+  covering exactly the three synthesis calls (~143/day).
+
+`ecosystem.config.cjs` no longer pins `LLM_DISABLE_TIER2` and the API keys to
+empty strings: pm2 applies that block last and dotenv never overwrites an
+already-defined variable, so those lines would have silently defeated a key
+placed in `apps/api/.env`.
+
+- Verified: api 76/76, `tsc` clean. The two budget tests were updated to encode
+  the new degrade-to-local contract rather than the old throw.
+
+---
+
 ## Recent Work: Document Validation Was Eating Proposals (2026-08-06)
 
 With the bridge finally wired (previous entry), the first stale-session

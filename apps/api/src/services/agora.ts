@@ -155,6 +155,24 @@ class LLMRequestQueue {
 // admission policy can be observed and tested without driving a whole session.
 export const globalLLMQueue = new LLMRequestQueue();
 
+/**
+ * Tier for the synthesis calls the architecture (CLAUDE.md) assigns to Tier 2:
+ * "serious deliberation, Decision Packets". Per-call-site rather than a global
+ * flag, because flipping LLM_DISABLE_TIER2 alone would route high-volume agent
+ * chatter to a paid API while leaving Decision Packets local — the inverse of
+ * the intent. Defaults to 1 (all local); set AGORA_SYNTHESIS_TIER=2 with a
+ * provider key to move just these calls. A tier-2 request degrades to Ollama
+ * if Tier 2 is off or fails, so this is safe to set before a key exists.
+ */
+const SYNTHESIS_TIER: 1 | 2 = process.env.AGORA_SYNTHESIS_TIER === '2' ? 2 : 1;
+
+/**
+ * Display cap for a single agent statement. Generous enough that the model's
+ * natural stopping point (396-663 chars observed on gemma3:4b) is never cut;
+ * the old 500 truncated 45.6% of statements mid-word.
+ */
+const AGENT_STATEMENT_MAX_CHARS = 800;
+
 // Orchestrator configuration
 const ORCHESTRATOR_CONFIG = {
   // Round progression settings
@@ -619,6 +637,30 @@ export class AgoraService {
     }
   }
 
+  /**
+   * Pick who speaks next, avoiding whoever just spoke.
+   *
+   * Uniform random over participants let one agent take up to 5 slots in a
+   * single round (39.2% of round-slots had a repeat on prod), which reads as
+   * an agent talking to itself. Excluding the recent speakers keeps the
+   * rotation visibly alive without imposing a rigid order.
+   */
+  private pickSpeaker(sessionId: string, participants: Array<{ agent_id: string }>): { agent_id: string } {
+    if (participants.length <= 1) return participants[0];
+
+    const recent = this.db.prepare(`
+      SELECT agent_id FROM agora_messages
+      WHERE session_id = ? AND message_type = 'agent' AND agent_id IS NOT NULL
+      ORDER BY created_at DESC
+      LIMIT ?
+    `).all(sessionId, Math.min(2, participants.length - 1)) as Array<{ agent_id: string }>;
+
+    const spokeRecently = new Set(recent.map(r => r.agent_id));
+    const eligible = participants.filter(p => !spokeRecently.has(p.agent_id));
+    const pool = eligible.length > 0 ? eligible : participants;
+    return pool[Math.floor(Math.random() * pool.length)];
+  }
+
   // Start automated discussion rounds with random intervals
   startAutomatedDiscussion(sessionId: string, minIntervalMs: number = 30000, maxIntervalMs: number = 120000): void {
     if (this.activeDiscussions.has(sessionId)) {
@@ -642,8 +684,7 @@ export class AgoraService {
           return;
         }
 
-        // Select a random participant to speak
-        const speaker = participants[Math.floor(Math.random() * participants.length)];
+        const speaker = this.pickSpeaker(sessionId, participants);
 
         try {
           await this.generateAgentResponse(sessionId, speaker.agent_id);
@@ -663,7 +704,7 @@ export class AgoraService {
     const initialTimeout = setTimeout(async () => {
       const participants = this.getParticipants(sessionId);
       if (participants.length > 0) {
-        const speaker = participants[Math.floor(Math.random() * participants.length)];
+        const speaker = this.pickSpeaker(sessionId, participants);
         try {
           await this.generateAgentResponse(sessionId, speaker.agent_id);
         } catch (error) {
@@ -1193,7 +1234,8 @@ Return JSON with:
 - suggestedNextSteps: array of recommended actions
 
 JSON only:`,
-          maxTokens: 400,
+          // Observed output lands at 350-391 tokens — within 9 of the old 400.
+          maxTokens: 600,
           temperature: 0.3,
           tier: 1,
           complexity: 'balanced',
@@ -1299,9 +1341,13 @@ Return a JSON array of action items, each with:
 - status: proposed
 
 Return [] if no clear action items. JSON array only:`,
-          maxTokens: 500,
+          // 500 truncated the array mid-structure on larger sessions, so the
+          // regex below found no match and the function silently returned []
+          // (measured 29-46% of extractions on prod). Uncapped runs peak at
+          // ~600 output tokens.
+          maxTokens: 1000,
           temperature: 0.3,
-          tier: 1,
+          tier: SYNTHESIS_TIER,
           complexity: 'balanced',
         });
 
@@ -1313,6 +1359,14 @@ Return [] if no clear action items. JSON array only:`,
             console.log(`[Orchestrator] Extracted ${items.length} action items for session ${sessionId.slice(0, 8)}`);
             return items;
           }
+          // Falling through to [] here used to be completely silent, which is
+          // how a ~29-46% failure rate went unnoticed: only successes logged.
+          console.warn(
+            `[Orchestrator] Action item extraction produced no JSON array for session ${sessionId.slice(0, 8)} ` +
+            `(${response.content.length} chars, likely truncated) -- returning none`
+          );
+        } else {
+          console.warn(`[Orchestrator] Action item extraction returned empty content for session ${sessionId.slice(0, 8)}`);
         }
       } catch (error) {
         console.warn('[Orchestrator] Action item extraction failed:', error);
@@ -1568,7 +1622,7 @@ Return JSON with:
 JSON only:`,
           maxTokens: 500,
           temperature: 0.3,
-          tier: 1,
+          tier: SYNTHESIS_TIER,
           complexity: 'balanced',
         });
 
@@ -1640,7 +1694,7 @@ Action Items: ${summary.actionItems.map(a => a.description).join('; ')}
 Recommendation:`,
           maxTokens: 150,
           temperature: 0.5,
-          tier: 1,
+          tier: SYNTHESIS_TIER,
           complexity: 'balanced',
         });
 
@@ -2211,6 +2265,10 @@ Guidelines:
 - Contribute meaningful insights related to the topic
 - Respond to previous speakers when relevant
 - Do not use any prefixes or quotes around your message
+- Cite ONLY what appears in the conversation above. You have no other
+  documents, standards, sections or reports available. Never invent a
+  document name, number, section or protocol identifier; if a specific
+  reference would help, say what is missing instead of naming one
 
 CRITICAL LANGUAGE REQUIREMENT:
 - You MUST respond ONLY in English
@@ -2244,12 +2302,19 @@ Continue the discussion with your perspective. Build on or respectfully challeng
   }
 
   private cleanResponse(content: string): string {
-    return content
+    const cleaned = content
       .replace(/^["']|["']$/g, '')
       .replace(/^(Agent|AI|Assistant|Bot):\s*/i, '')
       .replace(/\n/g, ' ')
-      .trim()
-      .substring(0, 500);
+      .trim();
+
+    // The model stops naturally at ~80 tokens (396-663 chars); the old 500
+    // cut 45.6% of statements mid-word. 800 clears the observed maximum, and
+    // anything past it ends on a sentence boundary rather than mid-token.
+    if (cleaned.length <= AGENT_STATEMENT_MAX_CHARS) return cleaned;
+    const hard = cleaned.slice(0, AGENT_STATEMENT_MAX_CHARS);
+    const lastStop = Math.max(hard.lastIndexOf('. '), hard.lastIndexOf('? '), hard.lastIndexOf('! '));
+    return lastStop > AGENT_STATEMENT_MAX_CHARS * 0.6 ? hard.slice(0, lastStop + 1) : hard.trimEnd() + '…';
   }
 
   private getTemplateResponse(agent: Agent, _session: AgoraSession): string {

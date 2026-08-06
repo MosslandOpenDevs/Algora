@@ -207,8 +207,8 @@ function setupLLMCostTracking(db: ReturnType<typeof initDatabase>): void {
   // Get pricing config from database
   const getConfig = db.prepare('SELECT * FROM budget_config WHERE provider = ?');
 
-  llmService.on('generation', (event: { tier: number; model: string; tokensUsed?: number }) => {
-    const { tier, model, tokensUsed } = event;
+  llmService.on('generation', (event: { tier: number; model: string; tokensUsed?: number; inputTokens?: number }) => {
+    const { tier, model, tokensUsed, inputTokens } = event;
 
     // Determine provider from tier and model
     let provider: string;
@@ -228,12 +228,16 @@ function setupLLMCostTracking(db: ReturnType<typeof initDatabase>): void {
     const hour = new Date().getHours();
     const outputTokens = tokensUsed || 0;
 
-    // Get pricing for cost estimation
+    // Get pricing for cost estimation. Input tokens dominate this workload
+    // (measured 7.35:1 input:output on deliberation), so pricing output only
+    // under-measured spend by 2.5-4x and made the daily ceiling meaningless.
     let estimatedCost = 0;
     if (tier === 2) {
-      const config = getConfig.get(provider) as { output_token_price: number } | undefined;
+      const config = getConfig.get(provider) as
+        { output_token_price: number; input_token_price?: number } | undefined;
       if (config) {
-        estimatedCost = outputTokens * config.output_token_price;
+        estimatedCost = outputTokens * config.output_token_price
+          + (inputTokens || 0) * (config.input_token_price ?? 0);
       }
     }
 
