@@ -13,8 +13,15 @@
 | model | `gemma3:4b` | both services |
 | `num_ctx` | **16384** | both services (coordination value — see below) |
 | `OLLAMA_NUM_PARALLEL` | **4** (was 1, the default) | host |
-| `OLLAMA_MAX_LOADED_MODELS` | `0` (auto) | host — deliberately unchanged |
+| `OLLAMA_MAX_LOADED_MODELS` | **2** (was `0`/auto) | host |
+| `OLLAMA_FLASH_ATTENTION` | **true** (was false) | host |
+| `OLLAMA_KV_CACHE_TYPE` | **q8_0** (was empty/f16) | host |
+| `OLLAMA_GPU_OVERHEAD` | **1 GiB** reserved | host |
 | `keep_alive` | `15m` per call | Algora |
+
+> `OLLAMA_NUM_PARALLEL` is read only at process start, so a `setx` change needs
+> an Ollama restart before it takes effect. Confirm the live value from the log
+> (below) rather than from the environment variable — they can disagree.
 
 ## The scheduling model
 
@@ -80,19 +87,31 @@ measuring *n*-way contention.
 measurement on this host.** A number without that control means nothing here,
 because the host is never idle.
 
+## Flash attention + `q8_0` KV cache: measured, no effect
+
+These were suggested here as a likely win and were then enabled on the host.
+Re-measured with the same controls:
+
+| | f16 KV, no FA | FA + `q8_0` KV |
+|---|---|---|
+| single request (control) | 106.6 / 106.9 tok/s | 104.7 / 107.2 tok/s |
+| 4 concurrent, aggregate | 235 tok/s | 229 tok/s |
+| resident VRAM | 3.30 GB | 3.30 GB |
+
+**No measurable difference on any axis** — the deltas are inside run-to-run
+noise, and VRAM is identical to two decimal places. The likely reason is the
+same property that makes `num_ctx` cheap here: gemma3 uses sliding-window
+attention on most layers, so the KV cache is already small and quantising it
+saves nothing worth measuring.
+
+Harmless to leave on, but do not expect it to buy headroom. If VRAM ever gets
+tight on this host, the lever is model choice or `NUM_PARALLEL`, not the KV
+cache format.
+
 ## Not changed
 
-- **`OLLAMA_MAX_LOADED_MODELS`** — `0` (auto) and working; distinct models
-  coexist, which is desirable.
 - **`OLLAMA_KEEP_ALIVE`** — server default `5m`, overridden per call by Algora's
   `15m`.
-
-## Optional, unmeasured
-
-`OLLAMA_FLASH_ATTENTION` is `false` and `OLLAMA_KV_CACHE_TYPE` is empty (f16).
-Enabling flash attention usually lowers KV-cache memory and raises throughput,
-and would then allow a quantised (`q8_0`) KV cache if headroom got tight. Not
-tried here; if attempted, use the control-sample method above.
 
 ## Verification
 
