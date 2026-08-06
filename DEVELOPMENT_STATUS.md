@@ -47,8 +47,22 @@ alternating), and a small call fired 8s into a 16.5s generation returned at
   (4096), evicting the agreed 16384 runner. Source:
   `IdeaScorer.SCORING_NUM_CTX = 4096` in MOSS.AO's own scoring path — a
   hard-coded per-call override added as a workaround for this very problem.
-  Their idea-triage timeouts are self-inflicted, and the two-party agreement
-  they proposed cannot hold until that override is removed.
+  Their idea-triage timeouts were self-inflicted, and the two-party agreement
+  they proposed could not hold until that override was removed.
+
+**Resolved.** MOSS.AO confirmed all four corrections against their own
+re-measurement and removed the override (`e0468d5`, *"drop SCORING_NUM_CTX — it
+became the problem it was added for"*, verified as an ancestor of their deployed
+HEAD; `src/` is clean and the removal is pinned by
+`assert not hasattr(IdeaScorer, "SCORING_NUM_CTX")`). They also accepted both of
+our declines. The host has since held `gemma3:4b ctx=16384` across a continuous
+2-minute poll with no flips — one instance, one context size, both services on
+it.
+
+**Open, and owned by neither of us:** serialization. `OLLAMA_NUM_PARALLEL` sits
+on 192.168.1.65, which neither project can reach from the ao box, so the request
+goes to the host admin jointly. Draft in
+`docs/ollama-host-parallelism-request.md`.
 
 Their two optional suggestions were **declined with measurements**: moving our
 small `fast` calls to `gemma3:1b`, and shortening `keep_alive`, would each put a
