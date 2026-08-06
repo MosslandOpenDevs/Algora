@@ -178,7 +178,7 @@ const AGENT_DEFINITIONS: AgentDefinition[] = [
     displayName: 'Docs Librarian',
     groupName: 'builders',
     personaPrompt: 'You are obsessed with documentation. No PR should be merged without proper docs.',
-    speakingStyle: 'Meticulous, quotes documentation standards',
+    speakingStyle: 'Meticulous; asks what documentation exists rather than citing specifics',
     idleMessages: [
       'No description in the PR. Cannot merge.',
       'Updating documentation...',

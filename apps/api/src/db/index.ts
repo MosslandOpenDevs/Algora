@@ -674,16 +674,20 @@ function seedBudgetConfig(db: Database.Database): void {
         provider: 'anthropic',
         daily_budget_usd: parseFloat(process.env.ANTHROPIC_DAILY_BUDGET_USD || '10'),
         hourly_call_limit: parseInt(process.env.ANTHROPIC_HOURLY_LIMIT || '100'),
-        input_token_price: 0.000003,  // $3/1M tokens
-        output_token_price: 0.000015, // $15/1M tokens
+        input_token_price: parseFloat(process.env.ANTHROPIC_INPUT_TOKEN_PRICE || '0.000003'),  // $3/1M default
+        output_token_price: parseFloat(process.env.ANTHROPIC_OUTPUT_TOKEN_PRICE || '0.000015'), // $15/1M default
       },
       {
         id: 'budget-openai',
         provider: 'openai',
         daily_budget_usd: parseFloat(process.env.OPENAI_DAILY_BUDGET_USD || '10'),
         hourly_call_limit: parseInt(process.env.OPENAI_HOURLY_LIMIT || '100'),
-        input_token_price: 0.000003,
-        output_token_price: 0.000015,
+        // Per-token USD. Defaults deliberately assume a full-size model, so an
+        // unset rate over-charges a mini model and trips the daily guard early
+        // rather than late. Set these to the real published rate for whatever
+        // OPENAI_MODEL is configured.
+        input_token_price: parseFloat(process.env.OPENAI_INPUT_TOKEN_PRICE || '0.000003'),
+        output_token_price: parseFloat(process.env.OPENAI_OUTPUT_TOKEN_PRICE || '0.000015'),
       },
       {
         id: 'budget-google',
@@ -714,6 +718,30 @@ function seedBudgetConfig(db: Database.Database): void {
     }
 
     console.info('Budget configuration seeded');
+  }
+
+  // The seed above is INSERT OR IGNORE and only runs on an empty table, so on
+  // an existing deployment the per-token rates would be frozen at whatever was
+  // seeded months ago and every env override would be silently ignored — while
+  // the operator believes the budget is tracking the model they configured.
+  // Explicit overrides therefore apply on every boot.
+  const priceOverrides: Array<[string, string | undefined, string | undefined]> = [
+    ['anthropic', process.env.ANTHROPIC_INPUT_TOKEN_PRICE, process.env.ANTHROPIC_OUTPUT_TOKEN_PRICE],
+    ['openai', process.env.OPENAI_INPUT_TOKEN_PRICE, process.env.OPENAI_OUTPUT_TOKEN_PRICE],
+    ['google', process.env.GOOGLE_INPUT_TOKEN_PRICE, process.env.GOOGLE_OUTPUT_TOKEN_PRICE],
+  ];
+  for (const [provider, inRaw, outRaw] of priceOverrides) {
+    const inPrice = inRaw !== undefined ? parseFloat(inRaw) : undefined;
+    const outPrice = outRaw !== undefined ? parseFloat(outRaw) : undefined;
+    if (inPrice !== undefined && Number.isFinite(inPrice)) {
+      db.prepare('UPDATE budget_config SET input_token_price = ? WHERE provider = ?').run(inPrice, provider);
+    }
+    if (outPrice !== undefined && Number.isFinite(outPrice)) {
+      db.prepare('UPDATE budget_config SET output_token_price = ? WHERE provider = ?').run(outPrice, provider);
+    }
+    if ((inPrice !== undefined && Number.isFinite(inPrice)) || (outPrice !== undefined && Number.isFinite(outPrice))) {
+      console.info(`  ${provider} token pricing overridden from env`);
+    }
   }
 }
 

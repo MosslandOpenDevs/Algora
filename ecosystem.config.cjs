@@ -55,14 +55,21 @@ module.exports = {
         NODE_ENV: 'production',
         PORT: 3201,
         CORS_ORIGIN: 'https://algora.moss.land',
-        // Force Ollama-only mode regardless of stale env in pm2's cache.
-        // This wins because pm2's `env:` block is applied last when starting
-        // the process — even if an old ANTHROPIC_API_KEY lingers, the LLM
-        // service short-circuits Tier 2 when this flag is true.
-        LLM_DISABLE_TIER2: 'true',
-        ANTHROPIC_API_KEY: '',
-        OPENAI_API_KEY: '',
-        GOOGLE_AI_API_KEY: '',
+        // Tier 2 (paid APIs) is opt-in per machine, read from apps/api/.env
+        // like every other runtime secret.
+        //
+        // Do NOT set LLM_DISABLE_TIER2 or the *_API_KEY vars here. pm2 applies
+        // this block last, and `dotenv` never overwrites a variable that is
+        // already defined — an empty string counts as defined. Pinning the keys
+        // to '' here therefore silently defeats a key placed in apps/api/.env,
+        // and the operator sees "Tier 2 enabled" with every request falling
+        // through the provider chain.
+        //
+        // To enable: put LLM_DISABLE_TIER2=false, OPENAI_API_KEY=... (and
+        // optionally OPENAI_MODEL / AGORA_SYNTHESIS_TIER=2) in apps/api/.env,
+        // then re-register: pm2 delete algora-api && pm2 start
+        // ecosystem.config.cjs --only algora-api && pm2 save. A plain restart
+        // does not re-read this file.
       },
       env_file: '.env',
       watch: false,

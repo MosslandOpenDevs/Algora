@@ -1,5 +1,16 @@
 import { describe, it, expect } from 'vitest';
-import { LLMService, BudgetExceededError } from './llm';
+import { LLMService } from './llm';
+
+// NOTE on the contract these tests encode: a Tier-2 request whose budget is
+// exhausted (or whose provider fails) now DEGRADES TO TIER 1 rather than
+// throwing. Throwing was worse than it looked — every caller treats it as "no
+// LLM", and Agora in particular substitutes a hard-coded template sentence and
+// stores it as a real agent statement, so an exhausted budget would fill the
+// public feed with governance-sounding text no model produced. The
+// budget:exceeded event still fires, so alerting is unaffected. In this test
+// environment Ollama is unreachable, so the degraded path surfaces as a
+// Tier-1-unavailable error — that is the fallback being attempted, not the old
+// BudgetExceededError escaping.
 
 describe('LLMService budget guard', () => {
   it('skips a provider whose guard returns false and emits budget:exceeded', async () => {
@@ -13,12 +24,13 @@ describe('LLMService budget guard', () => {
     cfg.tier2.openai = { apiKey: 'x', model: 'gpt' };
     cfg.tier2.gemini = { apiKey: 'x', model: 'gem' };
 
-    // All three exceeded → should throw BudgetExceededError and never call out.
+    // All three exceeded → no provider is called, budget:exceeded fires for
+    // each, and the request degrades to Tier 1 (unreachable here).
     svc.setBudgetChecker(() => false);
 
     await expect(
       svc.generate({ prompt: 'hi', tier: 2 }),
-    ).rejects.toBeInstanceOf(BudgetExceededError);
+    ).rejects.toThrow(/Tier 1 \(Ollama\) is not reachable/);
 
     expect(seen.sort()).toEqual(['anthropic', 'google', 'openai']);
   });
@@ -32,7 +44,10 @@ describe('LLMService budget guard', () => {
 
     svc.setBudgetChecker(() => { throw new Error('DB down'); });
 
-    await expect(svc.generate({ prompt: 'hi', tier: 2 })).rejects.toBeInstanceOf(BudgetExceededError);
+    // Fail-safe: a broken budget guard denies every paid provider, then the
+    // request degrades to the free local tier rather than to canned text.
+    await expect(svc.generate({ prompt: 'hi', tier: 2 }))
+      .rejects.toThrow(/Tier 1 \(Ollama\) is not reachable/);
   });
 
   it('auto-injects the untrusted-context notice when prompt contains the tag', async () => {
