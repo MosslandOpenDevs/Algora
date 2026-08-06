@@ -82,20 +82,36 @@ NVIDIA GeForce RTX 5060 — total 8.0 GiB, available 6.9 GiB
 
 Residency is 2.89 GB (`4b`) + 0.88 GB (`1b`) ≈ 3.8 of 6.9 GiB.
 
-**Open — two independent levers, both cheap:**
+**Resolved: `OLLAMA_NUM_PARALLEL=4` applied on the host.** Serialization is gone
+and it cost nothing in speed:
 
-1. **`OLLAMA_NUM_PARALLEL=2` on the host** (`setx`, then restart Ollama).
-   Measured cost ~10 MB, because two 16384 slots allocate the KV of a 32768
-   window: 2.90 GB vs 2.89 GB. Fixes same-model contention for both services at
-   once. Written up in `docs/ollama-host-parallelism-request.md`.
-2. **Move the chatter scheduler to `gemma3:1b`** — Algora-side, no admin needed.
-   Chatter is the constant 2/min cadence that does the blocking, and it is the
-   least quality-sensitive traffic we have (`maxTokens: 100`, 200-char cap,
-   static fallback on failure). It would get its own runner and stop queueing
-   against MOSS.AO entirely. Note this must **not** be applied to `complexity:
-   'fast'` as a whole: 4 of the 7 `fast` call sites are live deliberation paths
-   in `agora.ts`, where model quality is user-visible. Needs a decision on
-   chatter text quality before doing it.
+```
+single request (control, before):  300 tok @ 106.6 tok/s
+4 concurrent requests:            1200 tok in 5.1s  =  235 tok/s aggregate
+single request (control, after):   300 tok @ 106.9 tok/s
+```
+
+2.2x aggregate throughput, single-request decode unchanged against the ~109
+tok/s pre-change baseline, +0.41 GB VRAM (2.89 → 3.30 GB against 6.9 GiB
+available). Full write-up in `docs/ollama-shared-host-tuning.md`.
+
+**A false alarm worth recording.** Mid-change sampling showed decode at
+5.2 tok/s and prefill at 101 tok/s, and that was reported as a catastrophic
+regression with the backend (Vulkan vs CUDA) as the suspected cause. The
+host log disproved it — `library=CUDA` throughout — and re-measurement with a
+control showed no regression at all. The samples were contaminated: once
+`NUM_PARALLEL > 1`, Algora's own production traffic genuinely shares the GPU,
+so an uncontrolled "single request" measurement is really measuring *n*-way
+contention. **This host is never idle; always bracket a concurrency measurement
+with single-request controls.**
+
+**Not doing: moving the chatter scheduler to `gemma3:1b`.** It was the fallback
+plan for head-of-line blocking, and with `NUM_PARALLEL=4` there is no blocking
+left to fix — so it would trade user-visible chatter quality for nothing. Worth
+reconsidering only if the host reverts to a single slot. Recorded here because
+the reasoning is non-obvious: it must never be applied to `complexity: 'fast'`
+wholesale either way, since 4 of the 7 `fast` call sites are live deliberation
+paths in `agora.ts`.
 
 Their two optional suggestions were **declined with measurements**: moving our
 small `fast` calls to `gemma3:1b`, and shortening `keep_alive`, would each put a
