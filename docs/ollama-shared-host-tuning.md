@@ -12,7 +12,7 @@
 |---|---|---|
 | model | `gemma3:4b` | both services |
 | `num_ctx` | **16384** | both services (coordination value — see below) |
-| `OLLAMA_NUM_PARALLEL` | **4** (was 1, the default) | host |
+| `OLLAMA_NUM_PARALLEL` | **2** (was 1, the default) | host |
 | `OLLAMA_MAX_LOADED_MODELS` | **2** (was `0`/auto) | host |
 | `OLLAMA_FLASH_ATTENTION` | **true** (was false) | host |
 | `OLLAMA_KV_CACHE_TYPE` | **q8_0** (was empty/f16) | host |
@@ -52,28 +52,44 @@ The workloads have opposite shapes, which made this expensive both ways:
 - **Algora** — ~2 calls/min, 19–31 output tokens, sub-second when unblocked.
 - **MOSS.AO** — infrequent, multi-thousand-token prompts, tens of seconds.
 
-## Results at `NUM_PARALLEL=4`
+## Results — why 2 rather than 4
+
+Both were measured live, each bracketed by single-request controls (300-token
+requests, 4 fired concurrently):
+
+| `NUM_PARALLEL` | `gemma3:4b` VRAM | aggregate, 4 concurrent | vs serial |
+|---|---|---|---|
+| 1 | 2.89 GB | ~107 tok/s | 1.0x |
+| **2** (current) | **2.98 GB** | **173 tok/s** | **1.6x** |
+| 4 | 3.30 GB | 235 tok/s | 2.2x |
+
+Single-request decode is unchanged at every setting (106.6 / 106.9 tok/s at 4,
+106.9 tok/s at 2) against the ~109 tok/s pre-change baseline. The slot count is
+directly visible in completion times: at 2, four concurrent requests finish in
+two pairs (3.61s, 3.61s, 6.88s, 6.90s); at 4 they all finish together.
+
+**2 is the chosen setting** because `MAX_LOADED_MODELS` is 2 and
+`NUM_PARALLEL` applies *per runner* — so 4 would let two resident models reserve
+8 slots between them. 2 keeps ~74% of the throughput gain for ~22% of the VRAM
+cost, and leaves room for a third-party model to load.
+
+That headroom is not hypothetical: a `gemma3:1b` at ctx 4096 (not ours — some
+other client on the LAN) appears on this host periodically. Measured with both
+resident:
 
 ```
-single request (control, before):  300 tok @ 106.6 tok/s
-4 concurrent requests:            1200 tok in 5.1s  =  235 tok/s aggregate
-single request (control, after):   300 tok @ 106.9 tok/s
+gemma3:4b  ctx=16384  2.98 GB
+gemma3:1b  ctx= 4096  0.95 GB
+                      ------- 3.92 GB of ~5.9 GiB usable
+                              (6.9 GiB available - 1.0 GiB GPU_OVERHEAD)
 ```
 
-- **Aggregate throughput 2.2x.** Four requests complete in the wall time of
-  about 1.8 sequential ones.
-- **No single-request regression.** 106.6 / 106.9 tok/s brackets the ~109 tok/s
-  measured before the change.
-- **Per-request latency under full 4-way load rises ~1.8x** (2.8s → 5.1s for 300
-  tokens). Expected, and a good trade against blocking outright.
+~2.0 GB spare, and they serve concurrently: a `gemma3:1b` probe fired 2s into a
+`gemma3:4b` generation returned in **0.38s**, with no eviction.
 
-**VRAM cost: +0.41 GB.** The runner grew 2.89 GB → 3.30 GB, against 6.9 GiB
-available (`total="8.0 GiB" available="6.9 GiB"` per the server's own probe).
-
-> Note: this is larger than the ~10 MB figure estimated before the change. That
-> estimate used a single runner at `num_ctx=32768` as a proxy for two slots of
-> 16384, which under-predicts. The +0.41 GB above is measured directly at
-> `NUM_PARALLEL=4`, and is the number to trust.
+> Note on an earlier estimate: ~10 MB was predicted for two slots by using a
+> single runner at `num_ctx=32768` as a proxy. That under-predicts. The measured
+> figures in the table above are the ones to trust.
 
 ## Measurement caveat, learned the hard way
 

@@ -82,18 +82,22 @@ NVIDIA GeForce RTX 5060 — total 8.0 GiB, available 6.9 GiB
 
 Residency is 2.89 GB (`4b`) + 0.88 GB (`1b`) ≈ 3.8 of 6.9 GiB.
 
-**Resolved: `OLLAMA_NUM_PARALLEL=4` applied on the host.** Serialization is gone
-and it cost nothing in speed:
+**Resolved: `OLLAMA_NUM_PARALLEL=2` applied on the host.** Serialization is gone
+and single-request decode is unchanged. Measured at each setting, bracketed by
+single-request controls:
 
-```
-single request (control, before):  300 tok @ 106.6 tok/s
-4 concurrent requests:            1200 tok in 5.1s  =  235 tok/s aggregate
-single request (control, after):   300 tok @ 106.9 tok/s
-```
+| `NUM_PARALLEL` | `gemma3:4b` VRAM | aggregate, 4 concurrent |
+|---|---|---|
+| 1 | 2.89 GB | ~107 tok/s |
+| **2** (chosen) | **2.98 GB** | **173 tok/s** |
+| 4 | 3.30 GB | 235 tok/s |
 
-2.2x aggregate throughput, single-request decode unchanged against the ~109
-tok/s pre-change baseline, +0.41 GB VRAM (2.89 → 3.30 GB against 6.9 GiB
-available). Full write-up in `docs/ollama-shared-host-tuning.md`.
+2 rather than 4 because `MAX_LOADED_MODELS` is 2 and `NUM_PARALLEL` applies per
+runner — 4 would let two resident models reserve 8 slots between them. 2 keeps
+~74% of the gain for ~22% of the VRAM cost and leaves room for the unrelated
+`gemma3:1b` that another client on the LAN loads periodically: with both
+resident the total is 3.92 GB of ~5.9 GiB usable, and they serve concurrently.
+Full write-up in `docs/ollama-shared-host-tuning.md`.
 
 **A false alarm worth recording.** Mid-change sampling showed decode at
 5.2 tok/s and prefill at 101 tok/s, and that was reported as a catastrophic
@@ -106,7 +110,7 @@ contention. **This host is never idle; always bracket a concurrency measurement
 with single-request controls.**
 
 **Not doing: moving the chatter scheduler to `gemma3:1b`.** It was the fallback
-plan for head-of-line blocking, and with `NUM_PARALLEL=4` there is no blocking
+plan for head-of-line blocking, and with `NUM_PARALLEL=2` there is no blocking
 left to fix — so it would trade user-visible chatter quality for nothing. Worth
 reconsidering only if the host reverts to a single slot. Recorded here because
 the reasoning is non-obvious: it must never be applied to `complexity: 'fast'`
