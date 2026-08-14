@@ -22,6 +22,7 @@ const CACHE_CONFIG: Record<string, number> = {
  */
 const NO_CACHE_PATHS = [
   '/api/auth',
+  '/api/logs',
   '/api/votes',
   '/api/delegation',
   '/health',
