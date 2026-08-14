@@ -2,13 +2,43 @@
 
 This file tracks the current development progress for continuity between sessions.
 
-**Last Updated**: 2026-08-06
+**Last Updated**: 2026-08-14
 **Current Version**: 0.13.1
 **Production URL**: https://algora.moss.land
 
 ---
 
-## Recent Work: Shared-Ollama `num_ctx` Coordination (2026-08-06)
+## Recent Work: Collector Restart Loop Fix (2026-08-14)
+
+A production status check found all four signal collectors in a permanent
+30-second restart loop (65k–128k lifetime restarts each, CoinGecko answering
+HTTP 429, a third of the activity feed being restart spam). Root cause: the
+health check judged liveness by "new rows in `signals` within 5 minutes", but
+signals are deduplicated on insert and fetch intervals run 15–120 minutes, so
+healthy collectors always read as dead. Each restart's `start()` also fired an
+immediate all-source sweep, so real collection happened ~17× more often than
+configured while the interval timers never survived long enough to fire.
+
+Fixed in `apps/api/src/services/collectors/index.ts`: liveness now reads the
+source tables' `last_fetched` (stamped on every successful fetch) against a
+per-collector window derived from its slowest configured interval (2 cycles,
+10 min floor, 6 h cap); never-fetched collectors measure from service start;
+pending restarts can't be double-queued; backoff escalates per
+restart-since-last-success instead of `2^lifetime` (which had overflowed to
+`Infinity`); loop-era restart counts (>10,000) are shed once on load. The
+`/api/pipeline/alerts` flat 5-minute staleness window now reads the same
+verdict via `getStaleness()`. Also stamped `concluded_at` on the normal
+`completeSession()` path so pipeline health's `completedLast24h` stops
+reporting 0. Tests: `collector-health.test.ts` (11 cases) pins the failure
+modes; verified against a copy of the production DB — all four collectors
+judged healthy under the new logic.
+
+**Deploy note**: the fix must be built and restarted on the production host
+(atrn-vm-linux, pm2 `algora-api`) to take effect.
+
+---
+
+## Previous Work: Shared-Ollama `num_ctx` Coordination (2026-08-06)
 
 MOSS.AO sent a memo asking Algora to move `LOCAL_LLM_NUM_CTX` from 8192 to
 16384, because the two services share the Ollama host at `192.168.1.65:11434`
