@@ -1989,13 +1989,15 @@ Recommendation:`,
       await this.addOrchestratorClosingStatement(sessionId, summary, decisionPacket);
     }
 
-    // 4. Update session status
+    // 4. Update session status. concluded_at has to be stamped here too, not
+    // just on the timeout and stale-cleanup paths: this is the path a normal
+    // session takes, and pipeline health counts recent completions by it.
     const now = new Date().toISOString();
     this.db.prepare(`
       UPDATE agora_sessions
-      SET status = 'completed', updated_at = ?
+      SET status = 'completed', updated_at = ?, concluded_at = COALESCE(concluded_at, ?)
       WHERE id = ?
-    `).run(now, sessionId);
+    `).run(now, now, sessionId);
 
     // 5. Stop automated processes
     this.stopAutomatedDiscussion(sessionId);

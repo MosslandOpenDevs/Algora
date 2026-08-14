@@ -28,9 +28,108 @@ export interface CollectorHealth {
 interface CollectorWrapper {
   name: string;
   collector: RSSCollectorService | GitHubCollectorService | BlockchainCollectorService | SocialCollectorService;
+  /**
+   * Table holding this collector's sources. Every collector stamps
+   * `last_fetched` there on the success path of a fetch and leaves it
+   * untouched when the fetch throws, which makes it the one honest liveness
+   * signal available to this service.
+   */
+  sourceTable: string;
   start: () => void;
   stop: () => void;
   isHealthy: () => boolean;
+}
+
+export interface CollectorStaleness {
+  name: string;
+  isStale: boolean;
+  lastFetchedAt: string | null;
+  enabledSources: number;
+  /** The window this verdict was measured against, in minutes. */
+  thresholdMinutes: number;
+  /** Null when the collector has never recorded a successful fetch. */
+  minutesSinceFetch: number | null;
+}
+
+export interface CollectorLiveness {
+  /** Newest successful fetch across the collector's enabled sources. */
+  lastFetchedAt: string | null;
+  /** Longest configured fetch interval, in minutes, among enabled sources. */
+  maxIntervalMinutes: number | null;
+  enabledSources: number;
+}
+
+/** A collector is stale once it has missed this many full fetch cycles. */
+const STALE_CYCLE_MULTIPLIER = 2;
+/**
+ * Floor for the staleness window. start() defers its first fetch by 10-20s and
+ * a full sweep of 40 GitHub repos is not instant, so a collector that has just
+ * (re)started needs room before it can be called stale.
+ */
+const MIN_STALE_THRESHOLD_MS = 10 * 60 * 1000;
+/** Ceiling, so a mis-entered interval can't disable staleness detection. */
+const MAX_STALE_THRESHOLD_MS = 6 * 60 * 60 * 1000;
+
+/**
+ * Read a collector's liveness from its source table.
+ *
+ * Deliberately not derived from the signals table: signals are deduplicated on
+ * insert, so a perfectly healthy fetch routinely writes zero rows and would
+ * read as a failure.
+ */
+export function readCollectorLiveness(
+  db: Database.Database,
+  sourceTable: string
+): CollectorLiveness {
+  const row = db.prepare(`
+    SELECT MAX(last_fetched) AS lastFetched,
+           MAX(fetch_interval) AS maxInterval,
+           COUNT(*) AS enabledSources
+    FROM ${sourceTable}
+    WHERE enabled = 1
+  `).get() as { lastFetched: string | null; maxInterval: number | null; enabledSources: number };
+
+  return {
+    lastFetchedAt: row.lastFetched ?? null,
+    maxIntervalMinutes: row.maxInterval ?? null,
+    enabledSources: row.enabledSources ?? 0,
+  };
+}
+
+/**
+ * How long a collector may go without a successful fetch before it counts as
+ * stale. Derived from the collector's own slowest source rather than fixed:
+ * configured intervals span 5 to 120 minutes, so any single constant is either
+ * too tight for the slow collectors or useless for the fast ones.
+ */
+export function staleThresholdMs(maxIntervalMinutes: number | null): number {
+  const intervalMs = (maxIntervalMinutes ?? 0) * 60 * 1000;
+  return Math.min(
+    Math.max(intervalMs * STALE_CYCLE_MULTIPLIER, MIN_STALE_THRESHOLD_MS),
+    MAX_STALE_THRESHOLD_MS
+  );
+}
+
+/**
+ * Whether a collector has gone quiet long enough to justify a restart.
+ *
+ * `serviceStartedAtMs` is the reference for a collector that has never
+ * fetched, so a cold boot gets the same grace period as a running one instead
+ * of being restarted on the first health check.
+ */
+export function isCollectorStale(
+  liveness: CollectorLiveness,
+  nowMs: number,
+  serviceStartedAtMs: number
+): boolean {
+  // Nothing enabled means there is nothing to fetch — not a fault, and
+  // restarting would never clear it.
+  if (liveness.enabledSources === 0) return false;
+
+  const lastFetchedMs = liveness.lastFetchedAt ? Date.parse(liveness.lastFetchedAt) : NaN;
+  const reference = Number.isNaN(lastFetchedMs) ? serviceStartedAtMs : lastFetchedMs;
+
+  return nowMs - reference > staleThresholdMs(liveness.maxIntervalMinutes);
 }
 
 export class SignalCollectorService {
@@ -41,15 +140,21 @@ export class SignalCollectorService {
   private blockchainCollector: BlockchainCollectorService;
   private socialCollector: SocialCollectorService;
   private isRunning: boolean = false;
+  private startedAtMs: number = Date.now();
   private healthCheckInterval: NodeJS.Timeout | null = null;
   private collectorWrappers: CollectorWrapper[] = [];
   private healthState: Map<string, CollectorHealth> = new Map();
+  /** Restarts awaiting their backoff, so health ticks can't queue duplicates. */
+  private pendingRestarts: Map<string, NodeJS.Timeout> = new Map();
+  /** Restarts since the last success, driving the backoff curve. */
+  private consecutiveRestarts: Map<string, number> = new Map();
 
   // Configuration for health checks
   private static readonly HEALTH_CHECK_INTERVAL_MS = 30000; // 30 seconds
   private static readonly MAX_CONSECUTIVE_FAILURES = 3;
-  private static readonly STALE_THRESHOLD_MS = 5 * 60 * 1000; // 5 minutes
   private static readonly MAX_BACKOFF_MS = 5 * 60 * 1000; // 5 minutes max backoff
+  /** Caps the backoff exponent so a long outage can't overflow to Infinity. */
+  private static readonly MAX_BACKOFF_EXPONENT = 10;
 
   constructor(db: Database.Database, io: SocketServer) {
     this.db = db;
@@ -64,6 +169,7 @@ export class SignalCollectorService {
       {
         name: 'RSS',
         collector: this.rssCollector,
+        sourceTable: 'rss_feeds',
         start: () => this.rssCollector.start(),
         stop: () => this.rssCollector.stop(),
         isHealthy: () => this.rssCollector.getFeeds().length > 0,
@@ -71,6 +177,7 @@ export class SignalCollectorService {
       {
         name: 'GitHub',
         collector: this.githubCollector,
+        sourceTable: 'github_repos',
         start: () => this.githubCollector.start(),
         stop: () => this.githubCollector.stop(),
         isHealthy: () => this.githubCollector.getRepos().length > 0,
@@ -78,6 +185,7 @@ export class SignalCollectorService {
       {
         name: 'Blockchain',
         collector: this.blockchainCollector,
+        sourceTable: 'blockchain_sources',
         start: () => this.blockchainCollector.start(),
         stop: () => this.blockchainCollector.stop(),
         isHealthy: () => this.blockchainCollector.getSources().length > 0,
@@ -85,6 +193,7 @@ export class SignalCollectorService {
       {
         name: 'Social',
         collector: this.socialCollector,
+        sourceTable: 'social_sources',
         start: () => this.socialCollector.start(),
         stop: () => this.socialCollector.stop(),
         isHealthy: () => this.socialCollector.getSources().length > 0,
@@ -113,6 +222,17 @@ export class SignalCollectorService {
       } | undefined;
 
       if (existingHealth) {
+        // Databases that lived through the restart-loop era (staleness judged
+        // by a 5-minute signals window against 15-120 minute fetch intervals)
+        // carry restart counts in the tens of thousands. Those numbers
+        // describe the bug, not the collector, so shed them once on load
+        // rather than reporting them forever.
+        let restartCount = existingHealth.restart_count;
+        if (restartCount > 10000) {
+          console.log(`[SignalCollector] Resetting ${wrapper.name} restart_count (${restartCount} is restart-loop residue)`);
+          restartCount = 0;
+        }
+
         this.healthState.set(wrapper.name, {
           name: existingHealth.collector_name,
           isRunning: existingHealth.is_running === 1,
@@ -122,8 +242,11 @@ export class SignalCollectorService {
           totalSuccesses: existingHealth.total_successes,
           totalFailures: existingHealth.total_failures,
           lastError: existingHealth.last_error,
-          restartCount: existingHealth.restart_count,
+          restartCount,
         });
+        if (restartCount !== existingHealth.restart_count) {
+          this.persistHealthState(wrapper.name);
+        }
       } else {
         const newHealth: CollectorHealth = {
           name: wrapper.name,
@@ -178,6 +301,7 @@ export class SignalCollectorService {
     if (this.isRunning) return;
 
     this.isRunning = true;
+    this.startedAtMs = Date.now();
     console.log('[SignalCollector] Starting all collectors...');
 
     for (const wrapper of this.collectorWrappers) {
@@ -203,6 +327,12 @@ export class SignalCollectorService {
 
     // Stop health check
     this.stopHealthCheck();
+
+    // Drop restarts still waiting on their backoff, so a stopped service can't
+    // resurrect a collector after the fact.
+    for (const timer of this.pendingRestarts.values()) clearTimeout(timer);
+    this.pendingRestarts.clear();
+    this.consecutiveRestarts.clear();
 
     for (const wrapper of this.collectorWrappers) {
       wrapper.stop();
@@ -245,44 +375,51 @@ export class SignalCollectorService {
    * Run health check for all collectors
    *
    * Each collector runs its own internal loop and doesn't call back into this
-   * service per fetch, so we infer liveness from the signals table instead:
-   * a collector is "healthy" if any of its sources wrote a row recently.
-   * Without this, last_success_at would only reflect the boot moment and stay
-   * frozen even though signals continue streaming in.
+   * service per fetch, so liveness is inferred from the source tables'
+   * `last_fetched`, which every collector stamps once a fetch has succeeded.
+   *
+   * It previously counted rows in the signals table over a fixed 5-minute
+   * window instead. That misread every collector as permanently dead: signals
+   * are deduplicated on insert, so a healthy fetch usually writes nothing, and
+   * configured fetch intervals run 15-120 minutes — far outside the window.
+   * Every collector was therefore restarted on every 30s tick, and since each
+   * start() kicks off an immediate sweep of all its sources, the periodic
+   * timers never survived long enough to fire and the sources were polled
+   * ~17x more often than configured (CoinGecko answered with HTTP 429).
    */
   private runHealthCheck(): void {
     if (!this.isRunning) return;
+
+    const now = Date.now();
 
     for (const wrapper of this.collectorWrappers) {
       const health = this.healthState.get(wrapper.name);
       if (!health) continue;
 
-      // Verify with the signals table — did this collector's source prefix
-      // produce any rows in the past 5 minutes? If yes, mark as success and
-      // refresh last_success_at; if no, the existing state stands.
+      let liveness: CollectorLiveness;
       try {
-        const prefix = `${wrapper.name.toLowerCase()}:%`;
-        const recent = this.db.prepare(`
-          SELECT COUNT(*) as n FROM signals
-          WHERE source LIKE ? AND created_at > datetime('now', '-5 minutes')
-        `).get(prefix) as { n: number };
-        if (recent.n > 0) {
-          this.recordSuccess(wrapper.name);
-        }
+        liveness = readCollectorLiveness(this.db, wrapper.sourceTable);
       } catch (err) {
-        // signals query failure shouldn't break the health loop
-        console.warn(`[SignalCollector] verify-by-signals failed for ${wrapper.name}:`, err);
+        // A liveness lookup failure says nothing about the collector itself,
+        // so leave its state alone rather than restarting on a bad read.
+        console.warn(`[SignalCollector] liveness lookup failed for ${wrapper.name}:`, err);
+        continue;
       }
 
-      // Check if collector is stale (no activity for too long)
-      const isStale = health.lastSuccessAt &&
-        (Date.now() - health.lastSuccessAt.getTime()) > SignalCollectorService.STALE_THRESHOLD_MS;
+      // Advance last_success_at to the real fetch time, never past it.
+      if (liveness.lastFetchedAt) {
+        const fetchedAtMs = Date.parse(liveness.lastFetchedAt);
+        const isNewer = !health.lastSuccessAt || fetchedAtMs > health.lastSuccessAt.getTime();
+        if (!Number.isNaN(fetchedAtMs) && isNewer) {
+          this.recordSuccess(wrapper.name, new Date(fetchedAtMs));
+        }
+      }
 
-      // Check if too many consecutive failures
+      const isStale = isCollectorStale(liveness, now, this.startedAtMs);
       const hasTooManyFailures = health.consecutiveFailures >= SignalCollectorService.MAX_CONSECUTIVE_FAILURES;
 
       if (isStale || hasTooManyFailures) {
-        console.log(`[SignalCollector] Collector ${wrapper.name} needs restart: stale=${isStale}, failures=${health.consecutiveFailures}`);
+        console.log(`[SignalCollector] Collector ${wrapper.name} needs restart: stale=${isStale}, failures=${health.consecutiveFailures}, lastFetched=${liveness.lastFetchedAt ?? 'never'}`);
         this.restartCollector(wrapper);
       }
     }
@@ -301,13 +438,24 @@ export class SignalCollectorService {
     const health = this.healthState.get(wrapper.name);
     if (!health) return;
 
-    // Calculate backoff based on restart count
+    // A restart only takes effect once its backoff elapses, but the health
+    // check keeps ticking every 30s in the meantime. Without this guard each
+    // tick queued another restart, so stop()/start() churned continuously and
+    // every start() re-triggered a full sweep of the collector's sources.
+    if (this.pendingRestarts.has(wrapper.name)) return;
+
+    // Backoff escalates per restart since the last success, not over the
+    // lifetime restart count — the latter grows without bound, and 2^n
+    // overflows to Infinity well before it means anything.
+    const attempt = (this.consecutiveRestarts.get(wrapper.name) ?? 0) + 1;
+    this.consecutiveRestarts.set(wrapper.name, attempt);
+
     const backoffMs = Math.min(
-      Math.pow(2, health.restartCount) * 1000,
+      Math.pow(2, Math.min(attempt - 1, SignalCollectorService.MAX_BACKOFF_EXPONENT)) * 1000,
       SignalCollectorService.MAX_BACKOFF_MS
     );
 
-    console.log(`[SignalCollector] Restarting ${wrapper.name} (attempt ${health.restartCount + 1}, backoff: ${backoffMs}ms)`);
+    console.log(`[SignalCollector] Restarting ${wrapper.name} (attempt ${attempt} since last success, backoff: ${backoffMs}ms)`);
 
     // Stop the collector
     try {
@@ -317,7 +465,8 @@ export class SignalCollectorService {
     }
 
     // Wait for backoff period, then restart
-    setTimeout(() => {
+    const timer = setTimeout(() => {
+      this.pendingRestarts.delete(wrapper.name);
       if (!this.isRunning) return;
 
       try {
@@ -343,19 +492,24 @@ export class SignalCollectorService {
         console.error(`[SignalCollector] Failed to restart ${wrapper.name}:`, error);
       }
     }, backoffMs);
+
+    this.pendingRestarts.set(wrapper.name, timer);
   }
 
   /**
    * Record a successful operation for a collector
    */
-  recordSuccess(collectorName: string): void {
+  recordSuccess(collectorName: string, at: Date = new Date()): void {
     const health = this.healthState.get(collectorName);
     if (!health) return;
 
-    health.lastSuccessAt = new Date();
+    health.lastSuccessAt = at;
     health.consecutiveFailures = 0;
     health.totalSuccesses++;
     health.isRunning = true;
+    // A success ends the current restart streak, so the next incident starts
+    // its backoff from the bottom again.
+    this.consecutiveRestarts.delete(collectorName);
     this.persistHealthState(collectorName);
   }
 
@@ -385,6 +539,39 @@ export class SignalCollectorService {
    */
   getAllHealth(): CollectorHealth[] {
     return Array.from(this.healthState.values());
+  }
+
+  /**
+   * Staleness verdict per collector, against the same window the health check
+   * restarts on. Callers that surface "this collector has gone quiet" (alerts,
+   * dashboards) must read it from here rather than re-deriving it from a fixed
+   * interval — a second, tighter definition is what had the alerts endpoint
+   * warning about collectors that were fetching exactly as configured.
+   */
+  getStaleness(): CollectorStaleness[] {
+    const now = Date.now();
+
+    return this.collectorWrappers.map(wrapper => {
+      let liveness: CollectorLiveness;
+      try {
+        liveness = readCollectorLiveness(this.db, wrapper.sourceTable);
+      } catch {
+        liveness = { lastFetchedAt: null, maxIntervalMinutes: null, enabledSources: 0 };
+      }
+
+      const lastFetchedMs = liveness.lastFetchedAt ? Date.parse(liveness.lastFetchedAt) : NaN;
+
+      return {
+        name: wrapper.name,
+        isStale: isCollectorStale(liveness, now, this.startedAtMs),
+        lastFetchedAt: liveness.lastFetchedAt,
+        enabledSources: liveness.enabledSources,
+        thresholdMinutes: Math.round(staleThresholdMs(liveness.maxIntervalMinutes) / 60000),
+        minutesSinceFetch: Number.isNaN(lastFetchedMs)
+          ? null
+          : Math.round((now - lastFetchedMs) / 60000),
+      };
+    });
   }
 
   private logActivity(collectorName: string, action: string, message: string): void {

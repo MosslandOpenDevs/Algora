@@ -218,23 +218,29 @@ router.get('/alerts', (req: Request, res: Response) => {
             timestamp: new Date().toISOString(),
           });
         }
+      }
 
-        // Check for stale collectors (no success in 5+ minutes)
-        const staleThreshold = 5 * 60 * 1000;
-        if (health.lastSuccessAt && (Date.now() - health.lastSuccessAt.getTime()) > staleThreshold) {
-          alerts.push({
-            id: `collector-${health.name}-stale`,
-            severity: 'warning',
-            type: 'collector_stale',
-            message: `Collector ${health.name} has not reported success in over 5 minutes`,
-            details: {
-              collector: health.name,
-              lastSuccessAt: health.lastSuccessAt?.toISOString(),
-              minutesSinceSuccess: Math.round((Date.now() - health.lastSuccessAt.getTime()) / 60000),
-            },
-            timestamp: new Date().toISOString(),
-          });
-        }
+      // Staleness comes from the service, which measures each collector
+      // against its own configured fetch interval. This used to apply a flat
+      // 5-minute window of its own and so warned constantly about collectors
+      // polling on a correct 30- or 120-minute schedule.
+      for (const staleness of collectorService.getStaleness()) {
+        if (!staleness.isStale) continue;
+
+        alerts.push({
+          id: `collector-${staleness.name}-stale`,
+          severity: 'warning',
+          type: 'collector_stale',
+          message: `Collector ${staleness.name} has not fetched successfully in over ${staleness.thresholdMinutes} minutes`,
+          details: {
+            collector: staleness.name,
+            lastFetchedAt: staleness.lastFetchedAt,
+            minutesSinceFetch: staleness.minutesSinceFetch,
+            thresholdMinutes: staleness.thresholdMinutes,
+            enabledSources: staleness.enabledSources,
+          },
+          timestamp: new Date().toISOString(),
+        });
       }
     }
 
