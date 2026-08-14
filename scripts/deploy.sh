@@ -8,7 +8,7 @@
 # cron every few minutes.
 #
 # Why pull-based instead of a push from CI: the app server has no public inbound
-# route (it is reachable over Tailscale only) and the repo is public, so a
+# route (it is reachable only over a private network) and the repo is public, so a
 # self-hosted runner would be a footgun. Fetching outbound needs no deploy key,
 # no open port, and no GitHub configuration at all. Same rationale and structure
 # as agentic-orchestrator's scripts/deploy.sh, adapted for a pnpm monorepo.

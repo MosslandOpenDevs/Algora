@@ -33,166 +33,52 @@ reporting 0. Tests: `collector-health.test.ts` (11 cases) pins the failure
 modes; verified against a copy of the production DB — all four collectors
 judged healthy under the new logic.
 
-**Deploy note**: the fix must be built and restarted on the production host
-(atrn-vm-linux, pm2 `algora-api`) to take effect.
+**Deploy note**: the fix must be built and the pm2 `algora-api` process restarted
+on the private production application host to take effect.
 
 ---
 
 ## Previous Work: Shared-Ollama `num_ctx` Coordination (2026-08-06)
 
-MOSS.AO sent a memo asking Algora to move `LOCAL_LLM_NUM_CTX` from 8192 to
-16384, because the two services share the Ollama host at `192.168.1.65:11434`
-and were requesting the same model at different context sizes.
+Algora raised the reference `LOCAL_LLM_NUM_CTX` to `16384` after a controlled
+shared-service test showed that same-model requests with different context
+sizes replace the resident runner. Every client using that model was aligned
+and a divergent per-call override was removed.
 
-**We made the change.** It is right in direction and free for us. But the memo's
-supporting numbers did not survive re-measurement against the host
-(Ollama 0.32.5, 2026-08-06), and three of them were wrong in ways that matter
-for MOSS.AO's own debugging:
+The reusable outcome is:
 
-| Claim | Measured |
-|---|---|
-| Non-resident `num_ctx` "does not complete" (40s timeouts) | Completes. 4.38s at 16384, 4.64s back at 8192 |
-| Model load ~60s | **4.3–4.5s** (our own code comment was the stale source) |
-| 16384 costs ~+0.15 GB VRAM | **2.89 GB** at 16384 vs **3.03 GB** at 8192 — flat-to-lower |
-| Algora calls arrive every ~90s | Every ~30s (2/min) + a `/api/tags` health probe each 60s |
+- same model + different `num_ctx`: the resident runner is replaced and
+  reloaded;
+- concurrent requests to one runner: the configured slots are shared;
+- distinct models: separate runners can execute concurrently when capacity
+  permits;
+- a reference `NUM_PARALLEL=2` measurement delivered about `1.6x` normalized
+  aggregate throughput at about `1.03x` resident memory versus the single-slot
+  baseline; each deployment must repeat the measurement;
+- concurrency measurements must be bracketed by single-request controls so
+  background traffic is not mistaken for a configuration regression.
 
-A realistic reproduction — our production cadence against a 3,170-token/16384
-request — showed no stall at all: MOSS.AO's call returned in **11.2s**
-(`done_reason: stop`), and exactly one of our six calls paid a **4.45s** reload.
-So the cost of divergent `num_ctx` is a few seconds per alternation, not an
-indefinite hang.
-
-**What the memo got right, and what it missed.** The structural claim holds, at
-the right scope: the host keeps **one runner per model name**, and that runner
-**serves one request at a time**. Confirmed twice — a second context size for
-the same model never coexists (`/api/ps` shows one entry after alternating), and
-a small call fired 8s into a 16.5s generation returned at 16.6s, i.e. it waited.
-Two consequences the memo did not draw:
-
-- Its "~5 GB free, so this is not capacity" framing implies a second *instance
-  of the same model at another `num_ctx`* could load. It cannot, at any amount
-  of free VRAM. Converging `num_ctx` removes reload thrash but **not**
-  head-of-line blocking; the lever for that is `OLLAMA_NUM_PARALLEL` on the
-  host, not an env var in either app.
-- Polling `/api/ps` after the fix caught a **third** `num_ctx` in rotation
-  (4096), evicting the agreed 16384 runner. Source:
-  `IdeaScorer.SCORING_NUM_CTX = 4096` in MOSS.AO's own scoring path — a
-  hard-coded per-call override added as a workaround for this very problem.
-  Their idea-triage timeouts were self-inflicted, and the two-party agreement
-  they proposed could not hold until that override was removed.
-
-**Resolved.** MOSS.AO confirmed all four corrections against their own
-re-measurement and removed the override (`e0468d5`, *"drop SCORING_NUM_CTX — it
-became the problem it was added for"*, verified as an ancestor of their deployed
-HEAD; `src/` is clean and the removal is pinned by
-`assert not hasattr(IdeaScorer, "SCORING_NUM_CTX")`). They also accepted both of
-our declines. The host has since held `gemma3:4b ctx=16384` across a continuous
-2-minute poll with no flips — one instance, one context size, both services on
-it.
-
-**Correction, from the host itself.** `ollama ps` run on the Windows box showed
-`gemma3:4b` (ctx 16384) *and* `gemma3:1b` (ctx 4096) resident together — so
-"one instance at a time", which we had generalised from same-model tests, was
-too broad. Re-measured: a `gemma3:1b` call fired 8s into a 17.3s `gemma3:4b`
-generation returned in **0.59s**. **Distinct models get distinct runners and
-execute in parallel; only same-model/different-`num_ctx` thrashes, and only
-same-runner requests serialize.** The `num_ctx` convergence work is unaffected
-and still correct. What changes is the remedy — and it means MOSS.AO's first
-suggestion (a smaller model for our high-frequency path) was right in principle
-and our rejection of it was wrong. Reopened as a decision below.
-
-The host's own startup config confirms the rest, and it is all default rather
-than deliberate — `$env:OLLAMA_NUM_PARALLEL` is unset:
-
-```
-OLLAMA_NUM_PARALLEL:1   OLLAMA_MAX_LOADED_MODELS:0 (auto)   OLLAMA_MAX_QUEUE:512
-OLLAMA_KEEP_ALIVE:5m0s  OLLAMA_FLASH_ATTENTION:false        OLLAMA_KV_CACHE_TYPE: (f16)
-NVIDIA GeForce RTX 5060 — total 8.0 GiB, available 6.9 GiB
-```
-
-Residency is 2.89 GB (`4b`) + 0.88 GB (`1b`) ≈ 3.8 of 6.9 GiB.
-
-**Resolved: `OLLAMA_NUM_PARALLEL=2` applied on the host.** Serialization is gone
-and single-request decode is unchanged. Measured at each setting, bracketed by
-single-request controls:
-
-| `NUM_PARALLEL` | `gemma3:4b` VRAM | aggregate, 4 concurrent |
-|---|---|---|
-| 1 | 2.89 GB | ~107 tok/s |
-| **2** (chosen) | **2.98 GB** | **173 tok/s** |
-| 4 | 3.30 GB | 235 tok/s |
-
-2 rather than 4 because `MAX_LOADED_MODELS` is 2 and `NUM_PARALLEL` applies per
-runner — 4 would let two resident models reserve 8 slots between them. 2 keeps
-~74% of the gain for ~22% of the VRAM cost and leaves room for the unrelated
-`gemma3:1b` that another client on the LAN loads periodically: with both
-resident the total is 3.92 GB of ~5.9 GiB usable, and they serve concurrently.
-Full write-up in `docs/ollama-shared-host-tuning.md`.
-
-**A false alarm worth recording.** Mid-change sampling showed decode at
-5.2 tok/s and prefill at 101 tok/s, and that was reported as a catastrophic
-regression with the backend (Vulkan vs CUDA) as the suspected cause. The
-host log disproved it — `library=CUDA` throughout — and re-measurement with a
-control showed no regression at all. The samples were contaminated: once
-`NUM_PARALLEL > 1`, Algora's own production traffic genuinely shares the GPU,
-so an uncontrolled "single request" measurement is really measuring *n*-way
-contention. **This host is never idle; always bracket a concurrency measurement
-with single-request controls.**
-
-**Not doing: moving the chatter scheduler to `gemma3:1b`.** It was the fallback
-plan for head-of-line blocking, and with `NUM_PARALLEL=2` there is no blocking
-left to fix — so it would trade user-visible chatter quality for nothing. Worth
-reconsidering only if the host reverts to a single slot. Recorded here because
-the reasoning is non-obvious: it must never be applied to `complexity: 'fast'`
-wholesale either way, since 4 of the 7 `fast` call sites are live deliberation
-paths in `agora.ts`.
-
-Their two optional suggestions were **declined with measurements**: moving our
-small `fast` calls to `gemma3:1b`, and shortening `keep_alive`, would each put a
-second entry in the host's single instance slot and convert a fixed 4.4s load
-into continuous thrash. On a one-instance host, staying resident is what makes
-us a good neighbour — which is also why `apps/api/.env` already consolidated all
-three tiers onto `gemma3:4b`.
-
-**Changes:** `LOCAL_LLM_NUM_CTX=16384` in prod `apps/api/.env` (backup at
-`.env.bak.numctx.20260806`) with `algora-api` restarted and verified serving at
-`context_length: 16384`; the code default raised to match; and the coordination
-constraint documented at both use sites and in `.env.example` so the number is
-not changed unilaterally again. The stale `keep_alive` comment claiming "cold
-loads cost ~60s" — which the memo cited back at us as authoritative — now
-carries the measured figure.
+`16384` is a coordination default, not a description of live host capacity.
+Change it only after measuring bounded prompt requirements and update every
+client using the same model together. Operational endpoint, hostname, tenant,
+OS/GPU, driver, absolute capacity, and raw benchmark details are intentionally
+kept outside the public repository. See
+`docs/ollama-shared-host-tuning.md` for the generalized procedure.
 
 ---
 
 ## Recent Work: Deliberation Output Fixes + Tier-2 Readiness (2026-08-06)
 
-The operator asked whether Algora should move deliberation to a paid API, as
-MOSS.AO did. Measured against the real system, the premise did not transfer —
-and the investigation found that the visible quality problems were our own
-constants, not the model.
+The operator asked whether deliberation should move to a paid API. Controlled
+analysis showed that the visible quality problems came from application limits
+rather than the local model.
 
-**Why the MOSS.AO precedent does not apply.** Its CHANGELOG records the actual
-root cause: *"no Ollama request ever sent `num_ctx`, so the shared server
-loaded gemma3:4b at its own 4096 default … generation stopped at exactly
-`prompt_eval + eval == 4096` with `done_reason="length"` — which the provider
-then discarded, so nothing was ever logged."* That is the same bug fixed here
-earlier the same day. After adding `num_ctx=16384`, MOSS.AO hit a second,
-infrastructural wall: each distinct `num_ctx` is a separate model instance, and
-the congested shared GPU hung every 16k load for ~30 minutes. Their own
-conclusion: *"that part is infra, not code."*
-
-> **Update 2026-08-06:** the "~30 minute hang" was never independently
-> verified and does not reproduce — a 16k load on that host now measures
-> **4.3–4.5s**. The single-instance constraint behind it is real. See
-> *Shared-Ollama `num_ctx` Coordination* above.
-
-Algora never reaches that wall. Reconstructing every prompt from the largest
-real production session and tokenizing them on the actual Ollama host:
-agent statement 752 tokens, final summary 2,859, action items 3,910, and a
-synthetic worst case of **4,497 — 55% of the 8,192 window**. Every path is hard
-windowed (`slice(-5)`, `getMessages(50)`, `slice(-30)`) with a 400-char cap per
-message, so prompts cannot grow with rounds. Zero context-saturation warnings
-across all production logs.
+A peer deployment reinforced two transferable rules: always send an explicit
+`num_ctx`, because a server default can silently truncate longer prompts; and
+do not generalize shared-host latency or capacity measurements across
+deployments. Algora's prompts are hard-bounded and representative tests keep
+them below the configured context window. Exact production workloads, tenant
+details, host timings, and raw logs remain in private operations records.
 
 **What was actually broken (all local, all free to fix):**
 
@@ -980,11 +866,11 @@ See [docs/algora-v2-upgrade-plan.md](docs/algora-v2-upgrade-plan.md) for the com
 ### Phase 9: Production Deployment (COMPLETED)
 - [x] **pm2 Process Management**
   - [x] `ecosystem.config.cjs` for managing both api and web apps
-  - [x] Local machine deployment (211.196.73.206)
-  - [x] api on port 3201, web on port 3200
+  - [x] Private application-host deployment (address omitted)
+  - [x] API and web services bound behind the private reverse-proxy boundary
   - [x] Auto-restart configuration with memory limits
 - [x] **nginx Reverse Proxy**
-  - [x] Lightsail server (13.209.131.190) with nginx
+  - [x] Public edge proxy with nginx (provider/address omitted)
   - [x] SSL/TLS with Let's Encrypt
   - [x] WebSocket proxy for Socket.IO
   - [x] Static asset caching headers
@@ -1657,6 +1543,6 @@ When continuing development:
 ### Current Architecture
 ```
 Internet → algora.moss.land (DNS)
-        → Lightsail 13.209.131.190 (nginx + SSL)
-        → Local 211.196.73.206 (pm2: api:3201, web:3200)
+        → Public edge proxy (nginx + SSL)
+        → Private application host (pm2-managed services)
 ```

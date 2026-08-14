@@ -11,19 +11,15 @@ export interface LLMConfig {
       quality: string;   // Complex reasoning
     };
     timeout: number;
-    // Context window (num_ctx) requested per call. Ollama's server-side
-    // default is tiny (measured ~2048 on prod, 2026-08-06) and it silently
-    // truncates any prompt that exceeds it — the summary prompt (~3.4k
-    // tokens) was losing its head every time. Must comfortably exceed the
-    // largest prompt + num_predict.
+    // Context window (num_ctx) requested per call. Some Ollama defaults are too
+    // small for this application's bounded prompts and can silently truncate
+    // them. Keep this comfortably above the largest prompt + num_predict.
     //
-    // This value is also a COORDINATION value, not just a ceiling. The Ollama
-    // host is shared with MOSS.AO, and for a given model name it keeps ONE
-    // runner: a request at a num_ctx other than the resident one replaces it,
-    // forcing a full unload/reload. Both services must therefore request the
-    // SAME number or each alternation costs a reload. Do not change it
-    // unilaterally. (Distinct models do coexist and run in parallel — it is
-    // only same-model/different-options that thrashes.)
+    // This value is also a coordination value, not just a ceiling. Every client
+    // using the same model on a shared service must request the same number; a
+    // different value can replace the resident runner and cause a reload. Do
+    // not change it for one client in isolation. Distinct models may use
+    // separate runners when the deployment has enough capacity.
     numCtx: number;
   };
   tier2: {
@@ -139,13 +135,9 @@ export class LLMService extends EventEmitter {
           quality: process.env.LOCAL_LLM_MODEL_QUALITY || 'gemma3:4b',
         },
         timeout: parseInt(process.env.LLM_TIER1_TIMEOUT_MS || '180000', 10), // 3 min default
-        // 16384 is the value agreed with MOSS.AO for the shared host (see the
-        // coordination note on LLMConfig.tier1.numCtx). It costs us nothing:
-        // measured on the serving host, gemma3:4b resident at 16384 reports
-        // 2.89 GB VRAM vs 3.03 GB at 8192 — sliding-window attention keeps the
-        // KV cache flat — and decode time scales with tokens actually emitted
-        // (ours are 19–27), not with the window. Our largest real prompt is
-        // ~4.5k tokens, so 8192 was already sufficient on headroom alone.
+        // Shared-host coordination default; see LLMConfig.tier1.numCtx above.
+        // Re-size from bounded prompt measurements and deployment headroom, and
+        // roll out any change to every client using the same model together.
         numCtx: parseInt(process.env.LOCAL_LLM_NUM_CTX || '16384', 10),
       },
       tier2: {
@@ -450,16 +442,15 @@ export class LLMService extends EventEmitter {
           : request.prompt,
         stream: false,
         think: isThinking ? false : undefined,
-        // Keep the model resident. A cold load measured 4.3–4.5s on the shared
-        // host (2026-08-06) — not the ~60s this comment used to claim — and
-        // since the host keeps one runner per model name, staying resident is
-        // also what keeps us from evicting MOSS.AO between our calls.
+        // Keep the model resident to avoid unnecessary reloads between
+        // intermittent callers. Re-tune this per deployment if model admission
+        // pressure is more important than residency.
         keep_alive: '15m',
         options: {
           temperature: request.temperature ?? 0.7,
           num_predict: maxTokens,
-          // Without an explicit num_ctx Ollama applies its server default
-          // (~2048 measured on prod) and SILENTLY truncates longer prompts.
+          // Without an explicit num_ctx, an Ollama server default may silently
+          // truncate longer prompts.
           num_ctx: this.config.tier1.numCtx,
         },
       }),

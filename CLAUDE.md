@@ -156,9 +156,9 @@ Recommended models:
 
 ### Production
 - **URL**: https://algora.moss.land
-- **Architecture**: nginx (Lightsail) → pm2 (Local Machine)
-- **Lightsail Server**: 13.209.131.190 (nginx reverse proxy + SSL)
-- **Local Machine**: 211.196.73.206 (pm2 managed services)
+- **Architecture**: public nginx edge → private application host over a restricted network
+- **Edge**: public DNS/SSL endpoint; provider and address are deployment-local
+- **Application host**: pm2-managed services; hostname and address are intentionally omitted
 
 ### Local Development
 - Frontend: http://localhost:3200
@@ -219,7 +219,7 @@ When starting a new session, follow these steps:
 
 ### Production Deployment
 - pm2 process management (`ecosystem.config.cjs`)
-- nginx reverse proxy on Lightsail with SSL
+- nginx reverse proxy at the managed public edge with SSL
 - Fixed Next.js i18n middleware for static assets
 
 ### Governance OS (v2.0)
