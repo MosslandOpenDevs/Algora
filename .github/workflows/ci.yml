@@ -14,6 +14,9 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
 env:
   # The `prepare` script installs husky hooks, which are meaningless on a runner.
   HUSKY: 0
@@ -25,13 +28,67 @@ jobs:
     timeout-minutes: 25
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          # Gitleaks scans reachable history, not only the checked-out snapshot.
+          fetch-depth: 0
+          persist-credentials: false
 
-      - uses: pnpm/action-setup@v4
+      # Use the MIT-licensed CLI directly: gitleaks-action requires a separate
+      # license for organization-owned repositories. The release archive is
+      # version- and checksum-pinned so CI does not execute an unverified binary.
+      - name: Secret scan
+        shell: bash
+        env:
+          GITLEAKS_VERSION: 8.30.1
+          GITLEAKS_LINUX_X64_SHA256: 551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb
+        run: |
+          set -euo pipefail
+          archive="${RUNNER_TEMP}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          binary="${RUNNER_TEMP}/gitleaks"
+          curl --fail --location --silent --show-error --retry 3 \
+            --output "${archive}" \
+            "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          echo "${GITLEAKS_LINUX_X64_SHA256}  ${archive}" | sha256sum --check
+          tar -xzf "${archive}" -C "${RUNNER_TEMP}" gitleaks
+          "${binary}" git --redact --verbose --no-banner .
+
+      # Public documentation and source must not identify a deployment by a
+      # literal address. Loopback/wildcard examples remain valid; use a
+      # placeholder or deployment-local environment variable for everything
+      # else. Only file:line locations are printed to avoid repeating a leak.
+      - name: Public-repo identifier scan
+        shell: bash
+        run: |
+          set -euo pipefail
+          ip_locations="$(
+            git grep -n -o -I -E '([0-9]{1,3}\.){3}[0-9]{1,3}' \
+              -- . ':!pnpm-lock.yaml' \
+              | awk -F: '$NF != "127.0.0.1" && $NF != "0.0.0.0" { print $1 ":" $2 }' \
+              | sort -u \
+              || true
+          )"
+          endpoint_locations="$(
+            git grep -n -I -E 'LOCAL_LLM_ENDPOINT.{0,160}https?://' \
+              -- . ':!pnpm-lock.yaml' \
+              | awk 'index($0, "localhost") == 0 && index($0, "127.0.0.1") == 0 {
+                  split($0, fields, ":"); print fields[1] ":" fields[2]
+                }' \
+              | sort -u \
+              || true
+          )"
+          if [[ -n "${ip_locations}" || -n "${endpoint_locations}" ]]; then
+            echo "Deployment-specific address found; replace it with a placeholder." >&2
+            printf '%s\n%s\n' "${ip_locations}" "${endpoint_locations}" \
+              | sed '/^$/d' >&2
+            exit 1
+          fi
+
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4.3.0
         with:
           version: 9.0.0
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 20
           cache: pnpm

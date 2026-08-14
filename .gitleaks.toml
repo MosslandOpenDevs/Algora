@@ -1,0 +1,9 @@
+title = "Algora Gitleaks configuration"
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "The MOC ERC-20 contract address is a public on-chain identifier, not a credential."
+targetRules = ["generic-api-key"]
+regexes = ['''^0x8bbfe65e31b348cd823c62e02ad8c19a84dd0dab$''']

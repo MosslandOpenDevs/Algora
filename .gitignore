@@ -16,12 +16,28 @@ out/
 *.db-journal
 *.db-wal
 *.db-shm
+*.db.gz
+*.sqlite
+*.sqlite3
+*.sqlite-journal
+*.sqlite-wal
+*.sqlite-shm
 data/
 
-# Environment files
-.env
-.env.local
-.env.*.local
+# Environment files (allow only sanitized templates)
+.env*
+!.env.example
+
+# Credentials and signing material
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+id_rsa
+id_ed25519
+id_ecdsa
 
 # IDE
 .idea/

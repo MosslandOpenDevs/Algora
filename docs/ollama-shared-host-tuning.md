@@ -1,146 +1,110 @@
-# Shared Ollama host: applied tuning and measurements
+# Shared Ollama service: generalized tuning reference
 
-**Host:** `192.168.1.65:11434` — Windows, NVIDIA RTX 5060, Ollama 0.32.5
-**Shared by:** Algora and MOSS.AO (agentic-orchestrator)
-**Status:** all changes applied and verified 2026-08-06
+This guide records reusable tuning lessons for a GPU-backed Ollama service used
+by multiple workloads. Operational endpoints, hostnames, tenant names, OS/GPU
+identifiers, driver versions, and absolute capacity figures are intentionally
+omitted. Keep `LOCAL_LLM_ENDPOINT` and host-specific settings in non-versioned
+deployment configuration.
 
----
+The values below are a reference starting point, not a statement of the live
+production configuration. Re-measure them on each deployment.
 
-## Applied configuration
+## Reference baseline
 
-| | value | owner |
-|---|---|---|
-| model | `gemma3:4b` | both services |
-| `num_ctx` | **16384** | both services (coordination value — see below) |
-| `OLLAMA_NUM_PARALLEL` | **2** (was 1, the default) | host |
-| `OLLAMA_MAX_LOADED_MODELS` | **2** (was `0`/auto) | host |
-| `OLLAMA_FLASH_ATTENTION` | **true** (was false) | host |
-| `OLLAMA_KV_CACHE_TYPE` | **q8_0** (was empty/f16) | host |
-| `OLLAMA_GPU_OVERHEAD` | **1 GiB** reserved | host |
-| `keep_alive` | `15m` per call | Algora |
+| setting                    |             reference value | scope                             |
+| -------------------------- | --------------------------: | --------------------------------- |
+| model                      |                 `gemma3:4b` | workload-specific                 |
+| `num_ctx`                  |                     `16384` | every client using the same model |
+| `OLLAMA_NUM_PARALLEL`      |                         `2` | host                              |
+| `OLLAMA_MAX_LOADED_MODELS` |                         `2` | host                              |
+| `OLLAMA_FLASH_ATTENTION`   |                      `true` | host                              |
+| `OLLAMA_KV_CACHE_TYPE`     |                      `q8_0` | host                              |
+| `OLLAMA_GPU_OVERHEAD`      | deployment-specific reserve | host                              |
+| `keep_alive`               |                       `15m` | per call                          |
 
-> `OLLAMA_NUM_PARALLEL` is read only at process start, so a `setx` change needs
-> an Ollama restart before it takes effect. Confirm the live value from the log
-> (below) rather than from the environment variable — they can disagree.
+Host-level variables are read at process start. Restart Ollama after changing
+them, then confirm the effective values in the service log rather than assuming
+the environment and running process agree.
 
-## The scheduling model
+## Scheduling model
 
-Measured, not assumed. Three distinct behaviours that are easy to conflate:
+Controlled measurements showed three behaviors that should be tested
+separately:
 
-| situation | behaviour |
-|---|---|
-| same model, different `num_ctx` | runner is **replaced** — full unload/reload, 4.3–4.5s |
-| same runner, concurrent requests | **shares slots** (was: serialized at `NUM_PARALLEL=1`) |
-| different models | **separate runners, genuinely parallel** |
+| situation                        | behavior                                                       |
+| -------------------------------- | -------------------------------------------------------------- |
+| same model, different `num_ctx`  | the runner is replaced, causing a reload                       |
+| same runner, concurrent requests | requests share the configured slots                            |
+| different models                 | separate runners can execute concurrently when capacity allows |
 
-The third was verified directly: a `gemma3:1b` call fired 8s into a 17.3s
-`gemma3:4b` generation returned in **0.59s**.
+This is why `num_ctx` is a coordination value as well as a context ceiling.
+Clients using the same model should use the same value; otherwise alternating
+requests can repeatedly replace the resident runner. Size the value from the
+largest bounded prompt plus headroom, and change it across all clients together.
 
-The first is why `num_ctx` is a *coordination* value rather than a ceiling.
-Neither service needs 16384 on its own — Algora's largest real prompt is ~4.5k
-tokens — but any mismatch makes every alternation pay a reload. Do not change it
-on one side only.
+## Choosing `OLLAMA_NUM_PARALLEL`
 
-## Why `NUM_PARALLEL` was raised
+Benchmark with realistic prompt and output lengths. One controlled reference
+measurement produced the following normalized result; absolute throughput and
+memory values are deliberately omitted because they fingerprint the host and do
+not transfer reliably across hardware.
 
-At `NUM_PARALLEL=1` a single runner served one request at a time, so the two
-services blocked each other. A trivial call fired 8 seconds into a 16.5s
-generation returned at 16.6s — it had simply waited.
+| `NUM_PARALLEL` | resident-memory ratio | aggregate-throughput ratio |
+| -------------: | --------------------: | -------------------------: |
+|              1 |                 1.00x |                      1.00x |
+|              2 |           about 1.03x |                 about 1.6x |
+|              4 |           about 1.14x |                 about 2.2x |
 
-The workloads have opposite shapes, which made this expensive both ways:
+The reference deployment chose `2`: it captured most of the throughput gain
+while preserving headroom for another resident model. Treat that as a starting
+point only. Validate the combined reservation implied by
+`NUM_PARALLEL * MAX_LOADED_MODELS` on the target host.
 
-- **Algora** — ~2 calls/min, 19–31 output tokens, sub-second when unblocked.
-- **MOSS.AO** — infrequent, multi-thousand-token prompts, tens of seconds.
+A controlled second-model coexistence test also confirmed that separate model
+runners can remain resident and serve concurrently without eviction when there
+is enough headroom. Do not infer that result from unrelated background traffic;
+reproduce it with test workloads you control.
 
-## Results — why 2 rather than 4
+## Measurement discipline
 
-Both were measured live, each bracketed by single-request controls (300-token
-requests, 4 fired concurrently):
+Background traffic can contaminate shared-host benchmarks. For every concurrency
+test:
 
-| `NUM_PARALLEL` | `gemma3:4b` VRAM | aggregate, 4 concurrent | vs serial |
-|---|---|---|---|
-| 1 | 2.89 GB | ~107 tok/s | 1.0x |
-| **2** (current) | **2.98 GB** | **173 tok/s** | **1.6x** |
-| 4 | 3.30 GB | 235 tok/s | 2.2x |
+1. Run a single-request control immediately before the test.
+2. Run the concurrent workload with fixed prompts and output limits.
+3. Run the same single-request control immediately afterward.
+4. Compare normalized latency, throughput, and resident memory.
 
-Single-request decode is unchanged at every setting (106.6 / 106.9 tok/s at 4,
-106.9 tok/s at 2) against the ~109 tok/s pre-change baseline. The slot count is
-directly visible in completion times: at 2, four concurrent requests finish in
-two pairs (3.61s, 3.61s, 6.88s, 6.90s); at 4 they all finish together.
+Without those controls, a slowdown may simply reflect contention from another
+workload rather than a backend or configuration regression.
 
-**2 is the chosen setting** because `MAX_LOADED_MODELS` is 2 and
-`NUM_PARALLEL` applies *per runner* — so 4 would let two resident models reserve
-8 slots between them. 2 keeps ~74% of the throughput gain for ~22% of the VRAM
-cost, and leaves room for a third-party model to load.
+## Flash attention and KV-cache format
 
-That headroom is not hypothetical: a `gemma3:1b` at ctx 4096 (not ours — some
-other client on the LAN) appears on this host periodically. Measured with both
-resident:
+On the reference deployment, enabling flash attention and using a `q8_0` KV
+cache produced no material change beyond run-to-run noise, and resident memory
+was unchanged at the available measurement precision. This is safe to leave
+enabled, but it should not be treated as guaranteed capacity headroom. Model
+choice and parallelism remain the primary controls; re-measure on other
+architectures.
 
-```
-gemma3:4b  ctx=16384  2.98 GB
-gemma3:1b  ctx= 4096  0.95 GB
-                      ------- 3.92 GB of ~5.9 GiB usable
-                              (6.9 GiB available - 1.0 GiB GPU_OVERHEAD)
-```
+## Keep-alive
 
-~2.0 GB spare, and they serve concurrently: a `gemma3:1b` probe fired 2s into a
-`gemma3:4b` generation returned in **0.38s**, with no eviction.
-
-> Note on an earlier estimate: ~10 MB was predicted for two slots by using a
-> single runner at `num_ctx=32768` as a proxy. That under-predicts. The measured
-> figures in the table above are the ones to trust.
-
-## Measurement caveat, learned the hard way
-
-Mid-change sampling showed decode at **5.2 tok/s** and prefill at 101 tok/s,
-which read as a catastrophic regression and was reported as one. It was not.
-Once `NUM_PARALLEL > 1`, Algora's own live production traffic genuinely shares
-the GPU, so any "single request" sample taken without a control is really
-measuring *n*-way contention.
-
-**Take a single-request control immediately before and after any concurrent
-measurement on this host.** A number without that control means nothing here,
-because the host is never idle.
-
-## Flash attention + `q8_0` KV cache: measured, no effect
-
-These were suggested here as a likely win and were then enabled on the host.
-Re-measured with the same controls:
-
-| | f16 KV, no FA | FA + `q8_0` KV |
-|---|---|---|
-| single request (control) | 106.6 / 106.9 tok/s | 104.7 / 107.2 tok/s |
-| 4 concurrent, aggregate | 235 tok/s | 229 tok/s |
-| resident VRAM | 3.30 GB | 3.30 GB |
-
-**No measurable difference on any axis** — the deltas are inside run-to-run
-noise, and VRAM is identical to two decimal places. The likely reason is the
-same property that makes `num_ctx` cheap here: gemma3 uses sliding-window
-attention on most layers, so the KV cache is already small and quantising it
-saves nothing worth measuring.
-
-Harmless to leave on, but do not expect it to buy headroom. If VRAM ever gets
-tight on this host, the lever is model choice or `NUM_PARALLEL`, not the KV
-cache format.
-
-## Not changed
-
-- **`OLLAMA_KEEP_ALIVE`** — server default `5m`, overridden per call by Algora's
-  `15m`.
+The reference client sends `keep_alive: 15m` while the server default may be
+shorter. On a shared service, a longer residency period can prevent avoidable
+reloads between intermittent callers. Balance that against the need to admit
+other models, and configure it per workload rather than publishing host-specific
+assumptions.
 
 ## Verification
 
+Set the real endpoint only in a local or deployment environment file, then use
+the configured value for read-only verification:
+
 ```bash
-curl -s http://192.168.1.65:11434/api/ps    # one gemma3:4b, context_length 16384
+OLLAMA_BASE_URL="${LOCAL_LLM_ENDPOINT:-http://localhost:11434}"
+curl -s "${OLLAMA_BASE_URL}/api/ps"
 ```
 
-```powershell
-Select-String -Path "$env:LOCALAPPDATA\Ollama\server.log" -Pattern "server config" | Select-Object -Last 1
-Select-String -Path "$env:LOCALAPPDATA\Ollama\server.log" -Pattern "inference compute" | Select-Object -Last 1
-```
-
-The second confirms the backend is CUDA (`library=CUDA`, compute 12.0, driver
-13.1) rather than the Vulkan path the config also enables — worth re-checking
-after any Ollama restart, since a silent backend change would look exactly like
-a performance regression.
+After a restart, inspect the Ollama service log for the effective server
+configuration and inference backend. Log locations and accelerator details vary
+by host and should stay in private operations documentation.
