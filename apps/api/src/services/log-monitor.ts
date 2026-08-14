@@ -86,9 +86,12 @@ export class LogMonitorService {
       return [];
     }
 
-    const files = fs.readdirSync(this.logsDir)
-      .filter(f => f.endsWith('.log'))
-      .map(name => {
+    const files = fs.readdirSync(this.logsDir, { withFileTypes: true })
+      // Dirent#isFile does not follow symlinks. Log reads must stay inside the
+      // managed log set even if a link is later dropped into this directory.
+      .filter(entry => entry.isFile() && entry.name.endsWith('.log'))
+      .map(entry => {
+        const name = entry.name;
         const filePath = path.join(this.logsDir, name);
         const stat = fs.statSync(filePath);
         return {

@@ -6,6 +6,25 @@ import { requireAdmin } from '../middleware/auth';
 
 export const logsRouter: RouterType = Router();
 
+// Log output can contain internal paths, request details, and operational
+// failures. Gate the router once so every current and future log endpoint is
+// fail-closed instead of relying on each handler to remember the middleware.
+logsRouter.use(requireAdmin);
+
+function parseBoundedInteger(
+  value: unknown,
+  fallback: number,
+  min: number,
+  max: number,
+): number | null {
+  if (value === undefined) return fallback;
+  if (typeof value !== 'string' || !/^\d+$/.test(value)) return null;
+
+  const parsed = Number(value);
+  if (!Number.isSafeInteger(parsed) || parsed < min) return null;
+  return Math.min(parsed, max);
+}
+
 /**
  * GET /api/logs/stats
  * Get aggregated log statistics
@@ -42,10 +61,19 @@ logsRouter.get('/files', (_req: Request, res: Response) => {
 logsRouter.get('/recent/:fileName', async (req: Request, res: Response) => {
   try {
     const { fileName } = req.params;
-    const limit = Math.min(parseInt(req.query.limit as string) || 100, 1000);
+    const limit = parseBoundedInteger(req.query.limit, 100, 1, 1000);
+    if (limit === null) {
+      return res.status(400).json({ error: 'limit must be a positive integer' });
+    }
 
-    // Validate fileName to prevent path traversal
-    if (fileName.includes('..') || fileName.includes('/')) {
+    // Only files returned by getLogFiles are readable. That method excludes
+    // symlinks and non-.log entries, so a name inside the directory cannot be
+    // used to expose some other operational file.
+    if (
+      fileName.includes('..') ||
+      fileName.includes('/') ||
+      !logMonitorService.getLogFiles().some(file => file.name === fileName)
+    ) {
       return res.status(400).json({ error: 'Invalid file name' });
     }
 
@@ -73,14 +101,32 @@ logsRouter.get('/search', async (req: Request, res: Response) => {
       offset = '0',
     } = req.query;
 
+    const parsedLimit = parseBoundedInteger(limit, 100, 1, 500);
+    const parsedOffset = parseBoundedInteger(offset, 0, 0, Number.MAX_SAFE_INTEGER);
+    if (parsedLimit === null || parsedOffset === null) {
+      return res.status(400).json({
+        error: 'limit must be a positive integer and offset a non-negative integer',
+      });
+    }
+
+    if (
+      (level !== undefined &&
+        (typeof level !== 'string' || !['info', 'warn', 'error'].includes(level))) ||
+      [query, module, startDate, endDate].some(
+        value => value !== undefined && typeof value !== 'string'
+      )
+    ) {
+      return res.status(400).json({ error: 'Invalid search filters' });
+    }
+
     const result = await logMonitorService.searchLogs({
       query: query as string | undefined,
       level: level as 'info' | 'warn' | 'error' | undefined,
       module: module as string | undefined,
       startDate: startDate as string | undefined,
       endDate: endDate as string | undefined,
-      limit: Math.min(parseInt(limit as string), 500),
-      offset: parseInt(offset as string),
+      limit: parsedLimit,
+      offset: parsedOffset,
     });
 
     res.json(result);
@@ -109,7 +155,7 @@ logsRouter.get('/errors/today', async (_req: Request, res: Response) => {
  * Clean up old log files (admin only)
  * Query: daysToKeep (default: 30)
  */
-logsRouter.delete('/cleanup', writeLimiter, requireAdmin, (req: Request, res: Response) => {
+logsRouter.delete('/cleanup', writeLimiter, (req: Request, res: Response) => {
   try {
     const daysToKeep = parseInt(req.query.daysToKeep as string) || 30;
 
