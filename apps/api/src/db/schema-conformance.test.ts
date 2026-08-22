@@ -1,8 +1,8 @@
 /**
- * Structural guard: no SQL statement in apps/api may name a column that does
- * not exist on the table it reads.
+ * Structural guard: no SQL statement in apps/api may name a column or table
+ * that does not exist.
  *
- * This class of bug has now shipped four times, and it always looks the same:
+ * This class of bug has shipped four times, and it always looks the same:
  *
  * - `/api/timeline/issue/:id` selected `round_count` and `completed_at` from
  *   `agora_sessions`; the columns are `current_round` and `concluded_at`.
@@ -17,21 +17,24 @@
  * time behind a catch that turned it into a failed response. Nothing was
  * louder than a log line.
  *
- * Two details decide the shape of this guard:
+ * SQLite reports only the FIRST unknown column, so fixing one by hand moves the
+ * error to the next and looks resolved until the next request. Only prepare()
+ * sees the whole statement. `agora_sessions` had two.
  *
- * - SQLite reports only the FIRST unknown column, so fixing one by hand moves
- *   the error to the next and looks resolved until the next request. Only
- *   prepare() sees the whole statement. `agora_sessions` had two.
- * - Many services create their own tables lazily rather than in
- *   `createSchema()`, so a "no such table" here is that known pattern, not a
- *   typo. Those are counted and reported instead of failing the suite —
- *   otherwise this guard would demand a schema refactor it has no opinion
- *   about, and would have to be scoped so narrowly it stopped catching the
- *   bug it exists for. Columns on tables the canonical schema does define are
- *   checked everywhere under src/.
+ * Two decisions give this guard its reach:
  *
- * `activity/activity-log.test.ts` carries the same guard shape for
- * hand-written activity_log INSERTs; this is the general form.
+ * - The schema is assembled from every `CREATE TABLE` / `CREATE INDEX` written
+ *   under src/, not from `createSchema()` alone. About a dozen services declare
+ *   their own tables at construction time, and checking against the canonical
+ *   schema alone left 138 statements unverifiable. Reading the DDL where it
+ *   actually lives closes that gap without moving a line of production code:
+ *   services keep owning their tables, and every column still gets checked.
+ * - Statements are collected from quoted strings as well as template literals.
+ *   153 statements — 22% of the total, across 35 files — are written in single
+ *   quotes and were invisible while this only read backticks.
+ *
+ * `activity/activity-log.test.ts` carries the same guard shape for hand-written
+ * activity_log INSERTs; this is the general form.
  */
 
 import { describe, it, expect } from 'vitest';
@@ -39,15 +42,7 @@ import Database from 'better-sqlite3';
 import { readdirSync, readFileSync, statSync } from 'fs';
 import { join, relative } from 'path';
 
-import { createSchema } from './index';
-
 const API_SRC = join(__dirname, '..');
-
-function freshDb(): Database.Database {
-  const db = new Database(':memory:');
-  createSchema(db);
-  return db;
-}
 
 /** Production sources only — tests may quote SQL in prose or fixtures. */
 function tsFiles(dir: string): string[] {
@@ -65,45 +60,96 @@ function tsFiles(dir: string): string[] {
   return out;
 }
 
+const STARTS_SQL = /^(SELECT|INSERT|UPDATE|DELETE|WITH)\b/i;
+const DECLARES_SCHEMA = /CREATE\s+(TABLE|INDEX)/i;
+
+/** Backtick, single-quoted and double-quoted string literals in a source file. */
+function* stringLiterals(source: string): Generator<{ text: string; templated: boolean }> {
+  for (const m of source.matchAll(/`([^`]*)`/g)) yield { text: m[1], templated: true };
+  for (const m of source.matchAll(/'((?:[^'\\\n]|\\.)*)'/g)) yield { text: m[1], templated: false };
+  for (const m of source.matchAll(/"((?:[^"\\\n]|\\.)*)"/g)) yield { text: m[1], templated: false };
+}
+
+/**
+ * A database carrying every table the codebase declares.
+ *
+ * DDL is read from source rather than executed through `createSchema()` plus a
+ * dozen service constructors, which would mean constructing those services —
+ * each with its own dependencies — just to learn what tables they make.
+ * `createSchema()`'s own statements live under src/ too, so the same pass
+ * collects them.
+ */
+function freshDb(): Database.Database {
+  const db = new Database(':memory:');
+  const failures: string[] = [];
+
+  for (const file of tsFiles(API_SRC)) {
+    for (const { text } of stringLiterals(readFileSync(file, 'utf-8'))) {
+      if (!DECLARES_SCHEMA.test(text) || text.includes('${')) continue;
+
+      // A single literal often declares several tables and their indexes.
+      for (const statement of text.split(';')) {
+        if (!DECLARES_SCHEMA.test(statement)) continue;
+        try {
+          db.exec(`${statement.trim()};`);
+        } catch (error) {
+          failures.push(
+            `${relative(API_SRC, file)}: ${error instanceof Error ? error.message : error}`,
+          );
+        }
+      }
+    }
+  }
+
+  if (failures.length > 0) {
+    throw new Error(`Schema could not be assembled:\n${failures.join('\n')}`);
+  }
+
+  return db;
+}
+
 interface Statement {
   file: string;
   sql: string;
 }
 
 /**
- * Every template literal under src/ whose text starts with a SQL verb.
- * Statements carrying `${}` are returned separately: their final text is only
- * known at runtime, so prepare() cannot speak for them.
+ * Every statement whose text starts with a SQL verb, split by whether prepare()
+ * can speak for it. A template literal carrying `${}` has no final text until
+ * runtime; quoted strings never do, so they are always checkable.
  */
-function collectStatements(): { statically: Statement[]; interpolated: Statement[] } {
-  const statically: Statement[] = [];
+function collectStatements(): { checkable: Statement[]; interpolated: Statement[] } {
+  const checkable: Statement[] = [];
   const interpolated: Statement[] = [];
 
   for (const file of tsFiles(API_SRC)) {
-    const source = readFileSync(file, 'utf-8');
-    for (const match of source.matchAll(/`([^`]*)`/g)) {
-      const sql = match[1].trim();
-      if (!/^(SELECT|INSERT|UPDATE|DELETE|WITH)\b/i.test(sql)) continue;
+    for (const { text, templated } of stringLiterals(readFileSync(file, 'utf-8'))) {
+      const sql = text.trim();
+      if (!STARTS_SQL.test(sql)) continue;
 
       const entry = { file: relative(API_SRC, file), sql };
-      (sql.includes('${') ? interpolated : statically).push(entry);
+      (templated && sql.includes('${') ? interpolated : checkable).push(entry);
     }
   }
 
-  return { statically, interpolated };
+  return { checkable, interpolated };
 }
 
 interface Verdict {
-  /** Statements naming a column that does not exist. Always a bug. */
-  badColumns: string[];
-  /** Tables created by a service rather than by createSchema(). */
-  serviceOwnedTables: Set<string>;
+  /** Statements naming a column or table that does not exist. Always a bug. */
+  schemaErrors: string[];
+  /**
+   * Statements prepare() rejected for a reason that is not about the schema:
+   * a multi-statement string bound for db.exec(), or one half of a SQL string
+   * assembled by concatenation. Counted rather than asserted on.
+   */
+  unparseable: number;
 }
 
 function check(statements: Statement[]): Verdict {
   const db = freshDb();
-  const badColumns: string[] = [];
-  const serviceOwnedTables = new Set<string>();
+  const schemaErrors: string[] = [];
+  let unparseable = 0;
 
   for (const { file, sql } of statements) {
     try {
@@ -111,34 +157,39 @@ function check(statements: Statement[]): Verdict {
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
 
-      // better-sqlite3 rejects multi-statement strings; those belong to
-      // db.exec() and say nothing about the schema.
-      if (message.includes('more than one statement')) continue;
-
-      const missingTable = /no such table:\s*(\S+)/.exec(message);
-      if (missingTable) {
-        serviceOwnedTables.add(missingTable[1]);
-        continue;
+      if (/no such (column|table)/.test(message)) {
+        schemaErrors.push(`${file}: ${message}\n    ${sql.replace(/\s+/g, ' ').slice(0, 120)}`);
+      } else {
+        unparseable++;
       }
-
-      badColumns.push(`${file}: ${message}\n    ${sql.replace(/\s+/g, ' ').slice(0, 120)}`);
     }
   }
 
-  return { badColumns, serviceOwnedTables };
+  return { schemaErrors, unparseable };
 }
 
 describe('SQL in apps/api matches the schema', () => {
-  const { statically, interpolated } = collectStatements();
+  const { checkable, interpolated } = collectStatements();
 
   it('finds statements to check', () => {
-    // Guards the collector itself: a regex that stops matching would turn this
-    // whole suite green while checking nothing.
-    expect(statically.length).toBeGreaterThan(200);
+    // Guards the collector itself: a regex that stopped matching would turn
+    // this whole suite green while checking nothing.
+    expect(checkable.length).toBeGreaterThan(500);
   });
 
-  it('names no column that does not exist', () => {
-    expect(check(statically).badColumns).toEqual([]);
+  it('assembles a schema wide enough to check against', () => {
+    // Same guard for the DDL pass. A partial match could let a whole file's
+    // tables go missing, and every statement touching them would then fail as
+    // "no such table" — loudly, but for the wrong reason.
+    const tables = freshDb()
+      .prepare(`SELECT COUNT(*) AS n FROM sqlite_master WHERE type = 'table'`)
+      .get() as { n: number };
+
+    expect(tables.n).toBeGreaterThan(50);
+  });
+
+  it('names no column or table that does not exist', () => {
+    expect(check(checkable).schemaErrors).toEqual([]);
   });
 
   it('pins the columns these queries were fixed to read', () => {
@@ -165,14 +216,14 @@ describe('SQL in apps/api matches the schema', () => {
   });
 
   it('reports what this guard cannot reach', () => {
-    // Neither number is a failure — both are the guard's visible ceiling.
-    // Interpolated statements cannot be prepared ahead of time, and columns on
-    // service-created tables cannot be checked against a schema that does not
-    // declare them. If either grows, the passing count above is covering
-    // proportionally less than it appears to.
-    const { serviceOwnedTables } = check(statically);
+    // Not a failure — the guard's remaining ceiling, kept visible so nobody
+    // reads the passing count above as total coverage. Interpolated statements
+    // have no final text until runtime; that is where the `ambiguous column
+    // name` defect in analytics lived, and why
+    // `services/proof-of-outcome/analytics.test.ts` runs those queries instead.
+    const { unparseable } = check(checkable);
 
-    expect(interpolated.length).toBeLessThan(statically.length);
-    expect(serviceOwnedTables.size).toBeLessThan(statically.length);
+    expect(interpolated.length).toBeLessThan(checkable.length / 10);
+    expect(unparseable).toBeLessThan(checkable.length / 50);
   });
 });
