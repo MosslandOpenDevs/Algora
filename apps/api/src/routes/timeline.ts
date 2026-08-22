@@ -290,31 +290,35 @@ timelineRouter.get('/issue/:issueId', (req: Request, res: Response) => {
     });
 
     // Get Agora sessions
+    // Column names are `current_round` / `concluded_at`; `round_count` and
+    // `completed_at` never existed on this table. The response keys below stay
+    // as they were — they are the published shape of this endpoint.
     const sessions = db.prepare(`
-      SELECT id, title, status, round_count, created_at, completed_at
+      SELECT id, title, status, current_round, created_at, concluded_at
       FROM agora_sessions WHERE issue_id = ?
       ORDER BY created_at ASC
     `).all(issueId) as Array<{
       id: string;
       title: string;
       status: string;
-      round_count: number;
+      current_round: number;
       created_at: string;
-      completed_at: string | null;
+      concluded_at: string | null;
     }>;
 
     for (const s of sessions) {
+      const rounds = s.current_round ?? 0;
       events.push({
         id: s.id,
         type: 'agora_session',
         timestamp: s.created_at,
         title: `Agora: ${s.title || 'Deliberation Session'}`,
-        description: `${s.round_count} rounds of agent deliberation`,
+        description: `${rounds} round${rounds === 1 ? '' : 's'} of agent deliberation`,
         status: s.status,
         linkedId: issueId,
         metadata: {
-          roundCount: s.round_count,
-          completedAt: s.completed_at,
+          roundCount: rounds,
+          completedAt: s.concluded_at,
         },
       });
     }
