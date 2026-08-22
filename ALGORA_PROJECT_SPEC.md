@@ -156,51 +156,52 @@ body::before {
 
 ## 4. Local LLM Hardware Specification
 
-### 4.1 Target Hardware
-```
-Mac mini
-- Chip: Apple M4 Pro (14-core CPU, 20-core GPU, 16-core Neural Engine)
-- Memory: 64GB Unified Memory
-- Storage: 2TB SSD
-```
+### 4.1 Target Host
 
-### 4.2 Recommended Local LLM Models
+Tier 1 targets a modest Ollama host with roughly an **8GB GPU budget**, which
+may be **shared with other services**. The model set below is sized for that,
+not for a dedicated workstation — any host that can keep both models resident
+at once is sufficient.
 
-Based on the hardware specifications, the following models are recommended:
+### 4.2 Local LLM Models
 
-#### Tier 1: Idle Chatter (Fast, Lightweight)
-| Model | Parameters | VRAM Usage | Use Case |
-|-------|------------|------------|----------|
-| **Llama 3.2** | 3B/8B | ~4-8GB | Quick agent chatter, simple responses |
-| **Phi-4** | 14B | ~10GB | High-quality responses, reasoning tasks |
-| **Qwen 2.5** | 7B/14B | ~6-10GB | Excellent multilingual (Korean) support |
+| Model | Role | VRAM | Notes |
+|-------|------|------|-------|
+| **gemma3:4b** | Chat | ~3GB | Every Tier-1 task: chatter, debate, summarization, Korean, coding, reranking-as-judge |
+| **nomic-embed-text** | Embeddings | ~0.3GB | 768 dimensions; RAG semantic search |
 
-#### Tier 1+: Enhanced Local (Quality/Speed Balance)
-| Model | Parameters | VRAM Usage | Use Case |
-|-------|------------|------------|----------|
-| **Mistral Small 3** | 24B | ~16GB | Best balance of quality and speed |
-| **Qwen 2.5** | 32B | ~22GB | Strong reasoning, Korean support |
-| **DeepSeek-R1-Distill** | 32B | ~22GB | Advanced reasoning capabilities |
+Routing every Tier-1 task to a single chat model is intentional. Ollama treats
+the same model at a different `num_ctx` as a *separate instance*, so varying
+either the model or its context size evicts the resident one — and on a shared
+host, every co-tenant pays for the reload. The embedding model is the one
+permitted exception: it is small enough to stay resident alongside.
 
-#### Tier 2 Fallback (When External API Budget Exhausted)
-| Model | Parameters | VRAM Usage | Notes |
-|-------|------------|------------|-------|
-| **Qwen 2.5** | 72B-Q4 | ~45GB | Possible but slower |
-| **Llama 3.3** | 70B-Q4 | ~45GB | May require careful memory management |
+Two constraints follow, and both fail late and quietly if ignored:
 
-### 4.3 Recommended Configuration
+- **Never vary the chat model or its context per task.** Change
+  `packages/model-router/src/registry.ts` and the `LOCAL_LLM_MODEL_*`
+  variables together, never a single call site.
+- **Never name a model the host has not pulled.** Ollama answers `HTTP 404` at
+  call time, not at startup. Verify with `curl $LOCAL_LLM_ENDPOINT/api/tags`.
+
+Scaling up to a larger, unshared host is a matter of raising both models
+together and updating the registry.
+
+### 4.3 Configuration
 ```bash
-# Primary (Ollama)
+# Ollama endpoint
 LOCAL_LLM_ENDPOINT=http://localhost:11434
 
-# Tier 1 - Chatter (Fast)
-LOCAL_LLM_MODEL_CHATTER=llama3.2:8b
+# Tier 1 chat model — the same model everywhere by design
+LOCAL_LLM_MODEL_CHATTER=gemma3:4b
+LOCAL_LLM_MODEL_ENHANCED=gemma3:4b
 
-# Tier 1 - Enhanced (Quality)
-LOCAL_LLM_MODEL_ENHANCED=qwen2.5:32b
+# Context window. Two packages read this under two names — change together.
+LOCAL_LLM_NUM_CTX=16384
+OLLAMA_NUM_CTX=16384
 
-# Tier 2 Fallback (When external budget exhausted)
-LOCAL_LLM_MODEL_FALLBACK=qwen2.5:72b-q4
+# Embedding model for RAG. Must be present on the host above.
+RAG_EMBEDDING_MODEL=nomic-embed-text
 ```
 
 ### 4.4 Performance Notes
@@ -245,7 +246,7 @@ LOCAL_LLM_MODEL_FALLBACK=qwen2.5:72b-q4
 | **Frontend** | Next.js 14 + React 18 + TanStack Query |
 | **Styling** | Tailwind CSS |
 | **LLM - External** | Anthropic Claude / OpenAI GPT / Google Gemini |
-| **LLM - Local** | Ollama + Llama 3.2 / Qwen 2.5 / Phi-4 |
+| **LLM - Local** | Ollama + gemma3:4b (chat) / nomic-embed-text (embeddings) |
 | **Blockchain** | viem (Ethereum) |
 | **Validation** | Zod |
 | **i18n** | next-intl (en/ko) |
@@ -1104,9 +1105,11 @@ LLM_MODEL=claude-sonnet-4-20250514
 
 # LLM - Local (Tier 1)
 LOCAL_LLM_ENDPOINT=http://localhost:11434
-LOCAL_LLM_MODEL_CHATTER=llama3.2:8b
-LOCAL_LLM_MODEL_ENHANCED=qwen2.5:32b
-LOCAL_LLM_MODEL_FALLBACK=qwen2.5:72b-q4
+LOCAL_LLM_MODEL_CHATTER=gemma3:4b
+LOCAL_LLM_MODEL_ENHANCED=gemma3:4b
+LOCAL_LLM_NUM_CTX=16384
+OLLAMA_NUM_CTX=16384
+RAG_EMBEDDING_MODEL=nomic-embed-text
 
 # Tier Configuration
 TIER0_INTERVAL=60000

@@ -86,51 +86,52 @@ Reality Signals → Issues → Agentic Deliberation → Human Decision → Execu
 
 ## 4. 로컬 LLM 하드웨어 사양
 
-### 4.1 대상 하드웨어
-```
-Mac mini
-- 칩: Apple M4 Pro (14코어 CPU, 20코어 GPU, 16코어 Neural Engine)
-- 메모리: 64GB 통합 메모리
-- 스토리지: 2TB SSD
-```
+### 4.1 대상 호스트
 
-### 4.2 권장 로컬 LLM 모델
+Tier 1은 GPU 예산이 대략 **8GB** 수준인 소박한 Ollama 호스트를 대상으로 하며, 이
+호스트는 **다른 서비스와 공유될 수 있습니다**. 아래 모델 구성은 전용 워크스테이션이
+아니라 그 환경에 맞춰 정해진 것입니다. 두 모델을 동시에 상주시킬 수 있는 호스트면
+충분합니다.
 
-하드웨어 사양에 따라 다음 모델이 권장됩니다:
+### 4.2 로컬 LLM 모델
 
-#### Tier 1: 유휴 잡담 (빠르고 가벼운)
-| 모델 | 파라미터 | VRAM 사용량 | 용도 |
-|------|----------|-------------|------|
-| **Llama 3.2** | 3B/8B | ~4-8GB | 빠른 에이전트 잡담, 간단한 응답 |
-| **Phi-4** | 14B | ~10GB | 고품질 응답, 추론 작업 |
-| **Qwen 2.5** | 7B/14B | ~6-10GB | 뛰어난 다국어 (한국어) 지원 |
+| 모델 | 역할 | VRAM | 비고 |
+|------|------|------|------|
+| **gemma3:4b** | 채팅 | ~3GB | 모든 Tier 1 작업: 잡담, 토론, 요약, 한국어, 코딩, LLM-as-judge 리랭킹 |
+| **nomic-embed-text** | 임베딩 | ~0.3GB | 768차원, RAG 시맨틱 검색 |
 
-#### Tier 1+: 향상된 로컬 (품질/속도 균형)
-| 모델 | 파라미터 | VRAM 사용량 | 용도 |
-|------|----------|-------------|------|
-| **Mistral Small 3** | 24B | ~16GB | 품질과 속도의 최적 균형 |
-| **Qwen 2.5** | 32B | ~22GB | 강력한 추론, 한국어 지원 |
-| **DeepSeek-R1-Distill** | 32B | ~22GB | 고급 추론 능력 |
+모든 Tier 1 작업을 단일 채팅 모델로 보내는 것은 의도된 설계입니다. Ollama는 같은
+모델이라도 `num_ctx`가 다르면 *별개 인스턴스*로 취급하므로, 모델이나 컨텍스트 크기를
+바꾸면 상주 중인 인스턴스가 축출됩니다. 공유 호스트에서는 그 리로드 비용을 모든
+입주 서비스가 함께 치릅니다. 임베딩 모델은 유일하게 허용된 예외로, 채팅 모델 옆에
+함께 상주할 만큼 작습니다.
 
-#### Tier 2 폴백 (외부 API 예산 소진 시)
-| 모델 | 파라미터 | VRAM 사용량 | 참고 |
-|------|----------|-------------|------|
-| **Qwen 2.5** | 72B-Q4 | ~45GB | 가능하지만 느림 |
-| **Llama 3.3** | 70B-Q4 | ~45GB | 신중한 메모리 관리 필요 |
+여기서 두 가지 제약이 따라 나오며, 둘 다 어기면 뒤늦게 조용히 실패합니다:
 
-### 4.3 권장 구성
+- **작업별로 채팅 모델이나 컨텍스트를 바꾸지 마세요.**
+  `packages/model-router/src/registry.ts`와 `LOCAL_LLM_MODEL_*` 변수를 함께
+  바꿔야 하며, 특정 호출부만 오버라이드해서는 안 됩니다.
+- **호스트가 pull하지 않은 모델을 지정하지 마세요.** Ollama는 시작 시점이 아니라
+  호출 시점에 `HTTP 404`를 반환합니다. `curl $LOCAL_LLM_ENDPOINT/api/tags`로
+  확인하세요.
+
+더 큰 전용 호스트로 올릴 때는 두 모델을 함께 올리고 레지스트리를 갱신하면 됩니다.
+
+### 4.3 구성
 ```bash
-# 기본 (Ollama)
+# Ollama 엔드포인트
 LOCAL_LLM_ENDPOINT=http://localhost:11434
 
-# Tier 1 - 잡담 (빠름)
-LOCAL_LLM_MODEL_CHATTER=llama3.2:8b
+# Tier 1 채팅 모델 — 설계상 어디서나 동일한 모델
+LOCAL_LLM_MODEL_CHATTER=gemma3:4b
+LOCAL_LLM_MODEL_ENHANCED=gemma3:4b
 
-# Tier 1 - 향상됨 (품질)
-LOCAL_LLM_MODEL_ENHANCED=qwen2.5:32b
+# 컨텍스트 윈도우. 두 패키지가 서로 다른 이름으로 읽으므로 함께 변경하세요.
+LOCAL_LLM_NUM_CTX=16384
+OLLAMA_NUM_CTX=16384
 
-# Tier 2 폴백 (외부 예산 소진 시)
-LOCAL_LLM_MODEL_FALLBACK=qwen2.5:72b-q4
+# RAG용 임베딩 모델. 위 호스트에 반드시 존재해야 합니다.
+RAG_EMBEDDING_MODEL=nomic-embed-text
 ```
 
 ### 4.4 성능 참고사항
@@ -175,7 +176,7 @@ LOCAL_LLM_MODEL_FALLBACK=qwen2.5:72b-q4
 | **Frontend** | Next.js 14 + React 18 + TanStack Query |
 | **Styling** | Tailwind CSS |
 | **LLM - External** | Anthropic Claude / OpenAI GPT / Google Gemini |
-| **LLM - Local** | Ollama + Llama 3.2 / Qwen 2.5 / Phi-4 |
+| **LLM - Local** | Ollama + gemma3:4b (chat) / nomic-embed-text (embeddings) |
 | **Blockchain** | viem (Ethereum) |
 | **Validation** | Zod |
 | **i18n** | next-intl (en/ko) |
@@ -461,9 +462,11 @@ LLM_MODEL=claude-sonnet-4-20250514
 
 # LLM - 로컬 (Tier 1)
 LOCAL_LLM_ENDPOINT=http://localhost:11434
-LOCAL_LLM_MODEL_CHATTER=llama3.2:8b
-LOCAL_LLM_MODEL_ENHANCED=qwen2.5:32b
-LOCAL_LLM_MODEL_FALLBACK=qwen2.5:72b-q4
+LOCAL_LLM_MODEL_CHATTER=gemma3:4b
+LOCAL_LLM_MODEL_ENHANCED=gemma3:4b
+LOCAL_LLM_NUM_CTX=16384
+OLLAMA_NUM_CTX=16384
+RAG_EMBEDDING_MODEL=nomic-embed-text
 
 # 티어 설정
 TIER0_INTERVAL=60000

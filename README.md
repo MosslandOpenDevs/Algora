@@ -136,16 +136,30 @@ algora/
 
 ## Local LLM Setup
 
-Algora uses Ollama for local LLM inference. Recommended models for Mac mini M4 Pro (64GB):
+Algora uses Ollama for local LLM inference. It needs exactly two models — one
+chat model for every Tier-1 task, and one small embedding model for RAG:
 
 ```bash
 # Install Ollama
 brew install ollama
 
-# Pull recommended models
-ollama pull llama3.2:8b      # Fast chatter
-ollama pull qwen2.5:32b      # Quality responses
+# Pull the two models Algora actually uses
+ollama pull gemma3:4b         # chat, code, Korean, reranking
+ollama pull nomic-embed-text  # embeddings for semantic search
 ```
+
+Tier 1 routes every task to the single chat model deliberately, so one model
+stays resident and nothing swaps. If the Ollama host is shared with other
+services, keep both the model **and** its context size identical across all of
+them: Ollama treats the same model at a different `num_ctx` as a separate
+instance, so a divergent value evicts and reloads the resident one for
+everybody. Algora reads that value as `LOCAL_LLM_NUM_CTX` and `OLLAMA_NUM_CTX`
+(see `.env.example`) — change them together.
+
+The embedding model is the one permitted exception to "single resident model":
+it is small enough (~0.3GB VRAM) to sit alongside the chat model. Set
+`RAG_EMBEDDING_MODEL` only to a model the host has actually pulled — the RAG
+service checks at startup and refuses to embed otherwise.
 
 ## Environment Variables
 
@@ -158,9 +172,11 @@ OPENAI_API_KEY=sk-...
 GOOGLE_API_KEY=...
 LLM_PROVIDER=anthropic
 
-# Local LLM
+# Local LLM (Tier 1)
 LOCAL_LLM_ENDPOINT=http://localhost:11434
-LOCAL_LLM_MODEL_CHATTER=llama3.2:8b
+LOCAL_LLM_MODEL_CHATTER=gemma3:4b
+LOCAL_LLM_NUM_CTX=16384
+RAG_EMBEDDING_MODEL=nomic-embed-text
 
 # Budget
 ANTHROPIC_DAILY_BUDGET_USD=10.00

@@ -47,6 +47,57 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Mossland ecosystem wayfinding bar** — Algora was the only sister site without an outbound ecosystem bar (bridge.moss.land and ao.moss.land already link the family; only inbound links existed here). A new `EcosystemBar` (`components/cross-link/EcosystemBar.tsx`, Server Component) mounts once in the root layout after `NpcCityStrip`, rendering the same set in the same order as the other two sites — BRIDGE (Governance OS) · **Algora** (AI Deliberation Lab, current, non-link) · MOSS.AO (Agentic Orchestrator) — which completes the three-site wayfinding loop. New `Ecosystem` i18n namespace in **all four** locales, with role copy aligned to the in-product canon (`Navigation.governance`, the layout's SEO taglines: `AI 熟議ラボ` / `AI 审议实验室`). Carries the accessibility pattern from MOSS.AO's pre-merge review (agentic-orchestrator PR #2950): a real space text node between site name and role so the accessible name reads "BRIDGE Governance OS" rather than "BRIDGEGovernance OS", and new-tab disclosure on the external links (aria-hidden `↗` + localized sr-only text). `rel="noopener"` per the `NpcCityStrip` precedent, so sister sites keep referrer attribution.
 
 ### Fixed
+- **RAG embedding model pointed at a model the host does not have** — the API's
+  RAG service defaulted to `qwen3-embedding:0.6b`, which returns
+  `HTTP 404 model not found` on the shared Ollama host; the model actually
+  present there is `nomic-embed-text`. The mismatch stayed invisible because the
+  startup availability probe accepted **any** model whose name merely contained
+  `"embed"`, so a co-tenant's unrelated embedding model satisfied it: production
+  logged `[RAG] Service available with model: qwen3-embedding:0.6b` and
+  `/api/rag/status` reported `available: true`, while every `/api/embeddings`
+  call would have 404'd at index time. Because `indexDocument()` stores the
+  document even when embedding fails, each indexed document would have been
+  written with a `NULL` vector — permanently invisible to semantic search, and
+  distinguishable only by the `documentsIndexedWithoutEmbedding` counter. Only
+  the zero documents indexed so far kept this latent (`documentsIndexed: 0`).
+  The default is now `nomic-embed-text` (verified against the host: `HTTP 200`,
+  **768** dimensions, over the same legacy `/api/embeddings` endpoint the
+  service uses), and the availability probe now requires the **configured**
+  model to be present, resolving a bare name to its `:latest` tag the way Ollama
+  does and naming the models the host does have when it fails. Loading the
+  embedding model was confirmed not to disturb the single-resident-chat-model
+  convention: `gemma3:4b @ num_ctx 16384` stayed resident alongside it
+  (2.98GB + 0.32GB). `@algora/model-router`'s registry, task-type mapping,
+  default embedding model, install command and VRAM table were realigned to the
+  same model — note its embedding path is mock-backed
+  (`MockEmbeddingProvider`), so the API's RAG service was the only live caller.
+- **`/api/rag/status` reported a hard-coded embedding width** — `embeddingDimensions`
+  was a constant that no code path consumed, so it stayed at its default no
+  matter which model `RAG_EMBEDDING_MODEL` selected: the same class of confident
+  falsehood as the availability flag above. It is now re-stamped from the length
+  of the first real embedding, so the status endpoint reports the model's actual
+  width.
+- **Setup docs told newcomers to install models that are wrong or do not exist** —
+  `README`, `ALGORA_PROJECT_SPEC` (both languages), `ARCHITECTURE` (both
+  languages) and `CLAUDE.md` still described the pre-consolidation model set.
+  Following them produced a broken install three ways: `ollama pull llama3.2:8b`
+  is a tag that does not exist (`HTTP 404` from the Ollama registry — Llama 3.2
+  ships 1B/3B); the recommended 24B–72B models are far past what the deployment
+  targets and are not what any code path requests; and **no embedding model was
+  mentioned at all**, so RAG could not work for anyone who followed the guide.
+  The docs now describe the two models actually deployed (`gemma3:4b`,
+  `nomic-embed-text`), state why Tier 1 routes everything to one chat model, and
+  spell out the two ways to break a shared host — varying the model or its
+  context per task, and naming a model the host has not pulled.
+- **Undocumented and phantom LLM environment variables** — `LOCAL_LLM_MODEL_CHATTER`
+  and `LOCAL_LLM_MODEL_ENHANCED` are read by `@algora/orchestrator` and
+  `@algora/governance-os` but were absent from `.env.example`, while the specs
+  told operators to set them to models the deployment does not run.
+  `LOCAL_LLM_MODEL_FALLBACK` was documented in both specs and read by nothing at
+  all. The two real variables are now in `.env.example`, the phantom one is
+  gone, and `OLLAMA_NUM_CTX` is documented next to `LOCAL_LLM_NUM_CTX` — two
+  packages read the same coordination value under those two names, so
+  overriding only one silently desyncs the resident runner.
 - **Signal collectors are no longer restarted every 30 seconds, forever** — the collector health check judged liveness by counting rows the collector had written to the `signals` table in the past 5 minutes, but signals are deduplicated on insert (a healthy fetch usually writes zero rows) and configured fetch intervals run 15–120 minutes, so every collector read as permanently dead. Each 30s tick restarted it; each restart's `start()` kicked off an immediate sweep of all sources, so the configured interval timers never lived long enough to fire and sources were polled ~17× more often than configured — production had accumulated **65k–128k restarts per collector**, CoinGecko was answering `HTTP 429` around the clock, and a third of the activity feed was restart log spam. Liveness is now read from the source tables' `last_fetched` (stamped on every successful fetch, deduped or not) against a window derived from each collector's own slowest configured interval (2 cycles, floored at 10 min, capped at 6 h), a never-fetched collector measures from service start so cold boots get the same grace, and a restart already waiting on its backoff can't be queued again by the next tick. The backoff exponent also derived from the lifetime restart count, so `2^128k` overflowed to `Infinity` and every backoff clamped to the 5-minute max; it now escalates per restart-since-last-success with a capped exponent, and restart counts inflated past 10,000 by the loop era are shed once on load. The `/api/pipeline/alerts` endpoint had its own independent flat 5-minute staleness window with the same false-positive problem — it now reads the same per-collector verdict from the service (`getStaleness()`).
 - **`completedLast24h` in pipeline health was always 0** — the normal `completeSession()` path never stamped `concluded_at` (only the timeout and stale-sweep paths did, via `COALESCE`), while the health stage counts completions by that column; production showed 19 sessions completed in 24h and `completedLast24h: 0`. The normal path now stamps it the same way.
 - **Deliberation output was being thrown away by our own constants** — `extractActionItems` ran at `maxTokens: 500`, truncating the JSON array mid-structure on larger sessions so the regex found no match and the function returned `[]` **with no log line** (prod: 66 round-advance events, 47 success lines, 0 failure lines — a 29–46% silent loss); `cleanResponse()` cut 45.6% of agent statements mid-word at 500 chars although the model stops naturally at ~80 tokens / 396–663 chars; and `generateRoundSummary` was running within 9 tokens of its 400 cap. Raised to 1000 / 800 (sentence-boundary) / 600, and the silent no-match branch now warns. Measured against the real system, none of this was a model or context limit: the largest possible prompt is 4,497 tokens against an 8,192 window, every path is hard-windowed, and production has logged zero context-saturation warnings.

@@ -528,7 +528,7 @@ export class OllamaError extends Error {
  */
 export const OLLAMA_INSTALL_COMMANDS = {
   chat: ['ollama pull gemma3:4b'],
-  embeddings: ['ollama pull qwen3-embedding:0.6b'],
+  embeddings: ['ollama pull nomic-embed-text'],
 };
 
 /**
@@ -536,7 +536,7 @@ export const OLLAMA_INSTALL_COMMANDS = {
  */
 export const OLLAMA_HARDWARE_REQUIREMENTS = {
   'gemma3:4b': { vram: '7GB', ram: '16GB' },
-  'qwen3-embedding:0.6b': { vram: '1GB', ram: '2GB' },
+  'nomic-embed-text': { vram: '0.5GB', ram: '2GB' },
 };
 
 /**

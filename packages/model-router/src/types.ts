@@ -186,7 +186,7 @@ export interface TaskTypeMapping {
  * Default task type mappings.
  *
  * The shared remote Ollama keeps exactly one chat model (gemma3:4b) and one
- * embedding model (qwen3-embedding:0.6b) resident on the ~8GB GPU. All Tier-1
+ * embedding model (nomic-embed-text) resident on the ~8GB GPU. All Tier-1
  * routing flattens to that pair so we never trigger a VRAM swap. Anything else
  * will 404 against the server until it's pulled again.
  */
@@ -202,7 +202,7 @@ export const DEFAULT_TASK_TYPE_MAPPINGS: TaskTypeMapping[] = [
   { taskType: 'summarization', primaryModel: 'gemma3:4b', backupModel: 'gemma3:4b', tier: 1, maxTokens: 1000 },
   { taskType: 'translation', primaryModel: 'gemma3:4b', backupModel: 'gemma3:4b', tier: 1, maxTokens: 2000 },
   { taskType: 'research', primaryModel: 'gemma3:4b', backupModel: 'gemma3:4b', tier: 1, maxTokens: 3000 },
-  { taskType: 'embedding', primaryModel: 'qwen3-embedding:0.6b', backupModel: 'qwen3-embedding:0.6b', tier: 1, maxTokens: 8192 },
+  { taskType: 'embedding', primaryModel: 'nomic-embed-text', backupModel: 'nomic-embed-text', tier: 1, maxTokens: 2048 },
   // No dedicated reranker on the remote anymore — fall back to the chat model
   // emitting a relevance score. Cross-encoder pairs are short, so gemma3:4b
   // handles them in a single small call.
@@ -480,18 +480,19 @@ export interface EmbeddingModel {
 /**
  * Default embedding models.
  *
- * Only one is on the shared remote Ollama; legacy entries (nomic / mxbai /
- * bge-m3) were removed when the server was consolidated to a 2-model GPU.
+ * Only one is on the shared remote Ollama. It must name a model the host has
+ * actually pulled — anything else 404s on the first /api/embeddings call.
+ * Verified against the host: nomic-embed-text, 768 dimensions, 2048 context.
  */
 export const DEFAULT_EMBEDDING_MODELS: EmbeddingModel[] = [
   {
-    id: 'qwen3-embedding:0.6b',
-    name: 'Qwen 3 Embedding 0.6B',
+    id: 'nomic-embed-text',
+    name: 'Nomic Embed Text',
     provider: 'ollama',
-    dimensions: 1024,
-    maxTokens: 8192,
-    languages: ['en', 'ko', 'zh', 'ja'],
-    useCase: 'Multilingual general-purpose retrieval (Matryoshka 64–1024)',
+    dimensions: 768,
+    maxTokens: 2048,
+    languages: ['en'],
+    useCase: 'General-purpose retrieval — the embedding model resident on the shared host',
   },
 ];
 

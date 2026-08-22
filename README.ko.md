@@ -134,16 +134,30 @@ algora/
 
 ## 로컬 LLM 설정
 
-Algora는 로컬 LLM 추론을 위해 Ollama를 사용합니다. Mac mini M4 Pro (64GB) 권장 모델:
+Algora는 로컬 LLM 추론을 위해 Ollama를 사용합니다. 필요한 모델은 정확히 두
+개입니다 — 모든 Tier 1 작업이 쓰는 채팅 모델 하나, RAG용 소형 임베딩 모델 하나:
 
 ```bash
 # Ollama 설치
 brew install ollama
 
-# 권장 모델 다운로드
-ollama pull llama3.2:8b      # 빠른 잡담용
-ollama pull qwen2.5:32b      # 고품질 응답용
+# Algora가 실제로 사용하는 두 모델 다운로드
+ollama pull gemma3:4b         # 채팅, 코드, 한국어, 리랭킹
+ollama pull nomic-embed-text  # 시맨틱 검색용 임베딩
 ```
+
+Tier 1이 모든 작업을 단일 채팅 모델로 보내는 것은 의도된 설계입니다. 모델 하나만
+상주시켜 교체가 일어나지 않게 하기 위함입니다. Ollama 호스트를 다른 서비스와
+공유한다면 모델뿐 아니라 **컨텍스트 크기까지** 모든 서비스에서 동일하게 맞춰야
+합니다. Ollama는 같은 모델이라도 `num_ctx`가 다르면 별개 인스턴스로 취급하므로,
+값이 어긋나면 상주 중인 인스턴스가 축출되고 모두가 리로드를 겪습니다. Algora는 이
+값을 `LOCAL_LLM_NUM_CTX`와 `OLLAMA_NUM_CTX`로 읽습니다(`.env.example` 참조).
+반드시 함께 변경하세요.
+
+임베딩 모델은 "단일 상주 모델" 원칙의 유일한 예외입니다. 채팅 모델 옆에 함께 올릴
+수 있을 만큼 작기 때문입니다(~0.3GB VRAM). `RAG_EMBEDDING_MODEL`에는 해당
+호스트가 실제로 pull한 모델만 지정하세요. RAG 서비스는 시작 시 이를 검사하며,
+없으면 임베딩을 수행하지 않습니다.
 
 ## 환경 변수
 
@@ -156,9 +170,11 @@ OPENAI_API_KEY=sk-...
 GOOGLE_API_KEY=...
 LLM_PROVIDER=anthropic
 
-# 로컬 LLM
+# 로컬 LLM (Tier 1)
 LOCAL_LLM_ENDPOINT=http://localhost:11434
-LOCAL_LLM_MODEL_CHATTER=llama3.2:8b
+LOCAL_LLM_MODEL_CHATTER=gemma3:4b
+LOCAL_LLM_NUM_CTX=16384
+RAG_EMBEDDING_MODEL=nomic-embed-text
 
 # 예산
 ANTHROPIC_DAILY_BUDGET_USD=10.00
