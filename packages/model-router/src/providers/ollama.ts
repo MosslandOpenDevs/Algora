@@ -91,6 +91,16 @@ export interface OllamaProviderConfig {
   maxRetries: number;
   /** Keep model in memory between requests */
   keepAlive?: string;
+  /**
+   * Context window sent on EVERY generate/chat call. The shared GPU host
+   * serves one chat-model instance at a time and a request with a different
+   * num_ctx is a different instance — so every service on the box (AO,
+   * signal, Algora) converged on one value, 16384, measured jointly on
+   * 2026-08-06. Relying on the server default works only as long as the
+   * server default happens to match; sending it explicitly makes this
+   * service unable to drift. Change it box-wide or not at all.
+   */
+  numCtx: number;
 }
 
 /**
@@ -101,14 +111,17 @@ export const DEFAULT_OLLAMA_CONFIG: OllamaProviderConfig = {
   timeout: 120000,
   maxRetries: 3,
   keepAlive: '5m',
+  numCtx: Math.max(1024, parseInt(process.env.OLLAMA_NUM_CTX || '16384', 10)),
 };
 
 /**
  * Ollama LLM Provider implementation.
  *
- * Provides integration with the shared remote Ollama. Only two models are
- * resident on the GPU: gemma3:4b (chat / code / Korean / reranking via
- * LLM-as-judge) and qwen3-embedding:0.6b (embeddings).
+ * Provides integration with the shared remote Ollama (~8 GB GPU). The box
+ * convention is ONE resident chat model — gemma3:4b at num_ctx 16384 — for
+ * every co-tenant service (AO, signal, Algora alike): chat / code / Korean /
+ * reranking via LLM-as-judge all use it. Embeddings are a separate small
+ * model by necessity and are the one exception.
  */
 export class OllamaProvider {
   private config: OllamaProviderConfig;
@@ -151,6 +164,7 @@ export class OllamaProvider {
             prompt,
             stream: false,
             options: {
+              num_ctx: this.config.numCtx,
               num_predict: options?.maxTokens ?? 2048,
               temperature: options?.temperature ?? 0.7,
               top_p: options?.topP ?? 0.9,
@@ -223,6 +237,7 @@ export class OllamaProvider {
           messages,
           stream: false,
           options: {
+            num_ctx: this.config.numCtx,
             num_predict: options.maxTokens ?? 2048,
             temperature: options.temperature ?? 0.7,
             top_p: options.topP ?? 0.9,
