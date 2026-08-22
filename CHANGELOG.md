@@ -47,6 +47,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Mossland ecosystem wayfinding bar** — Algora was the only sister site without an outbound ecosystem bar (bridge.moss.land and ao.moss.land already link the family; only inbound links existed here). A new `EcosystemBar` (`components/cross-link/EcosystemBar.tsx`, Server Component) mounts once in the root layout after `NpcCityStrip`, rendering the same set in the same order as the other two sites — BRIDGE (Governance OS) · **Algora** (AI Deliberation Lab, current, non-link) · MOSS.AO (Agentic Orchestrator) — which completes the three-site wayfinding loop. New `Ecosystem` i18n namespace in **all four** locales, with role copy aligned to the in-product canon (`Navigation.governance`, the layout's SEO taglines: `AI 熟議ラボ` / `AI 审议实验室`). Carries the accessibility pattern from MOSS.AO's pre-merge review (agentic-orchestrator PR #2950): a real space text node between site name and role so the accessible name reads "BRIDGE Governance OS" rather than "BRIDGEGovernance OS", and new-tab disclosure on the external links (aria-hidden `↗` + localized sr-only text). `rel="noopener"` per the `NpcCityStrip` precedent, so sister sites keep referrer attribution.
 
 ### Fixed
+- **The issue timeline 500'd on every issue that had a deliberation** —
+  `/api/timeline/issue/:id` selected `round_count` and `completed_at` from
+  `agora_sessions`. Neither column has ever existed: the table has
+  `current_round` and `concluded_at`, and no migration ever created the other
+  two. TypeScript could not catch it because the row type was hand-written to
+  match the SQL rather than the table, so the mismatch surfaced only as a
+  runtime `SqliteError` — and only in the logs, since the handler's catch
+  turned it into a failed response. **2,553 of 2,554 sessions carry an
+  `issue_id`**, so in practice every issue with a session had a broken
+  timeline. SQLite reports only the first unknown column, so the log named
+  `round_count` alone and a one-word fix would have simply moved the error to
+  `completed_at`; both are corrected together. The response keys (`roundCount`,
+  `completedAt`) are unchanged — they are this endpoint's published shape.
+  Round counts also read "1 rounds" for the 2,212 single-round sessions, which
+  is now pluralized.
+- **A route's schema depended on a service constructor running first** —
+  `issue_signals`, read by two timeline queries, was created only by
+  `IssueDetectionService.initializeTables()`. On a fresh database the table did
+  not exist until issue detection happened to run, so the canonical schema and
+  the route layer disagreed about what exists. Its definition now lives in
+  `createSchema()` alongside `issues`; the service's `IF NOT EXISTS` copy is
+  idempotent and left in place.
+- **Regression guard for both** (`routes/schema-conformance.test.ts`) — every
+  static SQL statement in the route layer is now prepared against a fresh
+  canonical schema, so a column or table that does not exist fails in CI
+  instead of at request time. This generalizes the guard
+  `activity/activity-log.test.ts` already applied to hand-written
+  `activity_log` INSERTs. Verified in both directions: restoring `round_count`
+  fails the guard, and removing `issue_signals` from `createSchema()` fails it.
+  Statements assembled with `${}` interpolation cannot be prepared ahead of
+  time and are counted rather than silently skipped, so the guard's blind spot
+  stays visible.
 - **RAG embedding model pointed at a model the host does not have** — the API's
   RAG service defaulted to `qwen3-embedding:0.6b`, which returns
   `HTTP 404 model not found` on the shared Ollama host; the model actually

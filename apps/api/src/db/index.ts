@@ -173,6 +173,25 @@ export function createSchema(db: Database.Database): void {
     CREATE INDEX IF NOT EXISTS idx_issues_created_at ON issues(created_at DESC);
     CREATE INDEX IF NOT EXISTS idx_issues_status_priority ON issues(status, priority);
 
+    -- Signal-to-issue junction. Promoted here from IssueDetectionService's own
+    -- initializeTables() because the timeline routes read it: leaving it to a
+    -- service constructor made a route's schema depend on service start order,
+    -- and a fresh database had no such table until detection happened to run.
+    -- The service still declares it IF NOT EXISTS, which is idempotent.
+    CREATE TABLE IF NOT EXISTS issue_signals (
+      id TEXT PRIMARY KEY,
+      issue_id TEXT NOT NULL,
+      signal_id TEXT NOT NULL,
+      relevance_score REAL DEFAULT 1.0,
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (issue_id) REFERENCES issues(id),
+      FOREIGN KEY (signal_id) REFERENCES signals(id),
+      UNIQUE(issue_id, signal_id)
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_issue_signals_issue ON issue_signals(issue_id);
+    CREATE INDEX IF NOT EXISTS idx_issue_signals_signal ON issue_signals(signal_id);
+
     -- ========================================
     -- Agents
     -- ========================================
