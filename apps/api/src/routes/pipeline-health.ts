@@ -19,6 +19,15 @@ import { isoHoursAgo } from '../utils/time';
 
 const router = Router();
 
+/**
+ * How long a machine-owned escalation may sit before it counts as stalled.
+ *
+ * An extended_discussion escalation resolves when its follow-up deliberation
+ * completes, and a deliberation runs in minutes to a couple of hours. Six
+ * hours is comfortably past that, so anything older was never picked up.
+ */
+const ESCALATION_STALL_HOURS = 6;
+
 // Helper to get services from app.locals
 function getServices(req: Request): {
   db: Database.Database;
@@ -244,19 +253,44 @@ router.get('/alerts', (req: Request, res: Response) => {
       }
     }
 
-    // Check for pending escalations
+    // Escalations split by who has to act. A backlog waiting on people is an
+    // alert — someone can do something about it — while a deliberation the
+    // system owns and never ran is a fault, and reads as one.
     if (governanceOSBridge) {
       const pendingEscalations = governanceOSBridge.getPendingEscalations();
-      const humanReviewEscalations = pendingEscalations.filter(e => e.escalationType === 'human_review');
-      if (humanReviewEscalations.length > 0) {
+
+      const awaitingPeople = pendingEscalations.filter(
+        e => e.escalationType === 'human_review' || e.escalationType === 'working_group',
+      );
+      if (awaitingPeople.length > 0) {
         alerts.push({
-          id: 'escalations-human-review',
+          id: 'escalations-awaiting-people',
           severity: 'warning',
           type: 'human_review_pending',
-          message: `${humanReviewEscalations.length} session(s) awaiting human review`,
+          message: `${awaitingPeople.length} session(s) awaiting human action`,
           details: {
-            count: humanReviewEscalations.length,
-            sessionIds: humanReviewEscalations.map(e => e.sessionId.slice(0, 8)),
+            count: awaitingPeople.length,
+            humanReview: awaitingPeople.filter(e => e.escalationType === 'human_review').length,
+            workingGroup: awaitingPeople.filter(e => e.escalationType === 'working_group').length,
+            sessionIds: awaitingPeople.map(e => e.sessionId.slice(0, 8)),
+          },
+          timestamp: new Date().toISOString(),
+        });
+      }
+
+      const stalledSince = Date.now() - ESCALATION_STALL_HOURS * 60 * 60 * 1000;
+      const stalled = pendingEscalations.filter(
+        e => e.escalationType === 'extended_discussion' && e.createdAt.getTime() < stalledSince,
+      );
+      if (stalled.length > 0) {
+        alerts.push({
+          id: 'escalations-stalled',
+          severity: 'critical',
+          type: 'escalation_stalled',
+          message: `${stalled.length} extended discussion(s) never started after ${ESCALATION_STALL_HOURS}h`,
+          details: {
+            count: stalled.length,
+            sessionIds: stalled.map(e => e.sessionId.slice(0, 8)),
           },
           timestamp: new Date().toISOString(),
         });
@@ -638,16 +672,42 @@ function calculateStageHealth(
   };
 
   // Stage 6: Escalation
+  //
+  // Health here means "is the machine still moving", not "is the queue empty".
+  // Only extended_discussion resolves on its own — handleAgoraSessionCompleted
+  // closes it when the follow-up deliberation finishes. working_group and
+  // human_review wait on people by design and can legitimately sit open for
+  // weeks. Scoring the raw total conflated the two, so an ordinary human
+  // backlog read as a pipeline failure, and a signal stuck red is a signal
+  // people stop reading — which is how a timeline that 500'd on every issue
+  // went unnoticed for two weeks.
+  //
+  // So the score reacts to one thing: a machine-owned escalation that should
+  // have been picked up and was not. Human backlog is reported here and
+  // alerted on separately, where something can actually be done about it.
   const pendingEscalations = governanceOSBridge?.getPendingEscalations() || [];
-  const escalationScore = pendingEscalations.length < 5 ? 100 :
-                          pendingEscalations.length < 10 ? 70 : 40;
+  const machineOwned = pendingEscalations.filter(e => e.escalationType === 'extended_discussion');
+  const awaitingPeople = pendingEscalations.length - machineOwned.length;
+
+  const stalledSince = Date.now() - ESCALATION_STALL_HOURS * 60 * 60 * 1000;
+  const stalled = machineOwned.filter(e => e.createdAt.getTime() < stalledSince);
+  const oldestStalledHours = stalled.length === 0
+    ? 0
+    : Math.floor((Date.now() - Math.min(...stalled.map(e => e.createdAt.getTime()))) / 3_600_000);
+
+  const escalationScore = stalled.length === 0 ? 100 : stalled.length < 3 ? 70 : 40;
   stages.escalation = {
     status: escalationScore >= 75 ? 'healthy' : escalationScore >= 50 ? 'degraded' : 'critical',
     score: escalationScore,
     details: {
       pendingEscalations: pendingEscalations.length,
+      // What the score reacts to: deliberations the system owns and has not run.
+      stalled: stalled.length,
+      oldestStalledHours,
+      // Reported, never penalised — these are waiting on people, not on us.
+      awaitingPeople,
       byType: {
-        extendedDiscussion: pendingEscalations.filter(e => e.escalationType === 'extended_discussion').length,
+        extendedDiscussion: machineOwned.length,
         workingGroup: pendingEscalations.filter(e => e.escalationType === 'working_group').length,
         humanReview: pendingEscalations.filter(e => e.escalationType === 'human_review').length,
       },

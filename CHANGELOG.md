@@ -47,6 +47,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Mossland ecosystem wayfinding bar** — Algora was the only sister site without an outbound ecosystem bar (bridge.moss.land and ao.moss.land already link the family; only inbound links existed here). A new `EcosystemBar` (`components/cross-link/EcosystemBar.tsx`, Server Component) mounts once in the root layout after `NpcCityStrip`, rendering the same set in the same order as the other two sites — BRIDGE (Governance OS) · **Algora** (AI Deliberation Lab, current, non-link) · MOSS.AO (Agentic Orchestrator) — which completes the three-site wayfinding loop. New `Ecosystem` i18n namespace in **all four** locales, with role copy aligned to the in-product canon (`Navigation.governance`, the layout's SEO taglines: `AI 熟議ラボ` / `AI 审议实验室`). Carries the accessibility pattern from MOSS.AO's pre-merge review (agentic-orchestrator PR #2950): a real space text node between site name and role so the accessible name reads "BRIDGE Governance OS" rather than "BRIDGEGovernance OS", and new-tab disclosure on the external links (aria-hidden `↗` + localized sr-only text). `rel="noopener"` per the `NpcCityStrip` precedent, so sister sites keep referrer attribution.
 
 ### Changed
+- **Escalation health measures whether the machine is moving, not whether the
+  queue is empty** — the stage scored the raw count of open escalations (under
+  5 healthy, under 10 degraded, else critical), which conflated two unrelated
+  things. Only `extended_discussion` resolves on its own;`working_group` and
+  `human_review` wait on people by design and can legitimately sit open for
+  weeks. Under the old rule five people-shaped escalations dragged the pipeline
+  to "degraded" and ten to "critical" for a system working exactly as designed.
+  That is not cosmetic: production sat at escalation-critical for over two
+  weeks, and a signal pinned red is a signal people stop reading — which is how
+  an issue timeline returning 500 for every issue went unnoticed over the same
+  fortnight. The score now reacts to one thing, a deliberation the system owns
+  that was never picked up (`extended_discussion` still open after 6 hours,
+  well past the minutes-to-hours a deliberation takes), and reports `stalled`,
+  `oldestStalledHours` and `awaitingPeople` so the distinction is legible
+  rather than implied. Human backlog moved to `/api/pipeline/alerts`, where
+  something can be done about it, and that alert now covers `working_group`
+  too — it had only ever looked at `human_review`, so a working-group backlog
+  raised nothing at all. A stalled deliberation raises its own `critical`
+  alert.
 - **The schema guard now checks the whole of `apps/api`, not the part that was
   convenient** — `db/schema-conformance.test.ts` shipped with two blind spots
   it reported honestly but could not see past, and both are now closed without
