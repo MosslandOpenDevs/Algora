@@ -46,6 +46,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Issue auto-expiry janitor** — every detection cycle now auto-dismisses open (`detected`/`confirmed`) issues untouched for `ISSUE_AUTO_EXPIRE_DAYS` (default 7; explicit `0` disables, empty/invalid falls back to 7 with a warning). Staleness is keyed on last touch (`updated_at`), `in_progress` issues get a 3x horizon, and mid-governance statuses (`pending_vote`, `approved_for_action`, `needs_manual_review`, ...) are never auto-expired, so live governance work is not dismissed mid-flight. Each dismissal emits `issue:updated`. A one-time prod cleanup dismissed the 4,946 stale/duplicate open issues that had accumulated since mid-June (online backup kept on the server).
 - **Mossland ecosystem wayfinding bar** — Algora was the only sister site without an outbound ecosystem bar (bridge.moss.land and ao.moss.land already link the family; only inbound links existed here). A new `EcosystemBar` (`components/cross-link/EcosystemBar.tsx`, Server Component) mounts once in the root layout after `NpcCityStrip`, rendering the same set in the same order as the other two sites — BRIDGE (Governance OS) · **Algora** (AI Deliberation Lab, current, non-link) · MOSS.AO (Agentic Orchestrator) — which completes the three-site wayfinding loop. New `Ecosystem` i18n namespace in **all four** locales, with role copy aligned to the in-product canon (`Navigation.governance`, the layout's SEO taglines: `AI 熟議ラボ` / `AI 审议实验室`). Carries the accessibility pattern from MOSS.AO's pre-merge review (agentic-orchestrator PR #2950): a real space text node between site name and role so the accessible name reads "BRIDGE Governance OS" rather than "BRIDGEGovernance OS", and new-tab disclosure on the external links (aria-hidden `↗` + localized sr-only text). `rel="noopener"` per the `NpcCityStrip` precedent, so sister sites keep referrer attribution.
 
+### Changed
+- **The schema guard now checks the whole of `apps/api`, not the part that was
+  convenient** — `db/schema-conformance.test.ts` shipped with two blind spots
+  it reported honestly but could not see past, and both are now closed without
+  moving a line of production code. It built its schema from `createSchema()`
+  alone, so the ~dozen tables that services declare at construction time were
+  unknown and **138 statements went unverified**; the schema is now assembled
+  from every `CREATE TABLE` / `CREATE INDEX` written under `src/`, read where
+  it actually lives, so services keep owning their tables and every column
+  still gets checked. It also read only backtick template literals, while
+  **153 statements — 22% of the total, across 35 files — are written in single
+  quotes**; those were silently outside the guard, including the one used to
+  test it. Coverage goes from 536 statements to 689, and an unknown *table* is
+  now a failure rather than a skip, since passing over one hides every column
+  error inside it. No new defects surfaced: all 689 check clean. Verified by
+  injecting each shape of error in turn — a quoted statement on a
+  service-owned table (the case the previous version missed), a backtick
+  statement on a canonical table, and a reference to a table that does not
+  exist. The one remaining ceiling, `${}`-interpolated statements, is still
+  counted and reported rather than hidden.
+
 ### Fixed
 - **Escalated deliberations never actually happened** — `extended_discussion`,
   the mechanism for "the agents could not agree, deliberate harder", created
