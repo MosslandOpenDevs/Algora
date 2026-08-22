@@ -54,6 +54,25 @@ interface LocalIssue {
   suggested_actions: string;
 }
 
+/**
+ * The part of AgoraService this bridge needs to escalate a deliberation.
+ *
+ * Structurally typed rather than imported, the way the scheduler types the
+ * same dependency: agora.ts already imports this module, so importing it back
+ * would close a cycle.
+ */
+interface AgoraSessionRunner {
+  createSession(options: {
+    title: string;
+    description?: string;
+    issueId?: string;
+    topic?: string;
+    maxRounds?: number;
+    autoSummon?: boolean;
+  }): Promise<{ id: string }>;
+  addParticipant(sessionId: string, agentId: string): Promise<boolean>;
+}
+
 interface BridgeEvents {
   'bridge:pipeline_started': { issueId: string; pipelineId: string };
   'bridge:pipeline_completed': { issueId: string; result: PipelineResult };
@@ -110,6 +129,7 @@ export class GovernanceOSBridge extends EventEmitter {
   private governanceOS: GovernanceOS;
   private storage: GovernanceStorage;
   private pipelinesByIssue: Map<string, string[]> = new Map();
+  private agoraService: AgoraSessionRunner | null = null;
   private eventHandlers: Map<keyof BridgeEvents, Set<BridgeEventHandler<keyof BridgeEvents>>> = new Map();
 
   constructor(
@@ -339,6 +359,28 @@ export class GovernanceOSBridge extends EventEmitter {
   }): Promise<void> {
     console.log(`[GovernanceOSBridge] Handling Agora session completion: ${sessionData.sessionId.slice(0, 8)}`);
 
+    // Close the escalation this session was created to answer. Escalations
+    // recorded assigned_to and then had no way back to 'resolved' except a
+    // manual admin POST, which in practice was never called — so the queue
+    // only ever grew and the escalation health stage was pinned at critical.
+    // Resolving here is independent of the consensus outcome: the extended
+    // discussion happened, which is what the escalation asked for.
+    const closed = this.db.prepare(`
+      UPDATE escalated_sessions
+      SET status = 'resolved',
+          resolution = ?,
+          resolved_at = CURRENT_TIMESTAMP,
+          updated_at = CURRENT_TIMESTAMP
+      WHERE assigned_to = ? AND status IN ('pending', 'in_progress')
+    `).run(
+      `Extended discussion completed (consensus ${sessionData.consensusScore.toFixed(2)} over ${sessionData.totalRounds ?? 0} rounds)`,
+      sessionData.sessionId,
+    );
+
+    if (closed.changes > 0) {
+      console.log(`[GovernanceOSBridge] Resolved ${closed.changes} escalation(s) for session ${sessionData.sessionId.slice(0, 8)}`);
+    }
+
     // If this session was for a specific issue, update the issue status
     if (sessionData.issueId) {
       const hasStrongConsensus = sessionData.consensusScore >= 0.7;
@@ -554,29 +596,41 @@ export class GovernanceOSBridge extends EventEmitter {
       totalRounds?: number;
     }
   ): Promise<void> {
-    const { v4: uuidv4 } = await import('uuid');
-
     switch (escalationType) {
       case 'extended_discussion': {
-        // Create a new Agora session with additional rounds
+        // Go through AgoraService rather than INSERTing a session row.
+        // A hand-written INSERT wrote status 'pending', which nothing in the
+        // codebase consumes: no participants, no round timer, no discussion.
+        // Every escalated session sat inert while the escalation recorded
+        // itself as 'in_progress', so low-consensus deliberations were
+        // silently dropped. createSession() is the only path that summons
+        // agents and starts the rounds.
         const newMaxRounds = (sessionData.totalRounds || 5) + 3;
-        const newSessionId = uuidv4();
 
-        this.db.prepare(`
-          INSERT INTO agora_sessions (
-            id, issue_id, title, description, status, current_round, max_rounds, created_at, updated_at
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-        `).run(
-          newSessionId,
-          sessionData.issueId || null,
-          `[Extended] ${sessionData.title}`,
-          `Extended discussion session with Red Team participation. Previous session achieved insufficient consensus. This session has ${newMaxRounds} rounds for deeper deliberation.`,
-          'pending',
-          1,
-          newMaxRounds
-        );
+        if (!this.agoraService) {
+          this.db.prepare(`
+            UPDATE escalated_sessions
+            SET status = 'failed', resolution = ?, updated_at = CURRENT_TIMESTAMP
+            WHERE id = ?
+          `).run('Agora orchestrator not connected — extended discussion could not be started', escalationId);
+          console.error(
+            `[GovernanceOSBridge] Cannot escalate session ${sessionData.sessionId.slice(0, 8)}: ` +
+            'Agora orchestrator not connected. Escalation marked failed rather than left pending.',
+          );
+          break;
+        }
 
-        // Auto-summon Red Team agents for extended discussion
+        const extended = await this.agoraService.createSession({
+          title: `[Extended] ${sessionData.title}`,
+          description: `Extended discussion session with Red Team participation. Previous session achieved insufficient consensus. This session has ${newMaxRounds} rounds for deeper deliberation.`,
+          issueId: sessionData.issueId,
+          topic: sessionData.title,
+          maxRounds: newMaxRounds,
+          autoSummon: true,
+        });
+
+        // Red Team on top of the context-summoned roster — the point of an
+        // extended round is adversarial pressure the first pass lacked.
         try {
           const redTeamAgents = this.db.prepare(`
             SELECT id FROM agents
@@ -584,27 +638,24 @@ export class GovernanceOSBridge extends EventEmitter {
           `).all() as Array<{ id: string }>;
 
           for (const agent of redTeamAgents) {
-            this.db.prepare(`
-              UPDATE agent_states
-              SET status = 'active', current_session_id = ?, last_active = CURRENT_TIMESTAMP
-              WHERE agent_id = ?
-            `).run(newSessionId, agent.id);
+            await this.agoraService.addParticipant(extended.id, agent.id);
           }
 
           if (redTeamAgents.length > 0) {
-            console.log(`[GovernanceOSBridge] Summoned ${redTeamAgents.length} Red Team agents for session ${newSessionId.slice(0, 8)}`);
+            console.log(`[GovernanceOSBridge] Summoned ${redTeamAgents.length} Red Team agents for session ${extended.id.slice(0, 8)}`);
           }
         } catch (error) {
           console.error('[GovernanceOSBridge] Failed to summon Red Team:', error);
         }
 
-        // Update escalation with assignment
+        // assigned_to is how the escalation closes: handleAgoraSessionCompleted
+        // resolves whichever escalation points at the finished session.
         this.db.prepare(`
           UPDATE escalated_sessions SET assigned_to = ?, status = 'in_progress', updated_at = CURRENT_TIMESTAMP
           WHERE id = ?
-        `).run(newSessionId, escalationId);
+        `).run(extended.id, escalationId);
 
-        console.log(`[GovernanceOSBridge] Created extended discussion session ${newSessionId.slice(0, 8)}`);
+        console.log(`[GovernanceOSBridge] Created extended discussion session ${extended.id.slice(0, 8)}`);
         break;
       }
 
@@ -716,6 +767,78 @@ export class GovernanceOSBridge extends EventEmitter {
   /**
    * Resolve an escalation
    */
+  /**
+   * Retire escalations whose deliberation was never actually startable.
+   *
+   * Before the fix above, `extended_discussion` wrote its follow-up session
+   * with status 'pending' — a status nothing consumes — so the session never
+   * summoned an agent or ran a round, while the escalation recorded itself as
+   * 'in_progress'. Those rows can never resolve on their own: the session
+   * they wait on is inert, and the queue they sit in only grows.
+   *
+   * The condition is deliberately narrow enough to be provable rather than
+   * heuristic: the assigned session is still 'pending' AND has never carried
+   * a single message. A session that produced even one message is left alone,
+   * because then something did run and the outcome is not ours to discard.
+   *
+   * Idempotent, and inert once the fix is deployed — new escalations get a
+   * session that actually starts, so nothing matches this again.
+   *
+   * These are retired rather than restarted on purpose: re-running dozens of
+   * deliberations at once would hammer an Ollama host that is shared with
+   * other services. The reason string is left on the row so the issues behind
+   * them can be re-driven deliberately.
+   */
+  reconcileStrandedEscalations(): { retired: number; sessions: number } {
+    const stranded = this.db.prepare(`
+      SELECT e.id AS escalation_id, s.id AS session_id
+      FROM escalated_sessions e
+      JOIN agora_sessions s ON e.assigned_to = s.id
+      WHERE e.status IN ('pending', 'in_progress')
+        AND s.status = 'pending'
+        AND NOT EXISTS (SELECT 1 FROM agora_messages m WHERE m.session_id = s.id)
+    `).all() as Array<{ escalation_id: string; session_id: string }>;
+
+    if (stranded.length === 0) return { retired: 0, sessions: 0 };
+
+    const retireEscalation = this.db.prepare(`
+      UPDATE escalated_sessions
+      SET status = 'failed', resolution = ?, resolved_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `);
+    const retireSession = this.db.prepare(`
+      UPDATE agora_sessions SET status = 'failed', updated_at = CURRENT_TIMESTAMP WHERE id = ?
+    `);
+    const reason =
+      'Extended discussion never started: the session was created in a status no orchestrator consumes. Retired on upgrade; re-escalate the issue to deliberate it.';
+
+    this.db.transaction(() => {
+      for (const row of stranded) {
+        retireEscalation.run(reason, row.escalation_id);
+        retireSession.run(row.session_id);
+      }
+    })();
+
+    console.warn(
+      `[GovernanceOSBridge] Retired ${stranded.length} escalation(s) whose extended-discussion session never started. ` +
+      'Their issues were never re-deliberated — re-escalate them if the decisions still matter.',
+    );
+
+    return { retired: stranded.length, sessions: stranded.length };
+  }
+
+  /**
+   * Connect the Agora orchestrator.
+   *
+   * Without it an `extended_discussion` escalation has nothing that can run
+   * the follow-up deliberation, and says so loudly rather than recording an
+   * escalation nobody will ever act on.
+   */
+  setAgoraService(service: AgoraSessionRunner): void {
+    this.agoraService = service;
+    console.info('[GovernanceOSBridge] Agora orchestrator connected (extended-discussion escalations can run)');
+  }
+
   resolveEscalation(escalationId: string, resolution: string): boolean {
     const result = this.db.prepare(`
       UPDATE escalated_sessions
