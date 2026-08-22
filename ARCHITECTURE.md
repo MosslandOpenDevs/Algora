@@ -220,7 +220,7 @@ Review Period Starts (24-72h based on risk)
 | Tier | Cost | Latency | Use Cases | Models |
 |------|------|---------|-----------|--------|
 | Tier 0 | Free | Low | RSS fetch, GitHub events, On-chain data | N/A |
-| Tier 1 | Local | Medium | Agent chatter, tagging, simple summaries | Llama 3.2, Phi-4, Qwen 2.5 |
+| Tier 1 | Local | Medium | Agent chatter, tagging, simple summaries | gemma3:4b, nomic-embed-text |
 | Tier 2 | External | Higher | Deliberation, Decision Packets, Analysis | Claude, GPT-4, Gemini |
 
 ### Budget Management

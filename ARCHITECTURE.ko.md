@@ -220,7 +220,7 @@ Director 3에게 라우팅
 | 티어 | 비용 | 지연 시간 | 사용 사례 | 모델 |
 |------|------|----------|----------|------|
 | Tier 0 | 무료 | 낮음 | RSS 가져오기, GitHub 이벤트, 온체인 데이터 | 해당 없음 |
-| Tier 1 | 로컬 | 중간 | 에이전트 잡담, 태깅, 간단한 요약 | Llama 3.2, Phi-4, Qwen 2.5 |
+| Tier 1 | 로컬 | 중간 | 에이전트 잡담, 태깅, 간단한 요약 | gemma3:4b, nomic-embed-text |
 | Tier 2 | 외부 | 높음 | 숙의, Decision Packet, 분석 | Claude, GPT-4, Gemini |
 
 ### 예산 관리

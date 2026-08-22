@@ -119,9 +119,13 @@ export class RAGService {
     this.db = db;
     this.io = io;
     this.config = {
-      embeddingModel: config?.embeddingModel || process.env.RAG_EMBEDDING_MODEL || 'qwen3-embedding:0.6b',
+      // nomic-embed-text is the embedding model the shared Ollama host keeps
+      // resident. It is small (~0.3GB VRAM) and loads alongside the resident
+      // chat model without evicting it. Override with RAG_EMBEDDING_MODEL, but
+      // only to a model that host has actually pulled.
+      embeddingModel: config?.embeddingModel || process.env.RAG_EMBEDDING_MODEL || 'nomic-embed-text',
       embeddingEndpoint: config?.embeddingEndpoint || process.env.LOCAL_LLM_ENDPOINT || 'http://localhost:11434',
-      embeddingDimensions: config?.embeddingDimensions || 1024, // qwen3-embedding:0.6b default (Matryoshka 64–1024)
+      embeddingDimensions: config?.embeddingDimensions || 768, // nomic-embed-text; re-stamped from the first real embedding
       maxDocumentLength: config?.maxDocumentLength || 8192,
       defaultTopK: config?.defaultTopK || 5,
       similarityThreshold: config?.similarityThreshold || 0.3,
@@ -166,12 +170,25 @@ export class RAGService {
       if (response.ok) {
         const data = await response.json() as { models?: { name: string }[] };
         const models = data.models || [];
-        this.isAvailable = models.some(m => m.name.includes('embed'));
+
+        // Availability means THE CONFIGURED MODEL is present — not merely that
+        // some model with "embed" in its name is. A substring check is
+        // satisfied by a co-tenant's unrelated embedding model, after which
+        // every /api/embeddings call 404s at index time and documents are
+        // stored without vectors, invisible to semantic search forever.
+        // Ollama resolves a bare name to its ":latest" tag, so accept both.
+        const wanted = this.config.embeddingModel;
+        const wantedTagged = wanted.includes(':') ? wanted : `${wanted}:latest`;
+        this.isAvailable = models.some(m => m.name === wanted || m.name === wantedTagged);
 
         if (!this.isAvailable) {
-          console.warn('[RAG] No embedding model found. Run: ollama pull qwen3-embedding:0.6b');
+          console.warn(
+            `[RAG] Configured embedding model "${wanted}" is not present on ` +
+            `${this.config.embeddingEndpoint}. Run: ollama pull ${wanted} — or set ` +
+            `RAG_EMBEDDING_MODEL to one it has: ${models.map(m => m.name).join(', ') || '(none)'}`
+          );
         } else {
-          console.info(`[RAG] Service available with model: ${this.config.embeddingModel}`);
+          console.info(`[RAG] Service available with model: ${wanted}`);
         }
       }
     } catch (error) {
@@ -444,6 +461,11 @@ export class RAGService {
       this.config.embeddingEndpoint,
       this.config.embeddingModel
     );
+
+    // The configured dimension is a guess; this is the measurement. Point
+    // RAG_EMBEDDING_MODEL at a different model and /api/rag/status should
+    // report that model's real width, not a stale constant.
+    this.config.embeddingDimensions = embedding.length;
 
     // Cache (limit size)
     if (this.embeddingCache.size > 1000) {

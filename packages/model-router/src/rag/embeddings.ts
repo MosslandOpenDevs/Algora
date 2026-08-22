@@ -92,7 +92,7 @@ export class EmbeddingService {
 
   constructor(options?: EmbeddingServiceOptions) {
     this.provider = options?.provider || new MockEmbeddingProvider();
-    this.defaultModel = options?.defaultModel || 'qwen3-embedding:0.6b';
+    this.defaultModel = options?.defaultModel || 'nomic-embed-text';
     this.batchSize = options?.batchSize || 32;
     this.cacheEnabled = options?.cacheEnabled ?? true;
     this.cacheMaxSize = options?.cacheMaxSize || 10000;

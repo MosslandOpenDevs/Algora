@@ -16,7 +16,7 @@ Algora is a **24/7 Live Agentic Governance Platform** for MOC (Moss Coin) holder
 - **Frontend**: Next.js 14 + React 18 + TanStack Query + Tailwind CSS
 - **Database**: SQLite (better-sqlite3) with WAL mode
 - **LLM External**: Anthropic Claude / OpenAI GPT / Google Gemini (Tier 2)
-- **LLM Local**: Ollama (Tier 1) - Llama 3.2, Qwen 2.5, Phi-4
+- **LLM Local**: Ollama (Tier 1) - gemma3:4b (chat), nomic-embed-text (embeddings)
 - **i18n**: next-intl (English primary, Korean secondary)
 
 ### Project Structure
@@ -117,21 +117,37 @@ Key environment variables (see `.env.example` for full list):
 - `OPENAI_API_KEY`: For OpenAI GPT API (Tier 2)
 - `GOOGLE_API_KEY`: For Google Gemini API (Tier 2)
 - `LOCAL_LLM_ENDPOINT`: Ollama endpoint (default: http://localhost:11434)
-- `LOCAL_LLM_MODEL_CHATTER`: Fast model for chatter (llama3.2:8b)
-- `LOCAL_LLM_MODEL_ENHANCED`: Quality model (qwen2.5:32b)
+- `LOCAL_LLM_MODEL_CHATTER` / `LOCAL_LLM_MODEL_ENHANCED`: Tier 1 chat model (both `gemma3:4b`)
+- `LOCAL_LLM_NUM_CTX` / `OLLAMA_NUM_CTX`: Ollama context window (both 16384 — change together)
+- `RAG_EMBEDDING_MODEL`: Embedding model for RAG (`nomic-embed-text`)
 - `ANTHROPIC_DAILY_BUDGET_USD`: Daily budget limit ($10 default)
 
 ## Local LLM Hardware
 
-Target machine: Mac mini M4 Pro
-- 14-core CPU, 20-core GPU, 16-core Neural Engine
-- 64GB Unified Memory
-- 2TB SSD
+Tier 1 targets a modest Ollama host (~8GB GPU budget) that may be **shared with
+other services**, so the model set is deliberately small:
 
-Recommended models:
-- **Chatter**: Llama 3.2 8B, Phi-4 14B
-- **Enhanced**: Qwen 2.5 32B, Mistral Small 3 24B
-- **Fallback**: Qwen 2.5 72B-Q4 (when external budget exhausted)
+- **Chat**: `gemma3:4b` — every Tier-1 task (chatter, debate, summarization,
+  Korean, coding, reranking-as-judge) routes here so exactly one model stays
+  resident and nothing swaps.
+- **Embeddings**: `nomic-embed-text` (768 dims) — the one permitted second
+  resident model, at ~0.3GB VRAM.
+
+Two rules follow from sharing the host, and both are easy to break by accident:
+
+1. **Never vary the chat model or its `num_ctx` per task.** Ollama treats the
+   same model at a different context size as a separate instance, so a
+   divergent value evicts the resident one and every co-tenant pays for the
+   reload. Algora reads the same value under two names —
+   `LOCAL_LLM_NUM_CTX` (`apps/api`) and `OLLAMA_NUM_CTX`
+   (`packages/model-router`) — change them together.
+2. **Never name a model the host has not pulled.** Ollama answers `HTTP 404`
+   and the failure surfaces late, at call time. Verify with
+   `curl $LOCAL_LLM_ENDPOINT/api/tags` before changing a model id in
+   `packages/model-router/src/registry.ts` or `RAG_EMBEDDING_MODEL`.
+
+Sizing up (a larger, unshared host) means raising both models together and
+updating the registry — not overriding one call site.
 
 ## API Patterns
 
