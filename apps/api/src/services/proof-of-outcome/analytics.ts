@@ -213,7 +213,7 @@ export class AnalyticsService {
     const discussions = this.db.prepare(`
       SELECT COUNT(DISTINCT session_id) as count
       FROM agora_messages
-      WHERE speaker_id = ?
+      WHERE agent_id = ?
     `).get(agentId) as { count: number };
 
     return {
@@ -369,22 +369,27 @@ export class AnalyticsService {
   // === Category Analysis ===
 
   getCategoryAnalytics(): any {
+    // `proposals` has no category of its own — a proposal inherits it from the
+    // issue it answers, so the grouping reaches it through `issue_id`. Note the
+    // stored value can be multi-valued ("security|governance"); it is grouped
+    // as written rather than split, so a bucket is an exact category string.
     return this.db.prepare(`
       SELECT
-        category,
+        COALESCE(i.category, 'uncategorized') as category,
         COUNT(*) as total,
-        COUNT(CASE WHEN status IN ('passed', 'executed') THEN 1 END) as passed,
-        COUNT(CASE WHEN status = 'rejected' THEN 1 END) as rejected,
+        COUNT(CASE WHEN p.status IN ('passed', 'executed') THEN 1 END) as passed,
+        COUNT(CASE WHEN p.status = 'rejected' THEN 1 END) as rejected,
         AVG(
           CASE
-            WHEN tally IS NOT NULL
-            THEN json_extract(tally, '$.total_votes')
+            WHEN p.tally IS NOT NULL
+            THEN json_extract(p.tally, '$.total_votes')
             ELSE 0
           END
         ) as avgVotes
-      FROM proposals
-      WHERE status NOT IN ('draft', 'cancelled')
-      GROUP BY category
+      FROM proposals p
+      LEFT JOIN issues i ON p.issue_id = i.id
+      WHERE p.status NOT IN ('draft', 'cancelled')
+      GROUP BY COALESCE(i.category, 'uncategorized')
       ORDER BY total DESC
     `).all();
   }
@@ -396,9 +401,10 @@ export class AnalyticsService {
 
     const proposals = this.db.prepare(`
       SELECT
-        p.id, p.title, p.status, p.category, p.created_at, p.updated_at,
+        p.id, p.title, p.status, i.category, p.created_at, p.updated_at,
         p.tally
       FROM proposals p
+      LEFT JOIN issues i ON p.issue_id = i.id
       WHERE p.created_at BETWEEN ? AND ?
         AND p.status NOT IN ('draft', 'cancelled')
       ORDER BY p.created_at DESC
