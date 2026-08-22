@@ -47,6 +47,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Mossland ecosystem wayfinding bar** — Algora was the only sister site without an outbound ecosystem bar (bridge.moss.land and ao.moss.land already link the family; only inbound links existed here). A new `EcosystemBar` (`components/cross-link/EcosystemBar.tsx`, Server Component) mounts once in the root layout after `NpcCityStrip`, rendering the same set in the same order as the other two sites — BRIDGE (Governance OS) · **Algora** (AI Deliberation Lab, current, non-link) · MOSS.AO (Agentic Orchestrator) — which completes the three-site wayfinding loop. New `Ecosystem` i18n namespace in **all four** locales, with role copy aligned to the in-product canon (`Navigation.governance`, the layout's SEO taglines: `AI 熟議ラボ` / `AI 审议实验室`). Carries the accessibility pattern from MOSS.AO's pre-merge review (agentic-orchestrator PR #2950): a real space text node between site name and role so the accessible name reads "BRIDGE Governance OS" rather than "BRIDGEGovernance OS", and new-tab disclosure on the external links (aria-hidden `↗` + localized sr-only text). `rel="noopener"` per the `NpcCityStrip` precedent, so sister sites keep referrer attribution.
 
 ### Fixed
+- **Escalated deliberations never actually happened** — `extended_discussion`,
+  the mechanism for "the agents could not agree, deliberate harder", created
+  its follow-up Agora session with a hand-written `INSERT ... status
+  'pending'`. **Nothing in the codebase consumes that status**: no agent was
+  summoned, no round timer started, and not a single message was ever written
+  to any of them. Meanwhile the escalation recorded `assigned_to` and marked
+  itself `in_progress`, so it read as handled. Production had **37 such
+  escalations spanning 16 days, every assigned session still `pending` with
+  zero messages, and zero escalations resolved in the table's entire
+  history** — every low-consensus deliberation since 2026-08-06 was silently
+  dropped. Escalation now goes through `AgoraService.createSession()`, the only
+  path that summons participants and starts the rounds, with the Red Team added
+  on top of the context-summoned roster.
+- **Escalations had no way to close** — the only route from `in_progress` back
+  to `resolved` was a manual admin `POST`, which was never once called, so the
+  queue could only grow and the escalation health stage was pinned at
+  `critical` (40/100) where it could never recover. A health signal stuck red
+  is a health signal people stop reading — the same reason the broken timeline
+  went unnoticed for two weeks. `handleAgoraSessionCompleted` now resolves
+  whichever escalation points at the finished session, independent of the
+  consensus reached: the escalation asked for the discussion, not for
+  agreement.
+- **Escalations stranded by the above are retired on startup** — the 37
+  existing rows can never resolve on their own, since the sessions they wait on
+  are inert. A bounded, idempotent reconciliation retires only what is provably
+  dead: the assigned session is still `pending` **and** has never carried a
+  single message. A session that produced even one message is left alone,
+  because then something did run and the outcome is not ours to discard. They
+  are retired rather than restarted deliberately — re-running dozens of
+  deliberations at once would hammer an Ollama host shared with other
+  services — and the reason is left on each row so those issues can be
+  re-driven on purpose. If the orchestrator is ever unavailable, an escalation
+  is now marked `failed` rather than recorded as in-progress work nothing can
+  perform.
 - **Passing a date range to governance analytics threw `ambiguous column name`** —
   `getGovernanceMetrics` builds one `dateFilter` fragment and interpolates it
   into two queries with different FROM clauses. It read `AND created_at BETWEEN

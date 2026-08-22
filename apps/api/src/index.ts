@@ -455,6 +455,19 @@ async function bootstrap() {
     const agoraSvc = getAgoraService();
     if (agoraSvc) {
       schedulerService.setAgoraService(agoraSvc);
+      // The bridge needs it too: an extended-discussion escalation has to
+      // create its follow-up deliberation through the orchestrator, or the
+      // session never starts and the escalation never closes.
+      governanceOSBridge.setAgoraService(agoraSvc);
+    } else {
+      console.error('[Startup] Agora orchestrator unavailable — extended-discussion escalations cannot run');
+    }
+
+    // Retire escalations left waiting on a session that could never start.
+    // No-op once the deployment above has been through one cycle.
+    const reconciled = governanceOSBridge.reconcileStrandedEscalations();
+    if (reconciled.retired > 0) {
+      console.warn(`[Startup] Retired ${reconciled.retired} stranded escalation(s)`);
     }
 
     // Initialize proof of outcome service
