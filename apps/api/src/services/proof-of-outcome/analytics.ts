@@ -53,17 +53,21 @@ export class AnalyticsService {
     const params: any[] = [];
 
     if (startDate && endDate) {
-      dateFilter = ' AND created_at BETWEEN ? AND ?';
+      // Qualified with the alias every query below shares. Unqualified, this
+      // fragment was ambiguous in the participation query — `proposals` and
+      // `votes` both have `created_at` — so passing a date range threw
+      // "ambiguous column name" and took the whole report with it.
+      dateFilter = ' AND p.created_at BETWEEN ? AND ?';
       params.push(startDate, endDate);
     }
 
     const proposals = this.db.prepare(`
       SELECT
         COUNT(*) as total,
-        COUNT(CASE WHEN status = 'passed' OR status = 'executed' THEN 1 END) as passed,
-        COUNT(CASE WHEN status = 'rejected' THEN 1 END) as rejected
-      FROM proposals
-      WHERE status NOT IN ('draft', 'cancelled')${dateFilter}
+        COUNT(CASE WHEN p.status = 'passed' OR p.status = 'executed' THEN 1 END) as passed,
+        COUNT(CASE WHEN p.status = 'rejected' THEN 1 END) as rejected
+      FROM proposals p
+      WHERE p.status NOT IN ('draft', 'cancelled')${dateFilter}
     `).get(...params) as any;
 
     const votes = this.db.prepare(`
