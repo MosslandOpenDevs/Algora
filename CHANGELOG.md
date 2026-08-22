@@ -47,6 +47,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Mossland ecosystem wayfinding bar** — Algora was the only sister site without an outbound ecosystem bar (bridge.moss.land and ao.moss.land already link the family; only inbound links existed here). A new `EcosystemBar` (`components/cross-link/EcosystemBar.tsx`, Server Component) mounts once in the root layout after `NpcCityStrip`, rendering the same set in the same order as the other two sites — BRIDGE (Governance OS) · **Algora** (AI Deliberation Lab, current, non-link) · MOSS.AO (Agentic Orchestrator) — which completes the three-site wayfinding loop. New `Ecosystem` i18n namespace in **all four** locales, with role copy aligned to the in-product canon (`Navigation.governance`, the layout's SEO taglines: `AI 熟議ラボ` / `AI 审议实验室`). Carries the accessibility pattern from MOSS.AO's pre-merge review (agentic-orchestrator PR #2950): a real space text node between site name and role so the accessible name reads "BRIDGE Governance OS" rather than "BRIDGEGovernance OS", and new-tab disclosure on the external links (aria-hidden `↗` + localized sr-only text). `rel="noopener"` per the `NpcCityStrip` precedent, so sister sites keep referrer attribution.
 
 ### Fixed
+- **Passing a date range to governance analytics threw `ambiguous column name`** —
+  `getGovernanceMetrics` builds one `dateFilter` fragment and interpolates it
+  into two queries with different FROM clauses. It read `AND created_at BETWEEN
+  ? AND ?` unqualified, which resolves against `FROM proposals` but is
+  ambiguous against `FROM proposals p LEFT JOIN votes v`, since both tables
+  have a `created_at`. So `/api/outcomes/analytics/governance` worked without
+  dates and failed with them, and `/api/outcomes/analytics/report` — which
+  always passes dates — failed outright. The fragment and both queries now
+  share the `p` alias. This surfaced only after the wrong-column fixes below
+  cleared the first error out of the way; it had been the second failure in the
+  same request all along. It also sits exactly in the blind spot
+  `db/schema-conformance.test.ts` declares — the defect is *inside* an
+  interpolated fragment, whose text no static check can know — so it is covered
+  the only way it can be, by `services/proof-of-outcome/analytics.test.ts`
+  actually running the queries, dated and undated, and asserting the filter
+  both admits and excludes.
 - **Three analytics endpoints threw on every call** — the same wrong-column
   defect as the timeline, in `services/proof-of-outcome/analytics.ts`, behind
   three live routes. `/api/outcomes/analytics/agent/:id` counted
