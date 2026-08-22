@@ -47,6 +47,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Mossland ecosystem wayfinding bar** — Algora was the only sister site without an outbound ecosystem bar (bridge.moss.land and ao.moss.land already link the family; only inbound links existed here). A new `EcosystemBar` (`components/cross-link/EcosystemBar.tsx`, Server Component) mounts once in the root layout after `NpcCityStrip`, rendering the same set in the same order as the other two sites — BRIDGE (Governance OS) · **Algora** (AI Deliberation Lab, current, non-link) · MOSS.AO (Agentic Orchestrator) — which completes the three-site wayfinding loop. New `Ecosystem` i18n namespace in **all four** locales, with role copy aligned to the in-product canon (`Navigation.governance`, the layout's SEO taglines: `AI 熟議ラボ` / `AI 审议实验室`). Carries the accessibility pattern from MOSS.AO's pre-merge review (agentic-orchestrator PR #2950): a real space text node between site name and role so the accessible name reads "BRIDGE Governance OS" rather than "BRIDGEGovernance OS", and new-tab disclosure on the external links (aria-hidden `↗` + localized sr-only text). `rel="noopener"` per the `NpcCityStrip` precedent, so sister sites keep referrer attribution.
 
 ### Fixed
+- **Three analytics endpoints threw on every call** — the same wrong-column
+  defect as the timeline, in `services/proof-of-outcome/analytics.ts`, behind
+  three live routes. `/api/outcomes/analytics/agent/:id` counted
+  `agora_messages.speaker_id`, where the column is `agent_id`.
+  `/api/outcomes/analytics/categories` and `/api/outcomes/analytics/export`
+  read `proposals.category` — but proposals have no category at all: it belongs
+  to the issue they answer, reached through `issue_id`. Both now `LEFT JOIN
+  issues`, which is lossless here (**all 338 proposals carry an `issue_id` and
+  all 338 join**). Category analytics returns 31 buckets over 335 proposals and
+  the export returns 335 rows with no null category, where all three
+  previously returned nothing but a `SqliteError`. The stored category can be
+  multi-valued (`security|governance`); it is grouped as written rather than
+  split, so a bucket stays an exact category string — changing that is a
+  product decision, not a defect.
 - **The issue timeline 500'd on every issue that had a deliberation** —
   `/api/timeline/issue/:id` selected `round_count` and `completed_at` from
   `agora_sessions`. Neither column has ever existed: the table has
@@ -69,16 +83,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the route layer disagreed about what exists. Its definition now lives in
   `createSchema()` alongside `issues`; the service's `IF NOT EXISTS` copy is
   idempotent and left in place.
-- **Regression guard for both** (`routes/schema-conformance.test.ts`) — every
-  static SQL statement in the route layer is now prepared against a fresh
-  canonical schema, so a column or table that does not exist fails in CI
-  instead of at request time. This generalizes the guard
-  `activity/activity-log.test.ts` already applied to hand-written
-  `activity_log` INSERTs. Verified in both directions: restoring `round_count`
-  fails the guard, and removing `issue_signals` from `createSchema()` fails it.
-  Statements assembled with `${}` interpolation cannot be prepared ahead of
-  time and are counted rather than silently skipped, so the guard's blind spot
-  stays visible.
+- **Regression guard for all of the above** (`db/schema-conformance.test.ts`) —
+  every static SQL statement in `apps/api` is now prepared against a fresh
+  canonical schema, so a column that does not exist fails in CI instead of at
+  request time. This generalizes the guard `activity/activity-log.test.ts`
+  already applied to hand-written `activity_log` INSERTs. Verified by
+  reintroducing each of the four bugs one at a time — every one fails the
+  guard, and all four fixed passes it. Two blind spots are counted and
+  reported rather than silently skipped, so they stay visible: statements
+  assembled with `${}` interpolation cannot be prepared ahead of time, and
+  columns on tables that a service creates for itself rather than
+  `createSchema()` cannot be checked against a schema that does not declare
+  them (138 such statements today — a known pattern, not a defect, and
+  deliberately not turned into a schema refactor).
 - **RAG embedding model pointed at a model the host does not have** — the API's
   RAG service defaulted to `qwen3-embedding:0.6b`, which returns
   `HTTP 404 model not found` on the shared Ollama host; the model actually
