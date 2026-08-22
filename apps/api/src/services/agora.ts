@@ -786,8 +786,8 @@ export class AgoraService {
     if (messageCount >= ORCHESTRATOR_CONFIG.maxMessagesPerRound) {
       console.log(`[Orchestrator] Max messages (${messageCount}) reached for session ${sessionId.slice(0, 8)}. Forcing round advancement.`);
 
-      // Generate summary and extract action items before advancing
-      const _summary = await this.generateRoundSummary(sessionId);
+      // Action items are stored and read later; a round summary would not be.
+      // See generateRoundSummary — only the timeout paths consume one.
       await this.extractActionItems(sessionId);
 
       await this.orchestratorAdvanceRound(sessionId, 'max_messages_reached');
@@ -805,8 +805,6 @@ export class AgoraService {
       if (consensus.score >= ORCHESTRATOR_CONFIG.consensusThreshold && !consensus.needsMoreDiscussion) {
         console.log(`[Orchestrator] High consensus (${consensus.score.toFixed(2)}) reached. Advancing round.`);
 
-        // Generate summary and extract action items
-        await this.generateRoundSummary(sessionId);
         await this.extractActionItems(sessionId);
 
         await this.orchestratorAdvanceRound(sessionId, 'consensus_reached');
@@ -821,8 +819,6 @@ export class AgoraService {
       // Use LLM-based orchestrator evaluation
       const shouldAdvance = await this.evaluateRoundWithOrchestrator(sessionId);
       if (shouldAdvance) {
-        // Generate summary and extract action items
-        await this.generateRoundSummary(sessionId);
         await this.extractActionItems(sessionId);
 
         await this.orchestratorAdvanceRound(sessionId, 'orchestrator_decision');
@@ -1196,6 +1192,21 @@ Respond with only the needed areas (comma-separated):`,
   }
 
   // 3. Round Summary Generation
+  /**
+   * Summarize the round currently in progress.
+   *
+   * Reads messages at `session.current_round`, so it only means anything while
+   * that round is still the current one — call it before advancing, never
+   * after.
+   *
+   * Only the timeout paths use the result, and they use it directly. Three
+   * round-advance paths used to call this and throw the result away: no
+   * storage, no event, no log. On 2026-08-22 that was 73 LLM calls in a day,
+   * every one discarded, against an Ollama host shared with other services.
+   * If a summary is ever wanted on a normal advance, consume it the way
+   * handleRoundTimeout does rather than calling this for its side effects —
+   * it has none.
+   */
   async generateRoundSummary(sessionId: string): Promise<RoundSummary | null> {
     const session = this.getSession(sessionId);
     if (!session) return null;

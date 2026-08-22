@@ -47,6 +47,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Mossland ecosystem wayfinding bar** — Algora was the only sister site without an outbound ecosystem bar (bridge.moss.land and ao.moss.land already link the family; only inbound links existed here). A new `EcosystemBar` (`components/cross-link/EcosystemBar.tsx`, Server Component) mounts once in the root layout after `NpcCityStrip`, rendering the same set in the same order as the other two sites — BRIDGE (Governance OS) · **Algora** (AI Deliberation Lab, current, non-link) · MOSS.AO (Agentic Orchestrator) — which completes the three-site wayfinding loop. New `Ecosystem` i18n namespace in **all four** locales, with role copy aligned to the in-product canon (`Navigation.governance`, the layout's SEO taglines: `AI 熟議ラボ` / `AI 审议实验室`). Carries the accessibility pattern from MOSS.AO's pre-merge review (agentic-orchestrator PR #2950): a real space text node between site name and role so the accessible name reads "BRIDGE Governance OS" rather than "BRIDGEGovernance OS", and new-tab disclosure on the external links (aria-hidden `↗` + localized sr-only text). `rel="noopener"` per the `NpcCityStrip` precedent, so sister sites keep referrer attribution.
 
 ### Changed
+- **Round advances no longer ask the model for a summary nobody reads** —
+  `generateRoundSummary` is a pure function: it reads the round's messages,
+  asks for a summary, parses it and returns it, with no storage, no event and
+  no log on success. Three round-advance paths called it and discarded the
+  result anyway — one into an unread `_summary`, two as a bare `await`. Only
+  the two timeout paths ever consumed one. Measured on 2026-08-22: production
+  advanced **73 rounds, every one via `consensus_reached`, and not one through
+  a timeout path** — so all 73 calls that day produced nothing, each asking a
+  shared Ollama host for up to 600 tokens. The failures were visible and still
+  said nothing useful: two `[Orchestrator] Summary generation failed:
+  SyntaxError` the same day, reporting that output nobody wanted would not
+  parse. The three discarded calls are removed; `extractActionItems` stays at
+  each site because its result is stored and read. `generateRoundSummary` keeps
+  its two real callers and now documents its contract — it must run before the
+  advance, since it reads `session.current_round`, and it has no side effects
+  to call it for. A source guard
+  (`services/agora-summary-calls.test.ts`) fails if any call site stops binding
+  the result.
 - **Escalation health measures whether the machine is moving, not whether the
   queue is empty** — the stage scored the raw count of open escalations (under
   5 healthy, under 10 degraded, else critical), which conflated two unrelated
