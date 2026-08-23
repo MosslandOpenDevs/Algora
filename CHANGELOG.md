@@ -47,6 +47,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Mossland ecosystem wayfinding bar** — Algora was the only sister site without an outbound ecosystem bar (bridge.moss.land and ao.moss.land already link the family; only inbound links existed here). A new `EcosystemBar` (`components/cross-link/EcosystemBar.tsx`, Server Component) mounts once in the root layout after `NpcCityStrip`, rendering the same set in the same order as the other two sites — BRIDGE (Governance OS) · **Algora** (AI Deliberation Lab, current, non-link) · MOSS.AO (Agentic Orchestrator) — which completes the three-site wayfinding loop. New `Ecosystem` i18n namespace in **all four** locales, with role copy aligned to the in-product canon (`Navigation.governance`, the layout's SEO taglines: `AI 熟議ラボ` / `AI 审议实验室`). Carries the accessibility pattern from MOSS.AO's pre-merge review (agentic-orchestrator PR #2950): a real space text node between site name and role so the accessible name reads "BRIDGE Governance OS" rather than "BRIDGEGovernance OS", and new-tab disclosure on the external links (aria-hidden `↗` + localized sr-only text). `rel="noopener"` per the `NpcCityStrip` precedent, so sister sites keep referrer attribution.
 
 ### Fixed
+- **The dashboard announced a collapse every morning that never happened** —
+  the stat-card trends compared today *so far* against the **whole** of
+  yesterday. At 01:00 UTC that reads 93 signals against yesterday's full 1,263
+  and reports **-93%**, where the honest comparison — 93 against the 109
+  collected by 01:00 yesterday — is **-15%**. Collection was flat. The artifact
+  shrank as the day went on and only disappeared around midnight, which is
+  exactly when nobody is looking, so the front page raised an alarm each
+  morning and quietly retracted it by night. Yesterday is now measured over the
+  same elapsed window, and `dashboardCounts` takes `now` as a parameter instead
+  of SQLite's `'now'` so the boundary can be pinned in a test rather than
+  depending on what hour CI runs at.
+- **Two trends described something other than the number they sat beside** —
+  "Active Agents" and "Active Sessions" show a level: how many right now.
+  Nothing records what those levels were yesterday, so they were decorated with
+  the day-over-day change in `agent_chatter` volume and in sessions *created*.
+  A card reading "10, down 96%" stated nothing true about agents. Both trends
+  are removed rather than approximated; `StatsCard` already renders no
+  indicator when the field is absent, so the fix is API-side only. An absent
+  arrow is the only honest answer where no comparable history exists — and
+  `percentChange` now reports 0 rather than a measured-looking 100 when there
+  is no baseline at all.
+
+### Fixed
 - **A missing document answered 500 instead of 404** —
   `GovernanceOSBridge.getDocument` is typed `Promise<Document | null>`, but the
   document registry underneath *throws* `DocumentNotFoundError`. The signature
