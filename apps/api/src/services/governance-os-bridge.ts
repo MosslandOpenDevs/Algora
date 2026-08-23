@@ -17,7 +17,7 @@ import {
 import type { RiskLevel, ActionType } from '@algora/safe-autonomy';
 import { classifyAction } from '@algora/safe-autonomy';
 import type { Issue as OrchestratorIssue, WorkflowType, TopicCategory } from '@algora/orchestrator';
-import type { DocumentType, Document } from '@algora/document-registry';
+import { DocumentNotFoundError, type DocumentType, type Document } from '@algora/document-registry';
 import type { DualHouseVoting, HighRiskApproval, VoteChoice, HouseType } from '@algora/dual-house';
 import type { Task, TaskType, DifficultyLevel } from '@algora/model-router';
 
@@ -1458,7 +1458,18 @@ ${issue.evidence ? JSON.parse(issue.evidence).slice(0, 3).map((e: { source: stri
    */
   async getDocument(documentId: string): Promise<Document | null> {
     const docRegistry = this.governanceOS.getDocumentRegistry();
-    return docRegistry.documents.get(documentId);
+    try {
+      return await docRegistry.documents.get(documentId);
+    } catch (error) {
+      // The registry throws for a missing document while this method's type
+      // promises null. Callers trusted the type: /api/governance-os/documents/:id
+      // has an `if (!doc) return 404` branch that could never be reached, so a
+      // client asking for a document that does not exist got a 500 — a server
+      // fault, in the logs and in any alerting built on them. Honour the
+      // signature here rather than teaching each caller about the exception.
+      if (error instanceof DocumentNotFoundError) return null;
+      throw error;
+    }
   }
 
   /**

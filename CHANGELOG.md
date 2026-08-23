@@ -46,6 +46,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Issue auto-expiry janitor** — every detection cycle now auto-dismisses open (`detected`/`confirmed`) issues untouched for `ISSUE_AUTO_EXPIRE_DAYS` (default 7; explicit `0` disables, empty/invalid falls back to 7 with a warning). Staleness is keyed on last touch (`updated_at`), `in_progress` issues get a 3x horizon, and mid-governance statuses (`pending_vote`, `approved_for_action`, `needs_manual_review`, ...) are never auto-expired, so live governance work is not dismissed mid-flight. Each dismissal emits `issue:updated`. A one-time prod cleanup dismissed the 4,946 stale/duplicate open issues that had accumulated since mid-June (online backup kept on the server).
 - **Mossland ecosystem wayfinding bar** — Algora was the only sister site without an outbound ecosystem bar (bridge.moss.land and ao.moss.land already link the family; only inbound links existed here). A new `EcosystemBar` (`components/cross-link/EcosystemBar.tsx`, Server Component) mounts once in the root layout after `NpcCityStrip`, rendering the same set in the same order as the other two sites — BRIDGE (Governance OS) · **Algora** (AI Deliberation Lab, current, non-link) · MOSS.AO (Agentic Orchestrator) — which completes the three-site wayfinding loop. New `Ecosystem` i18n namespace in **all four** locales, with role copy aligned to the in-product canon (`Navigation.governance`, the layout's SEO taglines: `AI 熟議ラボ` / `AI 审议实验室`). Carries the accessibility pattern from MOSS.AO's pre-merge review (agentic-orchestrator PR #2950): a real space text node between site name and role so the accessible name reads "BRIDGE Governance OS" rather than "BRIDGEGovernance OS", and new-tab disclosure on the external links (aria-hidden `↗` + localized sr-only text). `rel="noopener"` per the `NpcCityStrip` precedent, so sister sites keep referrer attribution.
 
+### Fixed
+- **A missing document answered 500 instead of 404** —
+  `GovernanceOSBridge.getDocument` is typed `Promise<Document | null>`, but the
+  document registry underneath *throws* `DocumentNotFoundError`. The signature
+  lied, and `/api/governance-os/documents/:id` trusted it: its
+  `if (!doc) return 404` branch could never be reached, so asking for a
+  document that does not exist produced a server fault — in the response, in
+  the logs, and in anything alerting on them. Fixed where the contract is,
+  not at the caller, so the type is true for every caller rather than each one
+  learning about the exception.
+- **The one runtime `require()` in `apps/api`** — `/api/agora/llm-queue` loaded
+  `AgoraService` through `require()` mid-handler, behind an eslint-disable,
+  apparently to dodge a circular import that does not exist:
+  `services/agora.ts` imports nothing from `routes/`. It worked under pm2 and
+  broke anywhere else, which is why the route could not be exercised by a test
+  at all. Now a plain import.
+
+### Added
+- **A smoke sweep over every GET route** (`routes/route-smoke.test.ts`) — four
+  defects this month were the same shape: an endpoint returning 500 on every
+  request while nothing noticed. `/api/timeline/issue/:id` did it for two weeks
+  across all 2,553 issues with a deliberation; three `/api/outcomes/analytics/*`
+  routes did it on every call. Every one was found by reading production logs by
+  hand, because no test ever asked the API for a response. This asks all 156 of
+  them, and treats only 500 as failure: 200/400/404 mean the handler ran and
+  decided, and 503 is the correct answer where a fixture does not wire a
+  service. It found the document bug above on its first run. The fixture wires
+  the services that construct from `(db, io)` alone and deliberately stops
+  there — a fixture that drifts from production wiring is worse than one that
+  is obviously partial. Together with `db/schema-conformance.test.ts`, which
+  covers the SQL half before it ships, all four of this month's endpoint
+  failures would now fail in CI.
+
 ### Changed
 - **Round advances no longer ask the model for a summary nobody reads** —
   `generateRoundSummary` is a pure function: it reads the round's messages,

@@ -2,6 +2,7 @@ import { Router } from 'express';
 import type Database from 'better-sqlite3';
 import { v4 as uuidv4 } from 'uuid';
 import { getAgoraService } from '../services/socket';
+import { AgoraService } from '../services/agora';
 import { writeLimiter } from '../middleware/rate-limit';
 import { requireAdmin } from '../middleware/auth';
 
@@ -398,8 +399,6 @@ agoraRouter.post('/sessions/:id/automated/stop', writeLimiter, requireAdmin, (re
 
 // GET /api/agora/llm-queue - Get LLM queue status
 agoraRouter.get('/llm-queue', (req, res) => {
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const { AgoraService } = require('../services/agora');
   const queueSize = AgoraService.getLLMQueueSize();
   res.json({
     queueSize,
