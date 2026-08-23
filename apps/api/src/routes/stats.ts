@@ -7,59 +7,77 @@ import { requireAdmin } from '../middleware/auth';
 
 export const statsRouter: Router = Router();
 
+/**
+ * Day-over-day change, as a whole percentage.
+ *
+ * With no baseline there is no percentage to state: report growth from zero as
+ * a flat 0 rather than an infinite rise.
+ */
+export function percentChange(current: number, previous: number): number {
+  if (previous <= 0) return 0;
+  return Math.round(((current - previous) / previous) * 100);
+}
+
+/**
+ * Dashboard counts, with yesterday measured over the same elapsed window.
+ *
+ * The trend used to compare today so far against the *whole* of yesterday, so
+ * every morning the dashboard reported a collapse that had not happened: at
+ * 01:00 UTC, 93 signals against yesterday's full 1,263 reads as -93%, where the
+ * honest comparison — 93 against the 109 collected by 01:00 yesterday — is
+ * -15%. The artifact shrank through the day and only vanished around midnight,
+ * which is exactly when nobody was looking.
+ *
+ * `now` is a parameter rather than SQLite's `'now'` so this is testable without
+ * depending on the wall clock.
+ */
+export function dashboardCounts(db: Database.Database, now: string): {
+  activeAgents: number;
+  activeSessions: number;
+  signalsToday: number;
+  openIssues: number;
+  signalsYesterday: number;
+} {
+  return db.prepare(`
+    SELECT
+      (SELECT COUNT(*) FROM agent_states WHERE status != 'idle' AND status IS NOT NULL) as activeAgents,
+      (SELECT COUNT(*) FROM agora_sessions WHERE status = 'active') as activeSessions,
+      (SELECT COUNT(*) FROM issues WHERE status IN ('detected', 'confirmed', 'in_progress')) as openIssues,
+      (SELECT COUNT(*) FROM signals WHERE date(created_at) = date(:now)) as signalsToday,
+      (SELECT COUNT(*) FROM signals
+        WHERE date(created_at) = date(:now, '-1 day')
+          AND time(created_at) <= time(:now)) as signalsYesterday
+  `).get({ now }) as {
+    activeAgents: number;
+    activeSessions: number;
+    signalsToday: number;
+    openIssues: number;
+    signalsYesterday: number;
+  };
+}
+
 // GET /api/stats - Get dashboard statistics (optimized: single consolidated query + caching)
 statsRouter.get('/', (req, res) => {
   const db: Database.Database = req.app.locals.db;
 
   try {
     const result = cache.getOrSetSync(`${CACHE_KEYS.STATS}main`, () => {
-      // Consolidated query - reduces 11 DB round trips to 1
-      const stats = db.prepare(`
-        SELECT
-          -- Current counts
-          (SELECT COUNT(*) FROM agent_states WHERE status != 'idle' AND status IS NOT NULL) as activeAgents,
-          (SELECT COUNT(*) FROM agora_sessions WHERE status = 'active') as activeSessions,
-          (SELECT COUNT(*) FROM signals WHERE date(created_at) = date('now')) as signalsToday,
-          (SELECT COUNT(*) FROM issues WHERE status IN ('detected', 'confirmed', 'in_progress')) as openIssues,
-          -- Yesterday counts for trends
-          (SELECT COUNT(*) FROM signals WHERE date(created_at) = date('now', '-1 day')) as signalsYesterday,
-          (SELECT COUNT(*) FROM agora_sessions WHERE date(created_at) = date('now')) as sessionsToday,
-          (SELECT COUNT(*) FROM agora_sessions WHERE date(created_at) = date('now', '-1 day')) as sessionsYesterday,
-          (SELECT COUNT(*) FROM agent_chatter WHERE date(created_at) = date('now')) as agentMessagesToday,
-          (SELECT COUNT(*) FROM agent_chatter WHERE date(created_at) = date('now', '-1 day')) as agentMessagesYesterday
-      `).get() as {
-        activeAgents: number;
-        activeSessions: number;
-        signalsToday: number;
-        openIssues: number;
-        signalsYesterday: number;
-        sessionsToday: number;
-        sessionsYesterday: number;
-        agentMessagesToday: number;
-        agentMessagesYesterday: number;
-      };
-
-      // Calculate trends
-      const signalsTrend = stats.signalsYesterday > 0
-        ? Math.round(((stats.signalsToday - stats.signalsYesterday) / stats.signalsYesterday) * 100)
-        : stats.signalsToday > 0 ? 100 : 0;
-
-      const sessionsTrend = stats.sessionsYesterday > 0
-        ? Math.round(((stats.sessionsToday - stats.sessionsYesterday) / stats.sessionsYesterday) * 100)
-        : stats.sessionsToday > 0 ? 100 : 0;
-
-      const agentsTrend = stats.agentMessagesYesterday > 0
-        ? Math.round(((stats.agentMessagesToday - stats.agentMessagesYesterday) / stats.agentMessagesYesterday) * 100)
-        : stats.agentMessagesToday > 0 ? 100 : 0;
+      const stats = dashboardCounts(db, new Date().toISOString());
 
       return {
         activeAgents: stats.activeAgents,
         activeSessions: stats.activeSessions,
         signalsToday: stats.signalsToday,
         openIssues: stats.openIssues,
-        agentsTrend,
-        sessionsTrend,
-        signalsTrend,
+        // Only signals carries a trend. The other three cards show a level —
+        // agents active right now, sessions active right now, issues open right
+        // now — and nothing records what those levels were yesterday, so any
+        // arrow beside them would be measuring something else. Two used to:
+        // "Active Agents" carried the day-over-day change in agent_chatter
+        // volume, and "Active Sessions" the change in sessions created. A card
+        // reading "10, down 96%" said neither of those things to anyone
+        // reading it.
+        signalsTrend: percentChange(stats.signalsToday, stats.signalsYesterday),
       };
     }, CACHE_TTL.STATS);
 
