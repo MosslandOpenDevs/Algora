@@ -47,6 +47,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Mossland ecosystem wayfinding bar** — Algora was the only sister site without an outbound ecosystem bar (bridge.moss.land and ao.moss.land already link the family; only inbound links existed here). A new `EcosystemBar` (`components/cross-link/EcosystemBar.tsx`, Server Component) mounts once in the root layout after `NpcCityStrip`, rendering the same set in the same order as the other two sites — BRIDGE (Governance OS) · **Algora** (AI Deliberation Lab, current, non-link) · MOSS.AO (Agentic Orchestrator) — which completes the three-site wayfinding loop. New `Ecosystem` i18n namespace in **all four** locales, with role copy aligned to the in-product canon (`Navigation.governance`, the layout's SEO taglines: `AI 熟議ラボ` / `AI 审议实验室`). Carries the accessibility pattern from MOSS.AO's pre-merge review (agentic-orchestrator PR #2950): a real space text node between site name and role so the accessible name reads "BRIDGE Governance OS" rather than "BRIDGEGovernance OS", and new-tab disclosure on the external links (aria-hidden `↗` + localized sr-only text). `rel="noopener"` per the `NpcCityStrip` precedent, so sister sites keep referrer attribution.
 
 ### Fixed
+- **The dashboard's first paint could be an hour old** — server-side fetches
+  used `next: { revalidate: 10 }`, which does not mean "at most 10 seconds
+  old". Past 10 seconds the cache entry is stale, and the next visitor is
+  served **that stale entry** while the refresh happens behind them; on a quiet
+  site the age of what they see is the time since the previous visitor, not 10
+  seconds. Measured on production: **14–30s behind the API under steady
+  traffic, 99s on a cold hit, and roughly an hour on a page opened in a
+  browser** — for a dashboard whose activity feed is specified never to pause
+  more than ten seconds. The layer is removed rather than re-tuned, because no
+  value of `revalidate` bounds staleness under low traffic. The API already
+  memoises these endpoints (stats and activities 15s, agents 30s), so this adds
+  no database load and makes that TTL the real bound instead of a floor nobody
+  was holding. The `tags` option went with it — nothing in the app calls
+  `revalidateTag`. React Query still takes over after hydration; this governs
+  only the first paint.
+
+### Fixed
 - **The dashboard announced a collapse every morning that never happened** —
   the stat-card trends compared today *so far* against the **whole** of
   yesterday. At 01:00 UTC that reads 93 signals against yesterday's full 1,263

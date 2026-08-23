@@ -17,13 +17,26 @@ const API_BASE = process.env.API_INTERNAL_URL || 'http://localhost:3201';
 const REQUEST_TIMEOUT_MS = 3000;
 
 /**
- * Server-side fetch with timeout, caching, and error handling
+ * Server-side fetch with timeout and error handling.
+ *
+ * Deliberately uncached. `next: { revalidate: N }` does not mean "at most N
+ * seconds old": past N seconds the entry is stale, and the next visitor is
+ * served that stale entry while the refresh happens behind them. On a quiet
+ * site the age of what they see is the time since the previous visitor, not N.
+ *
+ * Measured on production while this was set to 10: 14-30s behind the API under
+ * steady traffic, 99s on a cold hit, and an hour on a page opened in a browser.
+ * For a dashboard whose activity feed is meant never to pause for more than ten
+ * seconds, that is the wrong layer to hold freshness in.
+ *
+ * The API memoises these endpoints itself — stats and activities for 15s,
+ * agents for 30s — so dropping this cache does not add database load, and makes
+ * that TTL the real bound rather than a floor nobody was holding. React Query
+ * takes over after hydration; this only governs the first paint.
  */
 async function serverFetch<T>(
   endpoint: string,
   options?: {
-    revalidate?: number | false;
-    tags?: string[];
     timeout?: number;
   }
 ): Promise<T> {
@@ -40,10 +53,7 @@ async function serverFetch<T>(
         'Content-Type': 'application/json',
       },
       signal: controller.signal,
-      next: {
-        revalidate: options?.revalidate ?? 10,
-        tags: options?.tags,
-      },
+      cache: 'no-store',
     });
 
     clearTimeout(timeoutId);
@@ -69,10 +79,7 @@ async function serverFetch<T>(
  */
 export async function getStats(): Promise<Stats> {
   try {
-    return await serverFetch<Stats>('/api/stats', {
-      revalidate: 10,
-      tags: ['stats'],
-    });
+    return await serverFetch<Stats>('/api/stats');
   } catch (error) {
     console.error('Failed to fetch stats on server:', error);
     return {
@@ -89,10 +96,7 @@ export async function getStats(): Promise<Stats> {
  */
 export async function getAgents(): Promise<Agent[]> {
   try {
-    const response = await serverFetch<{ agents: Agent[] }>('/api/agents', {
-      revalidate: 30,
-      tags: ['agents'],
-    });
+    const response = await serverFetch<{ agents: Agent[] }>('/api/agents');
     return response.agents || [];
   } catch (error) {
     console.error('Failed to fetch agents on server:', error);
@@ -106,11 +110,7 @@ export async function getAgents(): Promise<Agent[]> {
 export async function getActivities(limit = 25): Promise<Activity[]> {
   try {
     const response = await serverFetch<{ activities: Activity[] }>(
-      `/api/activity?limit=${limit}`,
-      {
-        revalidate: 15,
-        tags: ['activities'],
-      }
+      `/api/activity?limit=${limit}`
     );
     return response.activities || [];
   } catch (error) {
