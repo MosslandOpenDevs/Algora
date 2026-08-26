@@ -83,8 +83,9 @@ export class ChatterService {
       }
 
       // Generate chatter content
-      const content = await this.generateContent(agent);
-      if (!content) return;
+      const generated = await this.generateContent(agent);
+      if (!generated) return;
+      const { content, tier } = generated;
 
       // Duplicate filtering: check if similar content was recently generated
       const contentHash = content.substring(0, 50).toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -101,7 +102,7 @@ export class ChatterService {
       if (currentData) currentData.count++;
 
       // Save to database
-      const message = this.saveChatter(agent, content);
+      const message = this.saveChatter(agent, content, tier);
 
       // Emit to all connected clients
       this.io.emit('agent:chatter', message);
@@ -140,7 +141,18 @@ export class ChatterService {
     }
   }
 
-  private async generateContent(agent: Agent): Promise<string | null> {
+  /**
+   * Chatter text, and which tier actually produced it.
+   *
+   * The tier used to be recorded as `isTier1Available() ? 1 : 0` — a statement
+   * about what the system *could* have used, not about what it did. A canned
+   * line would be filed as tier 1 whenever the model happened to be reachable
+   * but the call failed. No such row exists today (0 of 29,723 tier-1 rows
+   * match a stored idle message, so the model path is in fact succeeding), but
+   * the field claims provenance and must earn it. `agora.ts` already returns
+   * tier 0 for its template fallback; this mirrors that.
+   */
+  private async generateContent(agent: Agent): Promise<{ content: string; tier: number } | null> {
     // Parse idle messages
     let idleMessages: string[] = [];
     try {
@@ -173,7 +185,7 @@ export class ChatterService {
             content = content.substring(0, 197) + '...';
           }
 
-          return content;
+          return { content, tier: response.tier ?? 1 };
         }
       } catch (error) {
         console.warn('[Chatter] LLM generation failed, using fallback');
@@ -182,11 +194,11 @@ export class ChatterService {
 
     // Fallback: Use predefined idle messages
     if (idleMessages.length > 0) {
-      return idleMessages[Math.floor(Math.random() * idleMessages.length)];
+      return { content: idleMessages[Math.floor(Math.random() * idleMessages.length)], tier: 0 };
     }
 
     // Last resort: Generic message based on group
-    return this.getGenericMessage(agent.group_name);
+    return { content: this.getGenericMessage(agent.group_name), tier: 0 };
   }
 
   private buildSystemPrompt(agent: Agent): string {
@@ -315,14 +327,14 @@ CRITICAL LANGUAGE REQUIREMENT:
     return groupMessages[Math.floor(Math.random() * groupMessages.length)];
   }
 
-  private saveChatter(agent: Agent, content: string): ChatterMessage {
+  private saveChatter(agent: Agent, content: string, tier: number): ChatterMessage {
     const id = uuidv4();
     const now = new Date().toISOString();
 
     this.db.prepare(`
       INSERT INTO agent_chatter (id, agent_id, content, tier, created_at)
       VALUES (?, ?, ?, ?, ?)
-    `).run(id, agent.id, content, llmService.isTier1Available() ? 1 : 0, now);
+    `).run(id, agent.id, content, tier, now);
 
     // Update agent's last chatter time
     this.db.prepare(`
@@ -349,11 +361,21 @@ CRITICAL LANGUAGE REQUIREMENT:
       agent_name: agent.display_name,
       agent_color: agent.color,
       content,
-      tier: llmService.isTier1Available() ? 1 : 0,
+      tier,
       created_at: now,
     };
   }
 
+  /**
+   * Record the chatter in the activity feed.
+   *
+   * The message column used to read "<Agent> said something", with what was
+   * actually said tucked into `details`. The feed renders
+   * `message || details`, so the placeholder always won: 57 of the last 400
+   * chatter entries reached the dashboard carrying no content at all. The
+   * scheduler's own chatter path has always logged the real line; this one now
+   * matches it.
+   */
   private logActivity(agent: Agent, content: string): void {
     this.db.prepare(`
       INSERT INTO activity_log (id, type, severity, timestamp, message, agent_id, details)
@@ -361,9 +383,9 @@ CRITICAL LANGUAGE REQUIREMENT:
     `).run(
       uuidv4(),
       new Date().toISOString(),
-      `${agent.display_name} said something`,
+      content,
       agent.id,
-      content.substring(0, 100)
+      agent.display_name
     );
   }
 
