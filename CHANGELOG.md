@@ -47,6 +47,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Mossland ecosystem wayfinding bar** — Algora was the only sister site without an outbound ecosystem bar (bridge.moss.land and ao.moss.land already link the family; only inbound links existed here). A new `EcosystemBar` (`components/cross-link/EcosystemBar.tsx`, Server Component) mounts once in the root layout after `NpcCityStrip`, rendering the same set in the same order as the other two sites — BRIDGE (Governance OS) · **Algora** (AI Deliberation Lab, current, non-link) · MOSS.AO (Agentic Orchestrator) — which completes the three-site wayfinding loop. New `Ecosystem` i18n namespace in **all four** locales, with role copy aligned to the in-product canon (`Navigation.governance`, the layout's SEO taglines: `AI 熟議ラボ` / `AI 审议实验室`). Carries the accessibility pattern from MOSS.AO's pre-merge review (agentic-orchestrator PR #2950): a real space text node between site name and role so the accessible name reads "BRIDGE Governance OS" rather than "BRIDGEGovernance OS", and new-tab disclosure on the external links (aria-hidden `↗` + localized sr-only text). `rel="noopener"` per the `NpcCityStrip` precedent, so sister sites keep referrer attribution.
 
 ### Fixed
+- **Published governance reports stated LLM usage that was never measured** —
+  `collectSystemMetrics` returned three constants: `uptime: 99.9`,
+  `llmCalls: 0`, `llmCost: 0`, with a comment that real metrics would need a
+  table which "may not exist". It existed. `budget_usage` has recorded every
+  call since 2026-06-17 — **70,493 of them**. The disclosure published on
+  2026-08-24 nonetheless reads `| LLM API Calls | 0 |` and `| Uptime | 99.9% |`,
+  and the monthly template turns the same zero into prose about "cost-effective
+  AI utilization". Usage now comes from the ledger. Uptime stays **null**:
+  nothing records downtime, so any percentage would be invented, and the
+  templates print `— (not measured)` and withhold the grade rather than award
+  "✅ Excellent" to an absent number. The cost-efficiency insight was also gated
+  on `llmCost > 0`, which muted it in precisely the case it describes — every
+  call so far has run on the local model at $0 — so it is gated on calls
+  instead. The 12 reports already published still carry the old figures; that
+  is a data question, not a code one, and is left for a decision.
+
+### Fixed
 - **The LIVE page displayed constants dressed as telemetry** — the SYSTEM panel
   was three string literals: `3/3 ACTIVE`, `0 pending`, `99.9%`. There are four
   collectors, not three, and `/api/collectors/status` and

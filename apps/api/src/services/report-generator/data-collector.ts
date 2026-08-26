@@ -56,7 +56,12 @@ export interface ReportMetrics {
     recentSessions: Array<{ topic: string; status: string; consensus_level: number }>;
   };
   system: {
-    uptime: number; // percentage
+    /**
+     * Availability over the period, as a percentage — or null, which is the
+     * honest answer today: nothing records downtime, so there is nothing to
+     * compute it from. It was reported as a flat 99.9 and graded "Excellent".
+     */
+    uptime: number | null;
     llmCalls: number;
     llmCost: number;
   };
@@ -418,13 +423,34 @@ export class DataCollector {
     return { total, completed, inProgress, avgConsensus, avgRounds, avgParticipants, recentSessions };
   }
 
-  private collectSystemMetrics(_start: string, _end: string): ReportMetrics['system'] {
-    // Return default values since analytics table may not exist
-    // In a production system, this would query actual metrics
+  /**
+   * LLM usage over the period, from the ledger that already records it.
+   *
+   * These were returned as constants — `uptime: 99.9`, `llmCalls: 0`,
+   * `llmCost: 0` — and published. The disclosure of 2026-08-24 states
+   * "LLM API Calls | 0" for a system that had made 70,493 of them, and the
+   * monthly template turns the same zero into prose about "cost-effective AI
+   * utilization". `budget_usage` has held the real figures since 2026-06-17.
+   *
+   * Uptime stays null: no downtime is recorded anywhere, so any percentage
+   * would be invented. The templates print an em dash for it rather than a
+   * number nobody measured.
+   */
+  private collectSystemMetrics(start: string, end: string): ReportMetrics['system'] {
+    // budget_usage.date is a plain YYYY-MM-DD, so compare on dates, not on the
+    // ISO instants the callers pass in.
+    const usage = this.db.prepare(`
+      SELECT
+        COALESCE(SUM(call_count), 0) as calls,
+        COALESCE(SUM(estimated_cost_usd), 0) as cost
+      FROM budget_usage
+      WHERE date BETWEEN date(?) AND date(?)
+    `).get(start, end) as { calls: number; cost: number };
+
     return {
-      uptime: 99.9, // Placeholder
-      llmCalls: 0,
-      llmCost: 0,
+      uptime: null,
+      llmCalls: usage.calls,
+      llmCost: usage.cost,
     };
   }
 }

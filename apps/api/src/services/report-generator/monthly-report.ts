@@ -122,8 +122,10 @@ System operations were efficient with ${metrics.system.llmCalls} LLM operations 
       insights.push('Lower consensus levels may indicate contentious topics requiring additional discussion rounds.');
     }
 
-    // Cost efficiency
-    if (metrics.system.llmCost > 0 && metrics.system.llmCalls > 0) {
+    // Cost efficiency. Gated on calls, not cost: every call so far has run on
+    // the local model at $0, and requiring cost > 0 muted the insight in
+    // exactly the case it describes.
+    if (metrics.system.llmCalls > 0) {
       const costPerCall = metrics.system.llmCost / metrics.system.llmCalls;
       if (costPerCall < 0.01) {
         insights.push('LLM operations are highly cost-efficient, leveraging local models effectively.');
@@ -306,7 +308,7 @@ ${metrics.sessions.recentSessions.map(s => `| ${this.truncateText(s.topic, 35)} 
 #### System Performance
 | Metric | Value | Status |
 |--------|-------|--------|
-| Platform Uptime | ${formatPct(metrics.system.uptime)} | ${metrics.system.uptime >= 99 ? '✅ Excellent' : metrics.system.uptime >= 95 ? '🟡 Good' : '🔴 Needs Attention'} |
+| Platform Uptime | ${metrics.system.uptime === null ? '— (not measured)' : formatPct(metrics.system.uptime)} | ${metrics.system.uptime === null ? '—' : metrics.system.uptime >= 99 ? '✅ Excellent' : metrics.system.uptime >= 95 ? '🟡 Good' : '🔴 Needs Attention'} |
 
 #### AI Operations Cost Analysis
 | Metric | Value |
