@@ -22,9 +22,16 @@ interface LiveStats {
 
 interface DashboardStats {
   activeAgents: number;
+  totalAgents: number;
   activeSessions: number;
   signalsToday: number;
   openIssues: number;
+}
+
+interface SystemStatus {
+  /** null when the endpoint could not be read — rendered as an em dash. */
+  collectors: { running: number; total: number } | null;
+  llmQueue: number | null;
 }
 
 async function fetchLiveStats(): Promise<LiveStats> {
@@ -48,10 +55,41 @@ async function fetchDashboardStats(): Promise<DashboardStats> {
   if (!res.ok) throw new Error('Failed to fetch dashboard stats');
   const data = await res.json();
   return {
-    activeAgents: data.activeAgents || 30,
-    activeSessions: data.activeSessions || 0,
-    signalsToday: data.signalsToday || 0,
-    openIssues: data.openIssues || 0,
+    // `?? 0`, not `|| 30`. Zero active agents is a real state, and `||`
+    // replaced it with a hard-coded 30 — the live page showed "AGENTS 30"
+    // beside a full progress bar while the API was answering 0.
+    activeAgents: data.activeAgents ?? 0,
+    totalAgents: data.totalAgents ?? 0,
+    activeSessions: data.activeSessions ?? 0,
+    signalsToday: data.signalsToday ?? 0,
+    openIssues: data.openIssues ?? 0,
+  };
+}
+
+/**
+ * The SYSTEM panel's numbers.
+ *
+ * These were three string literals — "3/3 ACTIVE", "0 pending", "99.9%" — on a
+ * page whose whole premise is that it is live. There were four collectors, not
+ * three. Settled rather than all-or-nothing so one unreachable endpoint does
+ * not blank the other line.
+ */
+async function fetchSystemStatus(): Promise<SystemStatus> {
+  const [collectors, queue] = await Promise.allSettled([
+    fetch(`${API_URL}/api/collectors/status`).then(r => r.json()),
+    fetch(`${API_URL}/api/agora/llm-queue`).then(r => r.json()),
+  ]);
+
+  const list =
+    collectors.status === 'fulfilled'
+      ? (collectors.value.status ?? collectors.value) as Array<{ isRunning?: boolean }>
+      : null;
+
+  return {
+    collectors: Array.isArray(list)
+      ? { running: list.filter(c => c.isRunning).length, total: list.length }
+      : null,
+    llmQueue: queue.status === 'fulfilled' ? queue.value.queueSize ?? null : null,
   };
 }
 
@@ -65,6 +103,12 @@ export function LiveMetrics({ className }: LiveMetricsProps) {
   const { data: dashStats } = useQuery({
     queryKey: ['dashboard-stats'],
     queryFn: fetchDashboardStats,
+    refetchInterval: 10000,
+  });
+
+  const { data: system } = useQuery({
+    queryKey: ['system-status'],
+    queryFn: fetchSystemStatus,
     refetchInterval: 10000,
   });
 
@@ -88,8 +132,8 @@ export function LiveMetrics({ className }: LiveMetricsProps) {
     },
     {
       label: 'AGENTS',
-      value: dashStats?.activeAgents || 0,
-      max: 30,
+      value: dashStats?.activeAgents ?? 0,
+      max: dashStats?.totalAgents || undefined,
       format: 'number' as const,
     },
     {
@@ -128,15 +172,25 @@ export function LiveMetrics({ className }: LiveMetricsProps) {
           <div className="space-y-1 text-xs">
             <div className="flex justify-between">
               <span className="text-[var(--text-muted)]">Collectors</span>
-              <span className="text-emerald-600">3/3 ACTIVE</span>
+              <span
+                className={
+                  system?.collectors && system.collectors.running === system.collectors.total
+                    ? 'text-emerald-600'
+                    : 'text-[var(--text-bright)]'
+                }
+              >
+                {system?.collectors
+                  ? `${system.collectors.running}/${system.collectors.total} ACTIVE`
+                  : '—'}
+              </span>
             </div>
             <div className="flex justify-between">
               <span className="text-[var(--text-muted)]">LLM Queue</span>
-              <span className="text-[var(--text-bright)]">0 pending</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-[var(--text-muted)]">Uptime</span>
-              <span className="text-emerald-600">99.9%</span>
+              <span className="text-[var(--text-bright)]">
+                {system?.llmQueue === null || system?.llmQueue === undefined
+                  ? '—'
+                  : `${system.llmQueue} pending`}
+              </span>
             </div>
           </div>
         </div>

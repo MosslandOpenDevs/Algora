@@ -7,11 +7,12 @@ interface SystemHealthCardProps {
   health: {
     status: string;
     uptime: number;
-    memory: number;
-    dbSize: number;
+    /** null when the value has no source yet — shown as an em dash, not a guess. */
+    memoryMb: number | null;
+    dbSizeMb: number | null;
     agents: {
-      total: number;
-      active: number;
+      total: number | null;
+      active: number | null;
     };
   };
 }
@@ -39,19 +40,22 @@ export function SystemHealthCard({ health }: SystemHealthCardProps) {
     {
       icon: HardDrive,
       label: t('memory'),
-      value: `${health.memory} MB`,
+      value: health.memoryMb === null ? '—' : `${health.memoryMb} MB`,
       color: 'text-agora-primary',
     },
     {
       icon: Database,
       label: t('database'),
-      value: `${health.dbSize} MB`,
+      value: health.dbSizeMb === null ? '—' : `${health.dbSizeMb} MB`,
       color: 'text-agora-accent',
     },
     {
       icon: Users,
       label: t('agents'),
-      value: `${health.agents.active}/${health.agents.total}`,
+      value:
+        health.agents.active === null || health.agents.total === null
+          ? '—'
+          : `${health.agents.active}/${health.agents.total}`,
       color: 'text-agora-warning',
     },
   ];

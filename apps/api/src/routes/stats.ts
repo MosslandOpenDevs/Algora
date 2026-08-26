@@ -33,6 +33,7 @@ export function percentChange(current: number, previous: number): number {
  */
 export function dashboardCounts(db: Database.Database, now: string): {
   activeAgents: number;
+  totalAgents: number;
   activeSessions: number;
   signalsToday: number;
   openIssues: number;
@@ -41,6 +42,9 @@ export function dashboardCounts(db: Database.Database, now: string): {
   return db.prepare(`
     SELECT
       (SELECT COUNT(*) FROM agent_states WHERE status != 'idle' AND status IS NOT NULL) as activeAgents,
+      -- The roster size. The live page used to hard-code 30 for this, and a
+      -- second copy of the same 30 stood in whenever activeAgents came back 0.
+      (SELECT COUNT(*) FROM agents) as totalAgents,
       (SELECT COUNT(*) FROM agora_sessions WHERE status = 'active') as activeSessions,
       (SELECT COUNT(*) FROM issues WHERE status IN ('detected', 'confirmed', 'in_progress')) as openIssues,
       (SELECT COUNT(*) FROM signals WHERE date(created_at) = date(:now)) as signalsToday,
@@ -49,6 +53,7 @@ export function dashboardCounts(db: Database.Database, now: string): {
           AND time(created_at) <= time(:now)) as signalsYesterday
   `).get({ now }) as {
     activeAgents: number;
+    totalAgents: number;
     activeSessions: number;
     signalsToday: number;
     openIssues: number;
@@ -66,6 +71,7 @@ statsRouter.get('/', (req, res) => {
 
       return {
         activeAgents: stats.activeAgents,
+        totalAgents: stats.totalAgents,
         activeSessions: stats.activeSessions,
         signalsToday: stats.signalsToday,
         openIssues: stats.openIssues,

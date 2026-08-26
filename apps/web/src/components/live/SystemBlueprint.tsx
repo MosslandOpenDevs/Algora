@@ -38,7 +38,8 @@ async function fetchPipelineStats(): Promise<PipelineStats> {
       count: signalsData.timeStats?.thisMonth || 0,
       rate: `${signalsData.ratePerMinute || 0}/min`
     },
-    analysis: { agents: 30 },
+    // Was a hard-coded 30 on a page labelled LIVE, while the roster held 38.
+    analysis: { agents: stats.totalAgents ?? 0 },
     issues: { open: stats.openIssues || 0 },
     agora: {
       sessions: stats.activeSessions || 0,
