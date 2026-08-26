@@ -47,6 +47,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Mossland ecosystem wayfinding bar** — Algora was the only sister site without an outbound ecosystem bar (bridge.moss.land and ao.moss.land already link the family; only inbound links existed here). A new `EcosystemBar` (`components/cross-link/EcosystemBar.tsx`, Server Component) mounts once in the root layout after `NpcCityStrip`, rendering the same set in the same order as the other two sites — BRIDGE (Governance OS) · **Algora** (AI Deliberation Lab, current, non-link) · MOSS.AO (Agentic Orchestrator) — which completes the three-site wayfinding loop. New `Ecosystem` i18n namespace in **all four** locales, with role copy aligned to the in-product canon (`Navigation.governance`, the layout's SEO taglines: `AI 熟議ラボ` / `AI 审议实验室`). Carries the accessibility pattern from MOSS.AO's pre-merge review (agentic-orchestrator PR #2950): a real space text node between site name and role so the accessible name reads "BRIDGE Governance OS" rather than "BRIDGEGovernance OS", and new-tab disclosure on the external links (aria-hidden `↗` + localized sr-only text). `rel="noopener"` per the `NpcCityStrip` precedent, so sister sites keep referrer attribution.
 
 ### Fixed
+- **Agent chatter reached the activity feed without its content** — the
+  activity row's `message` column was written as `"<Agent> said something"`,
+  with what was actually said tucked into `details`. `ActivityFeed` renders
+  `message || details`, so the placeholder always won: **57 of the last 400
+  chatter entries reached the dashboard carrying no content at all** — on the
+  surface the project specifies must never look idle. The scheduler's own
+  chatter path had always logged the real line, so the same event type arrived
+  in two shapes, one of them empty. Now it logs what was said, with the agent's
+  name kept in `details`.
+- **Chatter provenance was recorded from availability, not from what happened** —
+  the tier was stored as `isTier1Available() ? 1 : 0`, which states what the
+  system *could* have used rather than what produced the line. A canned idle
+  message would be filed as tier 1 whenever the model was merely reachable and
+  the call had failed. Measured on production, **0 of 29,723 tier-1 rows match
+  a stored idle message**, so nothing has actually been mislabelled — the model
+  path is succeeding. Changed because the field claims provenance and should
+  earn it: `generateContent` now returns the tier that produced the text, 0 for
+  a canned or generic line, mirroring what `agora.ts` already does for its own
+  template fallback.
+
+### Fixed
 - **Published governance reports stated LLM usage that was never measured** —
   `collectSystemMetrics` returned three constants: `uptime: 99.9`,
   `llmCalls: 0`, `llmCost: 0`, with a comment that real metrics would need a
