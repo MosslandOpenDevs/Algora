@@ -37,13 +37,15 @@ export default function EngineRoomPage() {
     refetchInterval: 5000,
   });
 
-  // The agent counts live here, not on /health — which never returned an
-  // `agents` field at all, so the card read "0/30" whatever was happening.
-  const { data: stats } = useQuery({
-    queryKey: ['stats'],
+  // Two different endpoints answer to the name "health". The root `/health`
+  // carries status, scheduler, budget and agent counts; `/api/health` carries
+  // the process metrics this page's system card renders. Neither is a superset
+  // of the other, so the page reads both rather than guessing.
+  const { data: systemMetrics } = useQuery({
+    queryKey: ['api-health'],
     queryFn: async () => {
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3201'}/api/stats`
+        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3201'}/api/health`
       );
       if (!res.ok) return null;
       return res.json();
@@ -95,19 +97,21 @@ export default function EngineRoomPage() {
   const systemHealth = {
     status: health?.status === 'ok' ? 'running' : health?.status || 'running',
     uptime: health?.uptime || 0,
-    // /api/health already carries process.memoryUsage(); the card showed a
-    // literal 512 beside it. Bytes to MB.
-    memoryMb: health?.memory?.rss ? Math.round(health.memory.rss / 1024 / 1024) : null,
-    dbSizeMb:
-      typeof health?.dbSizeBytes === 'number'
-        ? Math.round((health.dbSizeBytes / 1024 / 1024) * 10) / 10
+    // Both were literals — 512 and 24.5 — with comments conceding an API was
+    // needed. It existed: /api/health carries process.memoryUsage(), and now
+    // the database file's size too.
+    memoryMb:
+      typeof systemMetrics?.memory?.rss === 'number'
+        ? Math.round(systemMetrics.memory.rss / 1024 / 1024)
         : null,
-    // /api/health never returned an `agents` field, so these read
-    // `undefined || 30` and `undefined || 0` — the card said "0/30" always,
-    // whatever the system was doing.
+    dbSizeMb:
+      typeof systemMetrics?.dbSizeBytes === 'number'
+        ? Math.round((systemMetrics.dbSizeBytes / 1024 / 1024) * 10) / 10
+        : null,
+    // The root /health has carried these all along, and correctly.
     agents: {
-      total: stats?.totalAgents ?? null,
-      active: stats?.activeAgents ?? null,
+      total: health?.agents?.total ?? null,
+      active: health?.agents?.active ?? null,
     },
   };
 

@@ -60,16 +60,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   availability figure to compute, and the page header already shows the real
   uptime from `/api/health`. `/api/stats` gained `totalAgents` so no page has
   to guess the roster size.
-- **The engine page's system card could not report anything real** —
-  `/api/health` never returned an `agents` field, so `health?.agents?.total ||
-  30` and `health?.agents?.active || 0` made the card read **"0/30" permanently,
-  whatever the system was doing**. Memory was a literal `512` while the same
-  `/api/health` response already carried `process.memoryUsage()`, and the
-  database size a literal `24.5`, both with comments conceding an API was
-  needed. Agents now come from `/api/stats`, memory from the health response,
-  and `/api/health` reports the SQLite file's actual size. Where a value still
-  has no source it renders an em dash instead of a number — a blank is honest,
-  a plausible figure is not.
+- **The engine page reported memory and database size as literals** — `512` and
+  `24.5`, both with comments conceding an API was needed. It existed:
+  `/api/health` already carried `process.memoryUsage()`, and now reports the
+  SQLite file's size as well (guarded and null on failure, since a health probe
+  must not fail over a stat). The page reads it directly.
+
+  Two endpoints answer to the name "health" and neither is a superset of the
+  other: the root `/health` carries status, scheduler, budget and agent counts;
+  `/api/health` carries process metrics. The page now reads both rather than
+  guessing. The agent counts were never broken — they came through the root
+  `/health` correctly all along.
+
+  Where a value still has no source it renders an em dash instead of a number:
+  a blank is honest, a plausible figure is not.
 
 ### Fixed
 - **The dashboard's first paint could be an hour old** — server-side fetches
