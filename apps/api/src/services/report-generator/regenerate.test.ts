@@ -150,6 +150,20 @@ describe('regenerating a published report', () => {
     );
   });
 
+  it('accepts an explicit period for a report that predates the Period line', async () => {
+    // The two monthly reports published before the templates stated one. The
+    // caller supplies the window and owns that claim; the default path below
+    // still refuses to invent it.
+    const id = publish(db, '# Monthly Governance Report\n\n## August 2026\n', 'Monthly Governance Report - August 2026');
+
+    const { content } = await services(db).reports.regenerateReport(id, {
+      dryRun: true,
+      period: { start: new Date('2026-08-17T00:00:00Z'), end: new Date('2026-08-24T00:00:00Z') },
+    });
+
+    expect(content).toContain('22,435');
+  });
+
   it('refuses an id that does not exist', async () => {
     await expect(
       services(db).reports.regenerateReport('no-such-report', { dryRun: true }),

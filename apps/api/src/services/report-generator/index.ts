@@ -48,10 +48,15 @@ export class ReportGeneratorService {
    *
    * `dryRun` computes everything and writes nothing, so a correction can be
    * inspected before it lands.
+   *
+   * `period` overrides the lookup for a report that predates the templates
+   * stating one — the two monthly reports published before 2026-08-26. The
+   * caller supplies the window and owns that claim; the default path still
+   * refuses to invent it.
    */
   async regenerateReport(
     id: string,
-    options: { dryRun?: boolean } = {}
+    options: { dryRun?: boolean; period?: { start: Date; end: Date } } = {}
   ): Promise<{
     id: string;
     title: string;
@@ -62,7 +67,7 @@ export class ReportGeneratorService {
     const report = this.disclosureService.getById(id);
     if (!report) throw new Error(`Report not found: ${id}`);
 
-    const period = this.parseReportPeriod(report.content ?? '');
+    const period = options.period ?? this.parseReportPeriod(report.content ?? '');
     if (!period) throw new Error(`Report ${id} does not state its period; refusing to guess`);
 
     const isMonthly = /^Monthly/i.test(report.title);
