@@ -47,6 +47,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Mossland ecosystem wayfinding bar** — Algora was the only sister site without an outbound ecosystem bar (bridge.moss.land and ao.moss.land already link the family; only inbound links existed here). A new `EcosystemBar` (`components/cross-link/EcosystemBar.tsx`, Server Component) mounts once in the root layout after `NpcCityStrip`, rendering the same set in the same order as the other two sites — BRIDGE (Governance OS) · **Algora** (AI Deliberation Lab, current, non-link) · MOSS.AO (Agentic Orchestrator) — which completes the three-site wayfinding loop. New `Ecosystem` i18n namespace in **all four** locales, with role copy aligned to the in-product canon (`Navigation.governance`, the layout's SEO taglines: `AI 熟議ラボ` / `AI 审议实验室`). Carries the accessibility pattern from MOSS.AO's pre-merge review (agentic-orchestrator PR #2950): a real space text node between site name and role so the accessible name reads "BRIDGE Governance OS" rather than "BRIDGEGovernance OS", and new-tab disclosure on the external links (aria-hidden `↗` + localized sr-only text). `rel="noopener"` per the `NpcCityStrip` precedent, so sister sites keep referrer attribution.
 
 ### Fixed
+- **The LIVE page displayed constants dressed as telemetry** — the SYSTEM panel
+  was three string literals: `3/3 ACTIVE`, `0 pending`, `99.9%`. There are four
+  collectors, not three, and `/api/collectors/status` and
+  `/api/agora/llm-queue` were already there to be read. The pipeline
+  blueprint's ANALYSIS node hard-coded `agents: 30` while the roster holds 38.
+  Worst of the set, `activeAgents: data.activeAgents || 30` turned a real zero
+  into a fabricated 30: the page was showing **AGENTS 30 beside a full progress
+  bar while the API answered 0** — verified against the live DOM and the live
+  API together. `??` replaces `||`, the two panels read the endpoints that
+  exist, and `99.9%` is gone rather than approximated — there is no
+  availability figure to compute, and the page header already shows the real
+  uptime from `/api/health`. `/api/stats` gained `totalAgents` so no page has
+  to guess the roster size.
+- **The engine page's system card could not report anything real** —
+  `/api/health` never returned an `agents` field, so `health?.agents?.total ||
+  30` and `health?.agents?.active || 0` made the card read **"0/30" permanently,
+  whatever the system was doing**. Memory was a literal `512` while the same
+  `/api/health` response already carried `process.memoryUsage()`, and the
+  database size a literal `24.5`, both with comments conceding an API was
+  needed. Agents now come from `/api/stats`, memory from the health response,
+  and `/api/health` reports the SQLite file's actual size. Where a value still
+  has no source it renders an em dash instead of a number — a blank is honest,
+  a plausible figure is not.
+
+### Fixed
 - **The dashboard's first paint could be an hour old** — server-side fetches
   used `next: { revalidate: 10 }`, which does not mean "at most 10 seconds
   old". Past 10 seconds the cache entry is stale, and the next visitor is

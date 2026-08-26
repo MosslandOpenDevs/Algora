@@ -144,4 +144,13 @@ describe('GET /api/stats', () => {
       expect(res.body).toHaveProperty(key);
     }
   });
+
+  it('reports the roster size, so no page has to guess it', async () => {
+    // The live page hard-coded 30 for this, and used the same 30 whenever
+    // activeAgents came back 0 — turning a real zero into a fabricated count.
+    const res = await request(app).get('/api/stats');
+
+    expect(res.body).toHaveProperty('totalAgents');
+    expect(res.body.totalAgents).toBe(0); // empty fixture: zero is a real answer
+  });
 });

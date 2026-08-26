@@ -37,6 +37,20 @@ export default function EngineRoomPage() {
     refetchInterval: 5000,
   });
 
+  // The agent counts live here, not on /health — which never returned an
+  // `agents` field at all, so the card read "0/30" whatever was happening.
+  const { data: stats } = useQuery({
+    queryKey: ['stats'],
+    queryFn: async () => {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3201'}/api/stats`
+      );
+      if (!res.ok) return null;
+      return res.json();
+    },
+    refetchInterval: 10000,
+  });
+
   // Fetch tier usage stats
   const { data: tierStats } = useQuery({
     queryKey: ['tier-stats'],
@@ -81,11 +95,19 @@ export default function EngineRoomPage() {
   const systemHealth = {
     status: health?.status === 'ok' ? 'running' : health?.status || 'running',
     uptime: health?.uptime || 0,
-    memory: 512, // Would need system metrics API
-    dbSize: 24.5, // Would need file stats API
+    // /api/health already carries process.memoryUsage(); the card showed a
+    // literal 512 beside it. Bytes to MB.
+    memoryMb: health?.memory?.rss ? Math.round(health.memory.rss / 1024 / 1024) : null,
+    dbSizeMb:
+      typeof health?.dbSizeBytes === 'number'
+        ? Math.round((health.dbSizeBytes / 1024 / 1024) * 10) / 10
+        : null,
+    // /api/health never returned an `agents` field, so these read
+    // `undefined || 30` and `undefined || 0` — the card said "0/30" always,
+    // whatever the system was doing.
     agents: {
-      total: health?.agents?.total || 30,
-      active: health?.agents?.active || 0,
+      total: stats?.totalAgents ?? null,
+      active: stats?.activeAgents ?? null,
     },
   };
 
@@ -199,7 +221,9 @@ export default function EngineRoomPage() {
             <Database className="h-4 w-4" />
             <span className="text-sm">{t('stats.dbSize')}</span>
           </div>
-          <p className="mt-2 text-2xl font-bold text-agora-text">{systemHealth.dbSize} MB</p>
+          <p className="mt-2 text-2xl font-bold text-agora-text">
+            {systemHealth.dbSizeMb === null ? '—' : `${systemHealth.dbSizeMb} MB`}
+          </p>
           <p className="text-xs text-agora-muted">SQLite WAL</p>
         </div>
         <div className="rounded-lg border border-agora-border bg-agora-card p-4">
@@ -208,7 +232,9 @@ export default function EngineRoomPage() {
             <span className="text-sm">{t('stats.activeAgents')}</span>
           </div>
           <p className="mt-2 text-2xl font-bold text-agora-text">
-            {systemHealth.agents.active}/{systemHealth.agents.total}
+            {systemHealth.agents.active === null || systemHealth.agents.total === null
+              ? '—'
+              : `${systemHealth.agents.active}/${systemHealth.agents.total}`}
           </p>
           <p className="text-xs text-agora-muted">{t('stats.agents')}</p>
         </div>
