@@ -20,6 +20,7 @@ export class MonthlyReportGenerator {
    */
   async generate(metrics: ReportMetrics): Promise<MonthlyReportResult> {
     const startDate = new Date(metrics.period.start);
+    const endDate = new Date(metrics.period.end);
     const monthName = format(startDate, 'MMMM yyyy');
 
     const title = `Monthly Governance Report - ${monthName}`;
@@ -31,7 +32,13 @@ export class MonthlyReportGenerator {
     const strategicInsights = await this.generateStrategicInsights(metrics);
 
     // Build the full markdown content
-    const content = this.buildMarkdownContent(metrics, executiveSummary, strategicInsights, startDate);
+    const content = this.buildMarkdownContent(
+      metrics,
+      executiveSummary,
+      strategicInsights,
+      startDate,
+      endDate
+    );
 
     // Create a brief summary
     const summary = this.createSummary(metrics, executiveSummary);
@@ -139,7 +146,8 @@ System operations were efficient with ${metrics.system.llmCalls} LLM operations 
     metrics: ReportMetrics,
     executiveSummary: string,
     strategicInsights: string[],
-    startDate: Date
+    startDate: Date,
+    endDate: Date
   ): string {
     const formatNum = (n: number) => n.toLocaleString();
     const formatPct = (n: number) => `${n.toFixed(1)}%`;
@@ -149,6 +157,7 @@ System operations were efficient with ${metrics.system.llmCalls} LLM operations 
 
 ## ${monthName}
 
+**Period:** ${format(startDate, 'MMM d, yyyy')} - ${format(endDate, 'MMM d, yyyy')}
 **Generated:** ${format(new Date(), 'MMMM d, yyyy HH:mm')} UTC
 
 ---
