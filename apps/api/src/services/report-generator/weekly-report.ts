@@ -284,7 +284,7 @@ ${metrics.sessions.recentSessions.map(s => `| ${s.topic.substring(0, 40)}${s.top
 
 | Metric | Value |
 |--------|-------|
-| Uptime | ${formatPct(metrics.system.uptime)} |
+| Uptime | ${metrics.system.uptime === null ? '— (not measured)' : formatPct(metrics.system.uptime)} |
 | LLM API Calls | ${formatNum(metrics.system.llmCalls)} |
 | LLM Cost | $${metrics.system.llmCost.toFixed(2)} |
 
