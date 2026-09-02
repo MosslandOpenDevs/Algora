@@ -24,6 +24,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Rate-limiting on public interactive endpoints** — wallet verify/refresh, token vote, delegation create/revoke (+ its typed-data), agent summon/dismiss, Agora session create/message, and alert acknowledge are kept public (the live showcase needs them) but now sit behind `writeLimiter` (20 writes/min/IP) to throttle spam/abuse.
 
 ### Changed
+- **Scheduled report generation is off by default (MIP-1 Archive, 2026-09-02)** — Algora is
+  classified Archive under MIP-1 ("development ended; records preserved read-only"), so the
+  scheduler no longer generates weekly/monthly governance reports on its own. The last
+  scheduled report is *Monthly Governance Report — August 2026*. Manual routes and the
+  in-place correction path stay. Set `REPORT_SCHEDULER_ENABLED=true` to resume the schedule.
 - **Shared Ollama context coordination** — raised the reference
   `LOCAL_LLM_NUM_CTX` from 8192 to 16384 and aligned every client using the
   same model after controlled tests confirmed that different per-call context
