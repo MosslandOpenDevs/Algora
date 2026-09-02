@@ -40,10 +40,10 @@ const NODE_ENV = process.env.NODE_ENV || 'development';
 // killed the process ~57x/day). Log rejections and keep serving. Uncaught
 // synchronous exceptions still exit — state may be inconsistent — and pm2
 // restarts us with a clear marker in the log.
-process.on('unhandledRejection', (reason) => {
+process.on('unhandledRejection', reason => {
   console.error('[Process] Unhandled rejection:', reason);
 });
-process.on('uncaughtException', (error) => {
+process.on('uncaughtException', error => {
   console.error('[Process] Uncaught exception (exiting):', error);
   process.exit(1);
 });
@@ -54,9 +54,10 @@ const httpServer = createServer(app);
 // Socket.IO setup
 const io = new SocketServer(httpServer, {
   cors: {
-    origin: NODE_ENV === 'development'
-      ? ['http://localhost:3200', 'http://127.0.0.1:3200']
-      : process.env.CORS_ORIGIN?.split(',') || [],
+    origin:
+      NODE_ENV === 'development'
+        ? ['http://localhost:3200', 'http://127.0.0.1:3200']
+        : process.env.CORS_ORIGIN?.split(',') || [],
     methods: ['GET', 'POST'],
     credentials: true,
   },
@@ -72,34 +73,42 @@ const io = new SocketServer(httpServer, {
 // Helmet security headers. CSP stays off for the JSON API (no inline HTML
 // served here; the Next.js app owns its own CSP), but we enable HSTS in
 // production and standard defaults everywhere.
-app.use(helmet({
-  contentSecurityPolicy: false,
-  crossOriginResourcePolicy: { policy: 'cross-origin' }, // allow Next.js dev server to fetch
-  hsts: NODE_ENV === 'production'
-    ? { maxAge: 31536000, includeSubDomains: true, preload: true }
-    : false,
-  referrerPolicy: { policy: 'no-referrer' },
-}));
-app.use(cors({
-  origin: NODE_ENV === 'development'
-    ? ['http://localhost:3200', 'http://127.0.0.1:3200']
-    : process.env.CORS_ORIGIN?.split(',') || [],
-  credentials: true,
-}));
+app.use(
+  helmet({
+    contentSecurityPolicy: false,
+    crossOriginResourcePolicy: { policy: 'cross-origin' }, // allow Next.js dev server to fetch
+    hsts:
+      NODE_ENV === 'production'
+        ? { maxAge: 31536000, includeSubDomains: true, preload: true }
+        : false,
+    referrerPolicy: { policy: 'no-referrer' },
+  })
+);
+app.use(
+  cors({
+    origin:
+      NODE_ENV === 'development'
+        ? ['http://localhost:3200', 'http://127.0.0.1:3200']
+        : process.env.CORS_ORIGIN?.split(',') || [],
+    credentials: true,
+  })
+);
 
 // HTTP Compression - reduces payload size by 70-85%
-app.use(compression({
-  level: 6, // Balanced compression level (1-9, higher = more compression but slower)
-  threshold: 1024, // Only compress responses > 1KB
-  filter: (req, res) => {
-    // Don't compress if client doesn't accept it
-    if (req.headers['x-no-compression']) {
-      return false;
-    }
-    // Use default filter (compresses text-based responses)
-    return compression.filter(req, res);
-  },
-}));
+app.use(
+  compression({
+    level: 6, // Balanced compression level (1-9, higher = more compression but slower)
+    threshold: 1024, // Only compress responses > 1KB
+    filter: (req, res) => {
+      // Don't compress if client doesn't accept it
+      if (req.headers['x-no-compression']) {
+        return false;
+      }
+      // Use default filter (compresses text-based responses)
+      return compression.filter(req, res);
+    },
+  })
+);
 
 // HTTP Caching Headers - reduces redundant requests by 40%
 app.use(cacheMiddleware);
@@ -107,28 +116,36 @@ app.use(cacheMiddleware);
 // Structured request logging via pino-http. Adds a correlation id, logs
 // method/status/latency, and warns on slow requests (>500ms). Also still
 // emits the Server-Timing header for DevTools.
-app.use(pinoHttp({
-  logger,
-  customLogLevel: (_req, res, err) => {
-    if (err || res.statusCode >= 500) return 'error';
-    if (res.statusCode >= 400) return 'warn';
-    return 'info';
-  },
-  customSuccessMessage: (req, res) => `${req.method} ${res.statusCode}`,
-  customErrorMessage: (req, res) => `${req.method} ${res.statusCode}`,
-  serializers: {
-    req: (req) => ({ method: req.method, url: req.url, id: req.id }),
-    res: (res) => ({ statusCode: res.statusCode }),
-  },
-}));
+app.use(
+  pinoHttp({
+    logger,
+    customLogLevel: (_req, res, err) => {
+      if (err || res.statusCode >= 500) return 'error';
+      if (res.statusCode >= 400) return 'warn';
+      return 'info';
+    },
+    customSuccessMessage: (req, res) => `${req.method} ${res.statusCode}`,
+    customErrorMessage: (req, res) => `${req.method} ${res.statusCode}`,
+    serializers: {
+      req: req => ({ method: req.method, url: req.url, id: req.id }),
+      res: res => ({ statusCode: res.statusCode }),
+    },
+  })
+);
 app.use((req, res, next) => {
   const start = process.hrtime.bigint();
   const originalEnd = res.end.bind(res);
-  res.end = function(...args: Parameters<typeof originalEnd>) {
+  res.end = function (...args: Parameters<typeof originalEnd>) {
     const durationMs = Number(process.hrtime.bigint() - start) / 1_000_000;
-    res.setHeader('Server-Timing', `total;dur=${durationMs.toFixed(1)};desc="Total"`);
+    res.setHeader(
+      'Server-Timing',
+      `total;dur=${durationMs.toFixed(1)};desc="Total"`
+    );
     if (durationMs > 500) {
-      (req as any).log?.warn({ durationMs, url: req.originalUrl }, 'slow-request');
+      (req as any).log?.warn(
+        { durationMs, url: req.originalUrl },
+        'slow-request'
+      );
     }
     return originalEnd(...args);
   } as typeof res.end;
@@ -152,10 +169,16 @@ const serverStartTime = Date.now();
 // log so they show up next to request/error lines in the log stream.
 function setupSecurityEventLogging(): void {
   llmService.on('budget:exceeded', (event: { provider: string }) => {
-    logger.warn({ event: 'budget:exceeded', provider: event.provider }, 'Tier 2 budget exceeded');
+    logger.warn(
+      { event: 'budget:exceeded', provider: event.provider },
+      'Tier 2 budget exceeded'
+    );
   });
-  llmService.on('thermal:fallback', (event) => {
-    logger.info({ event: 'thermal:fallback', ...event }, 'LLM thermal fallback to Tier 2');
+  llmService.on('thermal:fallback', event => {
+    logger.info(
+      { event: 'thermal:fallback', ...event },
+      'LLM thermal fallback to Tier 2'
+    );
   });
 }
 
@@ -166,16 +189,19 @@ function setupBudgetGuard(db: ReturnType<typeof initDatabase>): void {
   const cache = new Map<string, CacheEntry>();
   const TTL_MS = 10_000;
 
-  llmService.setBudgetChecker((provider) => {
+  llmService.setBudgetChecker(provider => {
     const now = Date.now();
     const cached = cache.get(provider);
     if (cached && cached.expiresAt > now) return cached.allowed;
 
     try {
       const today = new Date().toISOString().split('T')[0];
-      const config = db.prepare(
-        'SELECT daily_budget_usd, enabled FROM budget_config WHERE provider = ?'
-      ).get(provider) as { daily_budget_usd: number; enabled: number } | undefined;
+      const config = db
+        .prepare(
+          'SELECT daily_budget_usd, enabled FROM budget_config WHERE provider = ?'
+        )
+        .get(provider) as
+        { daily_budget_usd: number; enabled: number } | undefined;
 
       // No config, or disabled → deny (fail-safe)
       if (!config || !config.enabled) {
@@ -183,14 +209,18 @@ function setupBudgetGuard(db: ReturnType<typeof initDatabase>): void {
         return false;
       }
 
-      const usage = db.prepare(
-        'SELECT SUM(estimated_cost_usd) as spent FROM budget_usage WHERE provider = ? AND date = ?'
-      ).get(provider, today) as { spent: number | null } | undefined;
+      const usage = db
+        .prepare(
+          'SELECT SUM(estimated_cost_usd) as spent FROM budget_usage WHERE provider = ? AND date = ?'
+        )
+        .get(provider, today) as { spent: number | null } | undefined;
 
       const spent = usage?.spent ?? 0;
       const allowed = spent < config.daily_budget_usd;
       if (!allowed) {
-        console.warn(`[Budget] Hard stop: ${provider} spent $${spent.toFixed(4)} >= $${config.daily_budget_usd}`);
+        console.warn(
+          `[Budget] Hard stop: ${provider} spent $${spent.toFixed(4)} >= $${config.daily_budget_usd}`
+        );
       }
       cache.set(provider, { allowed, expiresAt: now + TTL_MS });
       return allowed;
@@ -205,58 +235,82 @@ function setupBudgetGuard(db: ReturnType<typeof initDatabase>): void {
 // LLM Cost Tracking - records all LLM generation events to budget_usage table
 function setupLLMCostTracking(db: ReturnType<typeof initDatabase>): void {
   // Get pricing config from database
-  const getConfig = db.prepare('SELECT * FROM budget_config WHERE provider = ?');
+  const getConfig = db.prepare(
+    'SELECT * FROM budget_config WHERE provider = ?'
+  );
 
-  llmService.on('generation', (event: { tier: number; model: string; tokensUsed?: number; inputTokens?: number }) => {
-    const { tier, model, tokensUsed, inputTokens } = event;
+  llmService.on(
+    'generation',
+    (event: {
+      tier: number;
+      model: string;
+      tokensUsed?: number;
+      inputTokens?: number;
+    }) => {
+      const { tier, model, tokensUsed, inputTokens } = event;
 
-    // Determine provider from tier and model
-    let provider: string;
-    if (tier === 1) {
-      provider = 'ollama';
-    } else if (model.includes('claude')) {
-      provider = 'anthropic';
-    } else if (model.includes('gpt')) {
-      provider = 'openai';
-    } else if (model.includes('gemini')) {
-      provider = 'google';
-    } else {
-      provider = 'unknown';
-    }
-
-    const date = new Date().toISOString().split('T')[0];
-    const hour = new Date().getHours();
-    const outputTokens = tokensUsed || 0;
-
-    // Get pricing for cost estimation. Input tokens dominate this workload
-    // (measured 7.35:1 input:output on deliberation), so pricing output only
-    // under-measured spend by 2.5-4x and made the daily ceiling meaningless.
-    let estimatedCost = 0;
-    if (tier === 2) {
-      const config = getConfig.get(provider) as
-        { output_token_price: number; input_token_price?: number } | undefined;
-      if (config) {
-        estimatedCost = outputTokens * config.output_token_price
-          + (inputTokens || 0) * (config.input_token_price ?? 0);
+      // Determine provider from tier and model
+      let provider: string;
+      if (tier === 1) {
+        provider = 'ollama';
+      } else if (model.includes('claude')) {
+        provider = 'anthropic';
+      } else if (model.includes('gpt')) {
+        provider = 'openai';
+      } else if (model.includes('gemini')) {
+        provider = 'google';
+      } else {
+        provider = 'unknown';
       }
-    }
 
-    // Upsert to budget_usage
-    try {
-      db.prepare(`
+      const date = new Date().toISOString().split('T')[0];
+      const hour = new Date().getHours();
+      const outputTokens = tokensUsed || 0;
+
+      // Get pricing for cost estimation. Input tokens dominate this workload
+      // (measured 7.35:1 input:output on deliberation), so pricing output only
+      // under-measured spend by 2.5-4x and made the daily ceiling meaningless.
+      let estimatedCost = 0;
+      if (tier === 2) {
+        const config = getConfig.get(provider) as
+          | { output_token_price: number; input_token_price?: number }
+          | undefined;
+        if (config) {
+          estimatedCost =
+            outputTokens * config.output_token_price +
+            (inputTokens || 0) * (config.input_token_price ?? 0);
+        }
+      }
+
+      // Upsert to budget_usage
+      try {
+        db.prepare(
+          `
         INSERT INTO budget_usage (id, provider, tier, date, hour, output_tokens, estimated_cost_usd, call_count)
         VALUES (?, ?, ?, ?, ?, ?, ?, 1)
         ON CONFLICT(provider, tier, date, hour) DO UPDATE SET
           output_tokens = output_tokens + excluded.output_tokens,
           estimated_cost_usd = estimated_cost_usd + excluded.estimated_cost_usd,
           call_count = call_count + 1
-      `).run(uuidv4(), provider, tier, date, hour, outputTokens, estimatedCost);
+      `
+        ).run(
+          uuidv4(),
+          provider,
+          tier,
+          date,
+          hour,
+          outputTokens,
+          estimatedCost
+        );
 
-      console.log(`[LLM-TRACK] Tier ${tier} ${provider} - ${outputTokens} tokens, $${estimatedCost.toFixed(6)}`);
-    } catch (error) {
-      console.error('[LLM-TRACK] Failed to record usage:', error);
+        console.log(
+          `[LLM-TRACK] Tier ${tier} ${provider} - ${outputTokens} tokens, $${estimatedCost.toFixed(6)}`
+        );
+      } catch (error) {
+        console.error('[LLM-TRACK] Failed to record usage:', error);
+      }
     }
-  });
+  );
 
   console.info('[LLM-TRACK] Cost tracking initialized');
 }
@@ -284,15 +338,26 @@ app.get('/health', (req, res) => {
     const today = new Date().toISOString().split('T')[0];
 
     // Get budget status
-    const budgetConfigs = db.prepare(`
+    const budgetConfigs = db
+      .prepare(
+        `
       SELECT provider, daily_budget_usd FROM budget_config WHERE enabled = 1 AND provider != 'ollama'
-    `).all() as Array<{ provider: string; daily_budget_usd: number }>;
+    `
+      )
+      .all() as Array<{ provider: string; daily_budget_usd: number }>;
 
-    const totalDailyBudget = budgetConfigs.reduce((sum, c) => sum + c.daily_budget_usd, 0);
+    const totalDailyBudget = budgetConfigs.reduce(
+      (sum, c) => sum + c.daily_budget_usd,
+      0
+    );
 
-    const usageResult = db.prepare(`
+    const usageResult = db
+      .prepare(
+        `
       SELECT SUM(estimated_cost_usd) as total_spent FROM budget_usage WHERE date = ?
-    `).get(today) as { total_spent: number | null } | undefined;
+    `
+      )
+      .get(today) as { total_spent: number | null } | undefined;
 
     const todaySpent = usageResult?.total_spent || 0;
     const remaining = Math.max(0, totalDailyBudget - todaySpent);
@@ -315,9 +380,13 @@ app.get('/health', (req, res) => {
       now.setHours(nextHour, 0, 0, 0);
 
       // Get queue length (pending tasks)
-      const queueResult = db.prepare(`
+      const queueResult = db
+        .prepare(
+          `
         SELECT COUNT(*) as count FROM scheduler_tasks WHERE status = 'pending'
-      `).get() as { count: number } | undefined;
+      `
+        )
+        .get() as { count: number } | undefined;
 
       schedulerStatus = {
         isRunning: status.isRunning,
@@ -328,14 +397,18 @@ app.get('/health', (req, res) => {
     }
 
     // Get agent counts
-    const agentResult = db.prepare(`
+    const agentResult = db
+      .prepare(
+        `
       SELECT
         COUNT(*) as total,
         SUM(CASE WHEN s.status IN ('active', 'speaking', 'listening') THEN 1 ELSE 0 END) as active
       FROM agents a
       LEFT JOIN agent_states s ON a.id = s.agent_id
       WHERE a.is_active = 1
-    `).get() as { total: number; active: number } | undefined;
+    `
+      )
+      .get() as { total: number; active: number } | undefined;
 
     res.json({
       status: 'ok',
@@ -460,14 +533,18 @@ async function bootstrap() {
       // session never starts and the escalation never closes.
       governanceOSBridge.setAgoraService(agoraSvc);
     } else {
-      console.error('[Startup] Agora orchestrator unavailable — extended-discussion escalations cannot run');
+      console.error(
+        '[Startup] Agora orchestrator unavailable — extended-discussion escalations cannot run'
+      );
     }
 
     // Retire escalations left waiting on a session that could never start.
     // No-op once the deployment above has been through one cycle.
     const reconciled = governanceOSBridge.reconcileStrandedEscalations();
     if (reconciled.retired > 0) {
-      console.warn(`[Startup] Retired ${reconciled.retired} stranded escalation(s)`);
+      console.warn(
+        `[Startup] Retired ${reconciled.retired} stranded escalation(s)`
+      );
     }
 
     // Initialize proof of outcome service
@@ -490,23 +567,35 @@ async function bootstrap() {
     const reportGenerator = new ReportGeneratorService(db, io);
     app.locals.reportGenerator = reportGenerator;
     schedulerService.setReportGenerator(reportGenerator);
-    console.info('[ReportGenerator] Service initialized - automatic report generation enabled');
+    console.info(
+      '[ReportGenerator] Service initialized (scheduled generation: see scheduler)'
+    );
 
     // Initialize passive consensus service
-    const passiveConsensusService = new PassiveConsensusService(db, io, activityService);
+    const passiveConsensusService = new PassiveConsensusService(
+      db,
+      io,
+      activityService
+    );
     app.locals.passiveConsensusService = passiveConsensusService;
     schedulerService.setPassiveConsensusService(passiveConsensusService);
-    console.info('[PassiveConsensus] Service initialized - opt-out approval model active');
+    console.info(
+      '[PassiveConsensus] Service initialized - opt-out approval model active'
+    );
 
     // Initialize RAG service
     const ragService = new RAGService(db, io);
     app.locals.ragService = ragService;
-    console.info('[RAG] Service initialized - semantic search for governance documents');
+    console.info(
+      '[RAG] Service initialized - semantic search for governance documents'
+    );
 
     // Initialize Quality Gate service
     const qualityGateService = new QualityGateService(db, io);
     app.locals.qualityGateService = qualityGateService;
-    console.info('[QualityGate] Service initialized - LLM output validation active');
+    console.info(
+      '[QualityGate] Service initialized - LLM output validation active'
+    );
 
     // Initialize Signature service — EIP-712 verification for votes.
     // Enforcement is opt-in via env var; default off so the pre-wallet
@@ -517,8 +606,12 @@ async function bootstrap() {
     console.info(`[Signature] Service initialized (enforced=${sigEnforced})`);
 
     // Log LLM availability
-    console.info(`[LLM] Tier 1 (Ollama): ${llmService.isTier1Available() ? 'Available' : 'Not Available'}`);
-    console.info(`[LLM] Tier 2 configured: ${llmService.getConfig().tier2.anthropic ? 'Anthropic' : ''} ${llmService.getConfig().tier2.openai ? 'OpenAI' : ''} ${llmService.getConfig().tier2.gemini ? 'Gemini' : ''}`.trim());
+    console.info(
+      `[LLM] Tier 1 (Ollama): ${llmService.isTier1Available() ? 'Available' : 'Not Available'}`
+    );
+    console.info(
+      `[LLM] Tier 2 configured: ${llmService.getConfig().tier2.anthropic ? 'Anthropic' : ''} ${llmService.getConfig().tier2.openai ? 'OpenAI' : ''} ${llmService.getConfig().tier2.gemini ? 'Gemini' : ''}`.trim()
+    );
 
     // Start server
     httpServer.listen(PORT, () => {
@@ -541,7 +634,6 @@ async function bootstrap() {
 ╚══════════════════════════════════════════════════════════════╝
       `);
     });
-
   } catch (error) {
     console.error('Failed to start server:', error);
     process.exit(1);

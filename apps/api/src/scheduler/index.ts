@@ -22,13 +22,14 @@ interface PipelineRetryJobData {
 }
 
 export interface SchedulerConfig {
-  tier0Interval: number;  // Default: 300000 (5 min) — see notes on tightening
-  tier1Interval: number;  // Default: 60000 (1 min) — chatter cadence
-  tier2ScheduledRuns: number[];  // Default: [6, 12, 18, 23]
-  weeklyReportDay: number;  // Day of week (0=Sunday, 1=Monday, etc.)
+  tier0Interval: number; // Default: 300000 (5 min) — see notes on tightening
+  tier1Interval: number; // Default: 60000 (1 min) — chatter cadence
+  tier2ScheduledRuns: number[]; // Default: [6, 12, 18, 23]
+  weeklyReportDay: number; // Day of week (0=Sunday, 1=Monday, etc.)
   weeklyReportHour: number; // Hour to run (0-23)
   monthlyReportDay: number; // Day of month (1-28)
   monthlyReportHour: number; // Hour to run (0-23)
+  reportGenerationEnabled: boolean; // Weekly/monthly schedule; off by default since 2026-09-02 (MIP-1 Archive)
   dataCleanupHour: number; // Hour to run daily data cleanup (0-23)
 }
 
@@ -40,15 +41,25 @@ export class SchedulerService {
   private reportGenerator: ReportGeneratorService | null = null;
   private passiveConsensusService: PassiveConsensusService | null = null;
   private proposalService: ProposalService | null = null;
-  private tokenVotingService: { resolveExpiredVotings: (limit?: number) => Promise<{ resolved: number; errors: string[] }> } | null = null;
+  private tokenVotingService: {
+    resolveExpiredVotings: (
+      limit?: number
+    ) => Promise<{ resolved: number; errors: string[] }>;
+  } | null = null;
   private agoraService: {
     cleanupStaleSessions: (opts?: {
       maxIdleMinutes?: number;
       limit?: number;
-      preserveHarvestable?: { minMessages: number; hardCloseAfterMinutes: number };
+      preserveHarvestable?: {
+        minMessages: number;
+        hardCloseAfterMinutes: number;
+      };
     }) => { cleaned: number; ids: string[] };
-    harvestStaleSessions?: (opts?: { maxIdleMinutes?: number; minMessages?: number; limit?: number }) =>
-      Promise<{ harvested: number; failed: number; ids: string[] }>;
+    harvestStaleSessions?: (opts?: {
+      maxIdleMinutes?: number;
+      minMessages?: number;
+      limit?: number;
+    }) => Promise<{ harvested: number; failed: number; ids: string[] }>;
   } | null = null;
   private dataRetention: DataRetentionService;
   private budgetAlerts: BudgetAlertService;
@@ -56,7 +67,10 @@ export class SchedulerService {
   private config: SchedulerConfig;
   private intervals: Map<string, NodeJS.Timeout> = new Map();
   private isRunning: boolean = false;
-  private pipelineRetryQueue: InMemoryQueue<PipelineRetryJobData, { success: boolean }>;
+  private pipelineRetryQueue: InMemoryQueue<
+    PipelineRetryJobData,
+    { success: boolean }
+  >;
 
   // Pipeline retry configuration
   private static readonly MAX_PIPELINE_RETRIES = 3;
@@ -88,6 +102,9 @@ export class SchedulerService {
       weeklyReportHour: config?.weeklyReportHour ?? 0, // 00:00 UTC
       monthlyReportDay: config?.monthlyReportDay ?? 1, // 1st of month
       monthlyReportHour: config?.monthlyReportHour ?? 0, // 00:00 UTC
+      reportGenerationEnabled:
+        config?.reportGenerationEnabled ??
+        process.env.REPORT_SCHEDULER_ENABLED === 'true',
       dataCleanupHour: config?.dataCleanupHour ?? 3, // 03:00 daily
     };
 
@@ -110,10 +127,10 @@ export class SchedulerService {
     this.kpiPersistence = new KPIPersistenceService(db, io);
 
     // Initialize pipeline retry queue
-    this.pipelineRetryQueue = new InMemoryQueue<PipelineRetryJobData, { success: boolean }>(
-      'pipeline-retry',
-      { concurrency: 2, pollInterval: 5000 }
-    );
+    this.pipelineRetryQueue = new InMemoryQueue<
+      PipelineRetryJobData,
+      { success: boolean }
+    >('pipeline-retry', { concurrency: 2, pollInterval: 5000 });
     this.setupPipelineRetryProcessor();
   }
 
@@ -121,29 +138,43 @@ export class SchedulerService {
    * Set up the pipeline retry queue processor
    */
   private setupPipelineRetryProcessor(): void {
-    this.pipelineRetryQueue.process(async (job) => {
+    this.pipelineRetryQueue.process(async job => {
       if (!this.governanceOSBridge) {
         throw new Error('GovernanceOS Bridge not available');
       }
 
-      console.log(`[Scheduler] Processing pipeline retry for issue ${job.data.issueId.slice(0, 8)} (attempt ${job.attempts})`);
+      console.log(
+        `[Scheduler] Processing pipeline retry for issue ${job.data.issueId.slice(0, 8)} (attempt ${job.attempts})`
+      );
 
       try {
-        const result = await this.governanceOSBridge.runPipelineForIssue(job.data.issueId, {
-          workflowType: job.data.workflowType,
-        });
+        const result = await this.governanceOSBridge.runPipelineForIssue(
+          job.data.issueId,
+          {
+            workflowType: job.data.workflowType,
+          }
+        );
 
         if (result.success) {
           // Update retry queue record in DB
-          this.db.prepare(`
+          this.db
+            .prepare(
+              `
             UPDATE pipeline_retry_queue
             SET status = 'completed', completed_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
             WHERE issue_id = ? AND status = 'pending'
-          `).run(job.data.issueId);
+          `
+            )
+            .run(job.data.issueId);
 
-          this.activityService.log('PIPELINE_RETRY', 'info', `Pipeline retry succeeded for issue ${job.data.issueId.slice(0, 8)}`, {
-            details: { issueId: job.data.issueId, attempt: job.attempts },
-          });
+          this.activityService.log(
+            'PIPELINE_RETRY',
+            'info',
+            `Pipeline retry succeeded for issue ${job.data.issueId.slice(0, 8)}`,
+            {
+              details: { issueId: job.data.issueId, attempt: job.attempts },
+            }
+          );
 
           this.io.emit('pipeline:retry:success', {
             issueId: job.data.issueId,
@@ -153,37 +184,60 @@ export class SchedulerService {
 
           return { success: true };
         } else {
-          throw new Error(`Pipeline completed with non-success status: ${result.status}`);
+          throw new Error(
+            `Pipeline completed with non-success status: ${result.status}`
+          );
         }
       } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : String(error);
+        const errorMessage =
+          error instanceof Error ? error.message : String(error);
 
         // Update retry queue record
-        this.db.prepare(`
+        this.db
+          .prepare(
+            `
           UPDATE pipeline_retry_queue
           SET failure_count = failure_count + 1, last_error = ?, updated_at = CURRENT_TIMESTAMP
           WHERE issue_id = ? AND status = 'pending'
-        `).run(errorMessage, job.data.issueId);
+        `
+          )
+          .run(errorMessage, job.data.issueId);
 
         // Check if max retries exceeded
         if (job.attempts >= SchedulerService.MAX_PIPELINE_RETRIES) {
           // Mark for manual review
-          this.db.prepare(`
+          this.db
+            .prepare(
+              `
             UPDATE pipeline_retry_queue
             SET status = 'needs_manual_review', updated_at = CURRENT_TIMESTAMP
             WHERE issue_id = ? AND status = 'pending'
-          `).run(job.data.issueId);
+          `
+            )
+            .run(job.data.issueId);
 
-          this.db.prepare(`
+          this.db
+            .prepare(
+              `
             UPDATE issues
             SET status = 'needs_manual_review', updated_at = CURRENT_TIMESTAMP
             WHERE id = ?
-          `).run(job.data.issueId);
+          `
+            )
+            .run(job.data.issueId);
 
-          this.activityService.log('PIPELINE_RETRY', 'warning',
-            `Pipeline retry exhausted for issue ${job.data.issueId.slice(0, 8)} - needs manual review`, {
-              details: { issueId: job.data.issueId, attempts: job.attempts, lastError: errorMessage },
-            });
+          this.activityService.log(
+            'PIPELINE_RETRY',
+            'warning',
+            `Pipeline retry exhausted for issue ${job.data.issueId.slice(0, 8)} - needs manual review`,
+            {
+              details: {
+                issueId: job.data.issueId,
+                attempts: job.attempts,
+                lastError: errorMessage,
+              },
+            }
+          );
 
           this.io.emit('pipeline:retry:exhausted', {
             issueId: job.data.issueId,
@@ -198,13 +252,30 @@ export class SchedulerService {
     });
 
     // Listen for retry events
-    this.pipelineRetryQueue.on('failed', (job: { data: PipelineRetryJobData; attempts: number; failedReason?: string }) => {
-      console.error(`[Scheduler] Pipeline retry job failed: issue ${job.data.issueId.slice(0, 8)}, attempt ${job.attempts}`);
-    });
+    this.pipelineRetryQueue.on(
+      'failed',
+      (job: {
+        data: PipelineRetryJobData;
+        attempts: number;
+        failedReason?: string;
+      }) => {
+        console.error(
+          `[Scheduler] Pipeline retry job failed: issue ${job.data.issueId.slice(0, 8)}, attempt ${job.attempts}`
+        );
+      }
+    );
 
-    this.pipelineRetryQueue.on('retrying', (job: { data: PipelineRetryJobData; attempts: number }, backoffMs: number) => {
-      console.log(`[Scheduler] Pipeline retry scheduled: issue ${job.data.issueId.slice(0, 8)}, backoff ${backoffMs}ms`);
-    });
+    this.pipelineRetryQueue.on(
+      'retrying',
+      (
+        job: { data: PipelineRetryJobData; attempts: number },
+        backoffMs: number
+      ) => {
+        console.log(
+          `[Scheduler] Pipeline retry scheduled: issue ${job.data.issueId.slice(0, 8)}, backoff ${backoffMs}ms`
+        );
+      }
+    );
   }
 
   /**
@@ -216,40 +287,56 @@ export class SchedulerService {
     error?: string
   ): Promise<void> {
     // Check if already in retry queue
-    const existing = this.db.prepare(`
+    const existing = this.db
+      .prepare(
+        `
       SELECT id FROM pipeline_retry_queue
       WHERE issue_id = ? AND status = 'pending'
-    `).get(issueId);
+    `
+      )
+      .get(issueId);
 
     if (!existing) {
       // Create DB record
-      this.db.prepare(`
+      this.db
+        .prepare(
+          `
         INSERT INTO pipeline_retry_queue (id, issue_id, workflow_type, failure_count, last_error, status, next_retry_at, created_at, updated_at)
         VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-      `).run(
-        uuidv4(),
-        issueId,
-        workflowType,
-        1,
-        error || null,
-        'pending',
-        new Date(Date.now() + SchedulerService.INITIAL_RETRY_DELAY_MS).toISOString()
-      );
+      `
+        )
+        .run(
+          uuidv4(),
+          issueId,
+          workflowType,
+          1,
+          error || null,
+          'pending',
+          new Date(
+            Date.now() + SchedulerService.INITIAL_RETRY_DELAY_MS
+          ).toISOString()
+        );
     }
 
     // Add to in-memory queue
-    await this.pipelineRetryQueue.add('pipeline-retry', {
-      issueId,
-      workflowType,
-      failureCount: 1,
-      lastError: error,
-    }, {
-      attempts: SchedulerService.MAX_PIPELINE_RETRIES,
-      delay: SchedulerService.INITIAL_RETRY_DELAY_MS,
-      backoff: 2, // Exponential backoff
-    });
+    await this.pipelineRetryQueue.add(
+      'pipeline-retry',
+      {
+        issueId,
+        workflowType,
+        failureCount: 1,
+        lastError: error,
+      },
+      {
+        attempts: SchedulerService.MAX_PIPELINE_RETRIES,
+        delay: SchedulerService.INITIAL_RETRY_DELAY_MS,
+        backoff: 2, // Exponential backoff
+      }
+    );
 
-    console.log(`[Scheduler] Queued pipeline retry for issue ${issueId.slice(0, 8)}`);
+    console.log(
+      `[Scheduler] Queued pipeline retry for issue ${issueId.slice(0, 8)}`
+    );
   }
 
   /**
@@ -264,13 +351,21 @@ export class SchedulerService {
   } {
     const queueStats = this.pipelineRetryQueue.getStats();
 
-    const dbStats = this.db.prepare(`
+    const dbStats = this.db
+      .prepare(
+        `
       SELECT
         SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending,
         SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed,
         SUM(CASE WHEN status = 'needs_manual_review' THEN 1 ELSE 0 END) as needs_manual_review
       FROM pipeline_retry_queue
-    `).get() as { pending: number; completed: number; needs_manual_review: number };
+    `
+      )
+      .get() as {
+      pending: number;
+      completed: number;
+      needs_manual_review: number;
+    };
 
     return {
       pending: queueStats.waiting + queueStats.delayed,
@@ -309,7 +404,11 @@ export class SchedulerService {
    * and nothing closed its expired windows — an expired voting stayed 'active'
    * indefinitely.
    */
-  setTokenVotingService(service: { resolveExpiredVotings: (limit?: number) => Promise<{ resolved: number; errors: string[] }> }): void {
+  setTokenVotingService(service: {
+    resolveExpiredVotings: (
+      limit?: number
+    ) => Promise<{ resolved: number; errors: string[] }>;
+  }): void {
     this.tokenVotingService = service;
     console.info('[Scheduler] Proposal Service connected');
   }
@@ -322,10 +421,16 @@ export class SchedulerService {
     cleanupStaleSessions: (opts?: {
       maxIdleMinutes?: number;
       limit?: number;
-      preserveHarvestable?: { minMessages: number; hardCloseAfterMinutes: number };
+      preserveHarvestable?: {
+        minMessages: number;
+        hardCloseAfterMinutes: number;
+      };
     }) => { cleaned: number; ids: string[] };
-    harvestStaleSessions?: (opts?: { maxIdleMinutes?: number; minMessages?: number; limit?: number }) =>
-      Promise<{ harvested: number; failed: number; ids: string[] }>;
+    harvestStaleSessions?: (opts?: {
+      maxIdleMinutes?: number;
+      minMessages?: number;
+      limit?: number;
+    }) => Promise<{ harvested: number; failed: number; ids: string[] }>;
   }): void {
     this.agoraService = service;
     console.info('[Scheduler] Agora Service connected');
@@ -357,8 +462,17 @@ export class SchedulerService {
     // Schedule Tier 2 tasks
     this.scheduleTier2();
 
-    // Schedule report generation
-    this.scheduleReportGeneration();
+    // Scheduled report generation is off by default: Algora is Archive under
+    // MIP-1 (ratified 2026-09-02). Published reports stay as read-only records
+    // and the manual routes remain for corrections. Set
+    // REPORT_SCHEDULER_ENABLED=true to resume the weekly/monthly schedule.
+    if (this.config.reportGenerationEnabled) {
+      this.scheduleReportGeneration();
+    } else {
+      console.info(
+        '[Scheduler] Scheduled report generation is off (MIP-1 Archive, 2026-09-02); manual report routes remain'
+      );
+    }
 
     // Schedule daily data cleanup
     this.scheduleDataCleanup();
@@ -421,7 +535,9 @@ export class SchedulerService {
     }, this.config.tier0Interval);
 
     this.intervals.set('tier0', interval);
-    console.info(`Tier 0 scheduler started (interval: ${this.config.tier0Interval}ms)`);
+    console.info(
+      `Tier 0 scheduler started (interval: ${this.config.tier0Interval}ms)`
+    );
   }
 
   private startTier1(): void {
@@ -455,18 +571,28 @@ export class SchedulerService {
       const currentMinute = now.getMinutes();
 
       // Run at the start of scheduled hours
-      if (this.config.tier2ScheduledRuns.includes(currentHour) && currentMinute === 0) {
+      if (
+        this.config.tier2ScheduledRuns.includes(currentHour) &&
+        currentMinute === 0
+      ) {
         this.runTier2Tasks().catch(error => {
           console.error('Tier 2 task error:', error);
-          this.activityService.log('SYSTEM_STATUS', 'error', 'Tier 2 scheduled run failed', {
-            details: { error: String(error) },
-          });
+          this.activityService.log(
+            'SYSTEM_STATUS',
+            'error',
+            'Tier 2 scheduled run failed',
+            {
+              details: { error: String(error) },
+            }
+          );
         });
       }
     }, 60000);
 
     this.intervals.set('tier2', interval);
-    console.info(`Tier 2 scheduler started (hours: ${this.config.tier2ScheduledRuns.join(', ')})`);
+    console.info(
+      `Tier 2 scheduler started (hours: ${this.config.tier2ScheduledRuns.join(', ')})`
+    );
   }
 
   private scheduleReportGeneration(): void {
@@ -489,15 +615,25 @@ export class SchedulerService {
         console.info('[Scheduler] Running scheduled weekly report generation');
         try {
           const result = await this.reportGenerator.generateWeeklyReport(true);
-          this.activityService.log('DISCLOSURE_PUBLISH', 'info', `Weekly report generated: ${result.title}`, {
-            details: { reportId: result.id },
-            metadata: { type: 'weekly', autoGenerated: true },
-          });
+          this.activityService.log(
+            'DISCLOSURE_PUBLISH',
+            'info',
+            `Weekly report generated: ${result.title}`,
+            {
+              details: { reportId: result.id },
+              metadata: { type: 'weekly', autoGenerated: true },
+            }
+          );
         } catch (error) {
           console.error('[Scheduler] Weekly report generation failed:', error);
-          this.activityService.log('SYSTEM_STATUS', 'error', 'Weekly report generation failed', {
-            details: { error: String(error) },
-          });
+          this.activityService.log(
+            'SYSTEM_STATUS',
+            'error',
+            'Weekly report generation failed',
+            {
+              details: { error: String(error) },
+            }
+          );
         }
       }
 
@@ -510,21 +646,33 @@ export class SchedulerService {
         console.info('[Scheduler] Running scheduled monthly report generation');
         try {
           const result = await this.reportGenerator.generateMonthlyReport(true);
-          this.activityService.log('DISCLOSURE_PUBLISH', 'info', `Monthly report generated: ${result.title}`, {
-            details: { reportId: result.id },
-            metadata: { type: 'monthly', autoGenerated: true },
-          });
+          this.activityService.log(
+            'DISCLOSURE_PUBLISH',
+            'info',
+            `Monthly report generated: ${result.title}`,
+            {
+              details: { reportId: result.id },
+              metadata: { type: 'monthly', autoGenerated: true },
+            }
+          );
         } catch (error) {
           console.error('[Scheduler] Monthly report generation failed:', error);
-          this.activityService.log('SYSTEM_STATUS', 'error', 'Monthly report generation failed', {
-            details: { error: String(error) },
-          });
+          this.activityService.log(
+            'SYSTEM_STATUS',
+            'error',
+            'Monthly report generation failed',
+            {
+              details: { error: String(error) },
+            }
+          );
         }
       }
     }, 60000); // Check every minute
 
     this.intervals.set('reportGeneration', interval);
-    console.info(`[Scheduler] Report generation scheduled (weekly: day ${this.config.weeklyReportDay} hour ${this.config.weeklyReportHour}, monthly: day ${this.config.monthlyReportDay} hour ${this.config.monthlyReportHour})`);
+    console.info(
+      `[Scheduler] Report generation scheduled (weekly: day ${this.config.weeklyReportDay} hour ${this.config.weeklyReportHour}, monthly: day ${this.config.monthlyReportDay} hour ${this.config.monthlyReportHour})`
+    );
   }
 
   private scheduleDataCleanup(): void {
@@ -542,14 +690,19 @@ export class SchedulerService {
         try {
           const report = await this.dataRetention.runCleanup();
 
-          this.activityService.log('SYSTEM_STATUS', 'info', `Data cleanup completed: ${report.totalDeleted} rows deleted`, {
-            details: {
-              totalDeleted: report.totalDeleted,
-              results: report.results,
-              errors: report.errors,
-            },
-            metadata: { type: 'data-retention' },
-          });
+          this.activityService.log(
+            'SYSTEM_STATUS',
+            'info',
+            `Data cleanup completed: ${report.totalDeleted} rows deleted`,
+            {
+              details: {
+                totalDeleted: report.totalDeleted,
+                results: report.results,
+                errors: report.errors,
+              },
+              metadata: { type: 'data-retention' },
+            }
+          );
 
           // Emit event for monitoring
           this.io.emit('system:dataCleanup', {
@@ -557,31 +710,40 @@ export class SchedulerService {
             results: report.results,
             timestamp: new Date().toISOString(),
           });
-
         } catch (error) {
           console.error('[Scheduler] Data cleanup failed:', error);
-          this.activityService.log('SYSTEM_STATUS', 'error', 'Data cleanup failed', {
-            details: { error: String(error) },
-          });
+          this.activityService.log(
+            'SYSTEM_STATUS',
+            'error',
+            'Data cleanup failed',
+            {
+              details: { error: String(error) },
+            }
+          );
         }
       }
     }, 60000); // Check every minute
 
     this.intervals.set('dataCleanup', interval);
-    console.info(`[Scheduler] Data cleanup scheduled (daily at ${this.config.dataCleanupHour}:00)`);
+    console.info(
+      `[Scheduler] Data cleanup scheduled (daily at ${this.config.dataCleanupHour}:00)`
+    );
   }
 
   private scheduleBudgetAlerts(): void {
     // Check budget thresholds every 5 minutes
-    const interval = setInterval(async () => {
-      if (!this.isRunning) return;
+    const interval = setInterval(
+      async () => {
+        if (!this.isRunning) return;
 
-      try {
-        await this.budgetAlerts.checkBudgetThresholds();
-      } catch (error) {
-        console.error('[Scheduler] Budget alert check failed:', error);
-      }
-    }, 5 * 60 * 1000); // 5 minutes
+        try {
+          await this.budgetAlerts.checkBudgetThresholds();
+        } catch (error) {
+          console.error('[Scheduler] Budget alert check failed:', error);
+        }
+      },
+      5 * 60 * 1000
+    ); // 5 minutes
 
     this.intervals.set('budgetAlerts', interval);
     console.info('[Scheduler] Budget alerts scheduled (every 5 minutes)');
@@ -617,15 +779,18 @@ export class SchedulerService {
 
   private scheduleKPISnapshots(): void {
     // Take KPI snapshots every 5 minutes
-    const interval = setInterval(() => {
-      if (!this.isRunning) return;
+    const interval = setInterval(
+      () => {
+        if (!this.isRunning) return;
 
-      try {
-        this.kpiPersistence.takeSnapshot();
-      } catch (error) {
-        console.error('[Scheduler] KPI snapshot failed:', error);
-      }
-    }, 5 * 60 * 1000); // 5 minutes
+        try {
+          this.kpiPersistence.takeSnapshot();
+        } catch (error) {
+          console.error('[Scheduler] KPI snapshot failed:', error);
+        }
+      },
+      5 * 60 * 1000
+    ); // 5 minutes
 
     this.intervals.set('kpiSnapshots', interval);
     console.info('[Scheduler] KPI snapshots scheduled (every 5 minutes)');
@@ -651,32 +816,49 @@ export class SchedulerService {
 
   private schedulePassiveConsensusProcessing(): void {
     // Process expired passive consensus items every 5 minutes
-    const interval = setInterval(async () => {
-      if (!this.isRunning || !this.passiveConsensusService) return;
+    const interval = setInterval(
+      async () => {
+        if (!this.isRunning || !this.passiveConsensusService) return;
 
-      try {
-        const processedCount = await this.passiveConsensusService.processExpiredItems();
-        if (processedCount > 0) {
-          console.info(`[Scheduler] Passive consensus: ${processedCount} items auto-approved`);
+        try {
+          const processedCount =
+            await this.passiveConsensusService.processExpiredItems();
+          if (processedCount > 0) {
+            console.info(
+              `[Scheduler] Passive consensus: ${processedCount} items auto-approved`
+            );
+          }
+        } catch (error) {
+          console.error(
+            '[Scheduler] Passive consensus processing failed:',
+            error
+          );
         }
-      } catch (error) {
-        console.error('[Scheduler] Passive consensus processing failed:', error);
-      }
-    }, 5 * 60 * 1000); // 5 minutes
+      },
+      5 * 60 * 1000
+    ); // 5 minutes
 
     this.intervals.set('passiveConsensus', interval);
-    console.info('[Scheduler] Passive consensus processing scheduled (every 5 minutes)');
+    console.info(
+      '[Scheduler] Passive consensus processing scheduled (every 5 minutes)'
+    );
 
     // Also run immediately after a short delay
     setTimeout(async () => {
       if (!this.isRunning || !this.passiveConsensusService) return;
       try {
-        const processedCount = await this.passiveConsensusService.processExpiredItems();
+        const processedCount =
+          await this.passiveConsensusService.processExpiredItems();
         if (processedCount > 0) {
-          console.info(`[Scheduler] Initial passive consensus: ${processedCount} items auto-approved`);
+          console.info(
+            `[Scheduler] Initial passive consensus: ${processedCount} items auto-approved`
+          );
         }
       } catch (error) {
-        console.error('[Scheduler] Initial passive consensus processing failed:', error);
+        console.error(
+          '[Scheduler] Initial passive consensus processing failed:',
+          error
+        );
       }
     }, 10000); // 10 seconds after startup
   }
@@ -705,10 +887,14 @@ export class SchedulerService {
       if ((currentHour === 2 || currentHour === 14) && currentMinute === 0) {
         console.info('[Scheduler] Running scheduled proposal backfill');
         try {
-          const result = await this.governanceOSBridge.backfillMissingProposals();
+          const result =
+            await this.governanceOSBridge.backfillMissingProposals();
 
-          this.activityService.log('PROPOSAL_BACKFILL', 'info',
-            `Proposal backfill completed: ${result.created} created, ${result.skipped} skipped`, {
+          this.activityService.log(
+            'PROPOSAL_BACKFILL',
+            'info',
+            `Proposal backfill completed: ${result.created} created, ${result.skipped} skipped`,
+            {
               details: {
                 processed: result.processed,
                 created: result.created,
@@ -716,7 +902,8 @@ export class SchedulerService {
                 errors: result.errors.slice(0, 5), // Limit error details
               },
               metadata: { scheduled: true },
-            });
+            }
+          );
 
           // Emit event
           this.io.emit('governance:backfill:scheduled', {
@@ -725,18 +912,24 @@ export class SchedulerService {
             skipped: result.skipped,
             timestamp: new Date().toISOString(),
           });
-
         } catch (error) {
           console.error('[Scheduler] Proposal backfill failed:', error);
-          this.activityService.log('PROPOSAL_BACKFILL', 'error', 'Proposal backfill failed', {
-            details: { error: String(error) },
-          });
+          this.activityService.log(
+            'PROPOSAL_BACKFILL',
+            'error',
+            'Proposal backfill failed',
+            {
+              details: { error: String(error) },
+            }
+          );
         }
       }
     }, 60000); // Check every minute
 
     this.intervals.set('proposalBackfill', interval);
-    console.info('[Scheduler] Proposal backfill scheduled (daily at 02:00 and 14:00 UTC)');
+    console.info(
+      '[Scheduler] Proposal backfill scheduled (daily at 02:00 and 14:00 UTC)'
+    );
   }
 
   /**
@@ -754,10 +947,14 @@ export class SchedulerService {
 
     const result = await this.governanceOSBridge.backfillMissingProposals();
 
-    this.activityService.log('PROPOSAL_BACKFILL', 'info',
-      `Manual proposal backfill: ${result.created} created, ${result.skipped} skipped`, {
+    this.activityService.log(
+      'PROPOSAL_BACKFILL',
+      'info',
+      `Manual proposal backfill: ${result.created} created, ${result.skipped} skipped`,
+      {
         details: { ...result, manual: true },
-      });
+      }
+    );
 
     return result;
   }
@@ -775,11 +972,18 @@ export class SchedulerService {
    * resolveCompletedVotings existed but had no caller until 2026-08-06.
    */
   private scheduleProposalQueueProcessing(): void {
-    const interval = setInterval(() => { void this.runProposalQueue(); }, 60 * 60 * 1000); // Every hour
+    const interval = setInterval(
+      () => {
+        void this.runProposalQueue();
+      },
+      60 * 60 * 1000
+    ); // Every hour
 
     this.intervals.set('proposalQueue', interval);
     this.scheduleBootKick('proposalQueue', () => this.runProposalQueue());
-    console.info('[Scheduler] Proposal queue processing scheduled (every hour)');
+    console.info(
+      '[Scheduler] Proposal queue processing scheduled (every hour)'
+    );
   }
 
   private async runProposalQueue(): Promise<void> {
@@ -789,12 +993,22 @@ export class SchedulerService {
       const progressed = this.proposalService.autoProgressProposals();
       const promoted = this.proposalService.autoPromoteDiscussions();
       const resolved = this.proposalService.resolveCompletedVotings();
-      if (progressed.progressed > 0 || promoted.promoted > 0 || resolved.resolved > 0) {
-        console.info(`[Scheduler] Proposal queue: ${progressed.progressed} draft→discussion, ${promoted.promoted} discussion→voting, ${resolved.resolved} voting resolved (${resolved.passed} passed / ${resolved.rejected} rejected)`);
-        this.activityService.log('PROPOSAL_QUEUE', 'info',
-          `Proposal queue: ${progressed.progressed} progressed, ${promoted.promoted} promoted, ${resolved.resolved} resolved`, {
+      if (
+        progressed.progressed > 0 ||
+        promoted.promoted > 0 ||
+        resolved.resolved > 0
+      ) {
+        console.info(
+          `[Scheduler] Proposal queue: ${progressed.progressed} draft→discussion, ${promoted.promoted} discussion→voting, ${resolved.resolved} voting resolved (${resolved.passed} passed / ${resolved.rejected} rejected)`
+        );
+        this.activityService.log(
+          'PROPOSAL_QUEUE',
+          'info',
+          `Proposal queue: ${progressed.progressed} progressed, ${promoted.promoted} promoted, ${resolved.resolved} resolved`,
+          {
             details: { progressed, promoted, resolved },
-          });
+          }
+        );
       }
     } catch (error) {
       console.error('[Scheduler] Proposal queue processing failed:', error);
@@ -811,10 +1025,13 @@ export class SchedulerService {
    * boot-time collector and roster work.
    */
   private scheduleBootKick(name: string, run: () => Promise<void>): void {
-    const timer = setTimeout(() => {
-      this.intervals.delete(`${name}:boot`);
-      void run();
-    }, 3 * 60 * 1000);
+    const timer = setTimeout(
+      () => {
+        this.intervals.delete(`${name}:boot`);
+        void run();
+      },
+      3 * 60 * 1000
+    );
     if (typeof timer.unref === 'function') timer.unref();
     // Tracked so stop() clears a pending kick along with the intervals.
     this.intervals.set(`${name}:boot`, timer as unknown as NodeJS.Timeout);
@@ -826,40 +1043,59 @@ export class SchedulerService {
    * (e.g. process restart, hung LLM call, exception in the orchestrator).
    */
   private scheduleAgoraStaleCleanup(): void {
-    const interval = setInterval(() => { void this.runAgoraStaleMaintenance(); }, 60 * 60 * 1000); // every hour
+    const interval = setInterval(
+      () => {
+        void this.runAgoraStaleMaintenance();
+      },
+      60 * 60 * 1000
+    ); // every hour
     this.intervals.set('agoraStaleCleanup', interval);
     // A restart orphans every in-flight session (round timers are in-memory),
     // so this is exactly the job that must not wait a full hour after boot.
-    this.scheduleBootKick('agoraStaleCleanup', () => this.runAgoraStaleMaintenance());
-    console.info('[Scheduler] Agora stale cleanup scheduled (every hour, idle > 90m)');
+    this.scheduleBootKick('agoraStaleCleanup', () =>
+      this.runAgoraStaleMaintenance()
+    );
+    console.info(
+      '[Scheduler] Agora stale cleanup scheduled (every hour, idle > 90m)'
+    );
   }
 
   private async runAgoraStaleMaintenance(): Promise<void> {
     if (!this.isRunning || !this.agoraService) return;
     try {
-    // Salvage first: sessions that actually deliberated go through the
-    // real completion flow (summary → decision packet → governance
-    // integration → proposal) instead of being silently discarded by the
-    // cheap sweep below. Bounded, so the rest wait for the next hour.
-    if (this.agoraService.harvestStaleSessions) {
-      const harvest = await this.agoraService.harvestStaleSessions({ maxIdleMinutes: 90 });
-      if (harvest.harvested > 0 || harvest.failed > 0) {
-        this.activityService.log('AGORA_STALE_HARVEST', 'info',
-          `Completed ${harvest.harvested} stale Agora session(s) with full flow`, { details: harvest });
+      // Salvage first: sessions that actually deliberated go through the
+      // real completion flow (summary → decision packet → governance
+      // integration → proposal) instead of being silently discarded by the
+      // cheap sweep below. Bounded, so the rest wait for the next hour.
+      if (this.agoraService.harvestStaleSessions) {
+        const harvest = await this.agoraService.harvestStaleSessions({
+          maxIdleMinutes: 90,
+        });
+        if (harvest.harvested > 0 || harvest.failed > 0) {
+          this.activityService.log(
+            'AGORA_STALE_HARVEST',
+            'info',
+            `Completed ${harvest.harvested} stale Agora session(s) with full flow`,
+            { details: harvest }
+          );
+        }
       }
-    }
 
-    // Anything the (bounded) harvest could not reach stays active until a
-    // later run, unless it has been stuck for 6h — then it is closed
-    // regardless so a permanently failing session cannot linger forever.
-    const result = this.agoraService.cleanupStaleSessions({
-      maxIdleMinutes: 90,
-      preserveHarvestable: { minMessages: 5, hardCloseAfterMinutes: 360 },
-    });
-    if (result.cleaned > 0) {
-      this.activityService.log('AGORA_STALE_CLEANUP', 'info',
-        `Closed ${result.cleaned} stale Agora session(s)`, { details: result });
-    }
+      // Anything the (bounded) harvest could not reach stays active until a
+      // later run, unless it has been stuck for 6h — then it is closed
+      // regardless so a permanently failing session cannot linger forever.
+      const result = this.agoraService.cleanupStaleSessions({
+        maxIdleMinutes: 90,
+        preserveHarvestable: { minMessages: 5, hardCloseAfterMinutes: 360 },
+      });
+      if (result.cleaned > 0) {
+        this.activityService.log(
+          'AGORA_STALE_CLEANUP',
+          'info',
+          `Closed ${result.cleaned} stale Agora session(s)`,
+          { details: result }
+        );
+      }
     } catch (error) {
       console.error('[Scheduler] Agora stale cleanup failed:', error);
     }
@@ -870,36 +1106,49 @@ export class SchedulerService {
    * Resolves expired votings and updates linked issue statuses
    */
   private scheduleVotingResolution(): void {
-    const interval = setInterval(async () => {
-      if (!this.isRunning || !this.proposalService) return;
+    const interval = setInterval(
+      async () => {
+        if (!this.isRunning || !this.proposalService) return;
 
-      try {
-        const result = this.proposalService.resolveCompletedVotings();
-        if (this.tokenVotingService) {
-          const tokenResult = await this.tokenVotingService.resolveExpiredVotings();
-          if (tokenResult.resolved > 0) {
-            console.info(`[Scheduler] Token voting resolution: ${tokenResult.resolved} closed`);
+        try {
+          const result = this.proposalService.resolveCompletedVotings();
+          if (this.tokenVotingService) {
+            const tokenResult =
+              await this.tokenVotingService.resolveExpiredVotings();
+            if (tokenResult.resolved > 0) {
+              console.info(
+                `[Scheduler] Token voting resolution: ${tokenResult.resolved} closed`
+              );
+            }
+            for (const err of tokenResult.errors)
+              console.warn(`[Scheduler] Token voting resolve failed: ${err}`);
           }
-          for (const err of tokenResult.errors) console.warn(`[Scheduler] Token voting resolve failed: ${err}`);
-        }
-        if (result.resolved > 0) {
-          console.info(`[Scheduler] Voting resolution: ${result.resolved} resolved (${result.passed} passed, ${result.rejected} rejected)`);
-          this.activityService.log('VOTING_RESOLUTION', 'info',
-            `Voting resolution: ${result.passed} passed, ${result.rejected} rejected`, {
-              details: result,
-            });
+          if (result.resolved > 0) {
+            console.info(
+              `[Scheduler] Voting resolution: ${result.resolved} resolved (${result.passed} passed, ${result.rejected} rejected)`
+            );
+            this.activityService.log(
+              'VOTING_RESOLUTION',
+              'info',
+              `Voting resolution: ${result.passed} passed, ${result.rejected} rejected`,
+              {
+                details: result,
+              }
+            );
 
-          this.io.emit('governance:votings:resolved', {
-            resolved: result.resolved,
-            passed: result.passed,
-            rejected: result.rejected,
-            timestamp: new Date().toISOString(),
-          });
+            this.io.emit('governance:votings:resolved', {
+              resolved: result.resolved,
+              passed: result.passed,
+              rejected: result.rejected,
+              timestamp: new Date().toISOString(),
+            });
+          }
+        } catch (error) {
+          console.error('[Scheduler] Voting resolution failed:', error);
         }
-      } catch (error) {
-        console.error('[Scheduler] Voting resolution failed:', error);
-      }
-    }, 6 * 60 * 60 * 1000); // Every 6 hours
+      },
+      6 * 60 * 60 * 1000
+    ); // Every 6 hours
 
     this.intervals.set('votingResolution', interval);
     console.info('[Scheduler] Voting resolution scheduled (every 6 hours)');
@@ -910,7 +1159,9 @@ export class SchedulerService {
       try {
         const result = this.proposalService.resolveCompletedVotings();
         if (result.resolved > 0) {
-          console.info(`[Scheduler] Initial voting resolution: ${result.resolved} resolved`);
+          console.info(
+            `[Scheduler] Initial voting resolution: ${result.resolved} resolved`
+          );
         }
       } catch (error) {
         console.error('[Scheduler] Initial voting resolution failed:', error);
@@ -921,29 +1172,41 @@ export class SchedulerService {
   private async runTier0Tasks(): Promise<void> {
     // Signal collection is handled by SignalCollectorService (RSS, GitHub, Blockchain, Social)
     // This method logs periodic status for monitoring purposes
-    this.activityService.log('COLLECTOR', 'info', 'Tier 0 data collection active', {
-      metadata: { tier: 0, note: 'Signal collectors running independently' },
-    });
+    this.activityService.log(
+      'COLLECTOR',
+      'info',
+      'Tier 0 data collection active',
+      {
+        metadata: { tier: 0, note: 'Signal collectors running independently' },
+      }
+    );
   }
 
   private async runTier1Tasks(): Promise<void> {
     // Generate agent chatter using local LLM
     // Placeholder - will be implemented with actual LLM integration
-    const agents = this.db.prepare(`
+    const agents = this.db
+      .prepare(
+        `
       SELECT a.id, a.name, a.display_name, a.color, a.idle_messages
       FROM agents a
       LEFT JOIN agent_states s ON a.id = s.agent_id
       WHERE a.is_active = 1 AND (s.status IS NULL OR s.status = 'idle')
       ORDER BY RANDOM()
       LIMIT 1
-    `).all() as any[];
+    `
+      )
+      .all() as any[];
 
     if (agents.length > 0) {
       const agent = agents[0];
-      const idleMessages = agent.idle_messages ? JSON.parse(agent.idle_messages) : [];
-      const message = idleMessages.length > 0
-        ? idleMessages[Math.floor(Math.random() * idleMessages.length)]
-        : `${agent.display_name} is observing the system...`;
+      const idleMessages = agent.idle_messages
+        ? JSON.parse(agent.idle_messages)
+        : [];
+      const message =
+        idleMessages.length > 0
+          ? idleMessages[Math.floor(Math.random() * idleMessages.length)]
+          : `${agent.display_name} is observing the system...`;
 
       // Emit chatter event
       this.io.emit('agent:chatter', {
@@ -964,18 +1227,27 @@ export class SchedulerService {
 
   private async runTier2Tasks(): Promise<void> {
     // Run serious deliberation using external LLM
-    this.activityService.log('SYSTEM_STATUS', 'info', 'Running Tier 2 deliberation', {
-      metadata: { tier: 2 },
-    });
+    this.activityService.log(
+      'SYSTEM_STATUS',
+      'info',
+      'Running Tier 2 deliberation',
+      {
+        metadata: { tier: 2 },
+      }
+    );
 
     if (!this.governanceOSBridge) {
-      console.warn('[Scheduler] GovernanceOS Bridge not available, skipping Tier 2 tasks');
+      console.warn(
+        '[Scheduler] GovernanceOS Bridge not available, skipping Tier 2 tasks'
+      );
       return;
     }
 
     try {
       // 1. Find pending/confirmed issues that need pipeline processing
-      const pendingIssues = this.db.prepare(`
+      const pendingIssues = this.db
+        .prepare(
+          `
         SELECT * FROM issues
         WHERE status IN ('detected', 'confirmed')
         AND priority IN ('critical', 'high')
@@ -987,7 +1259,9 @@ export class SchedulerService {
           END,
           created_at ASC
         LIMIT 5
-      `).all() as Array<{
+      `
+        )
+        .all() as Array<{
         id: string;
         title: string;
         description: string;
@@ -1003,26 +1277,42 @@ export class SchedulerService {
         return;
       }
 
-      console.info(`[Scheduler] Processing ${pendingIssues.length} pending issues`);
+      console.info(
+        `[Scheduler] Processing ${pendingIssues.length} pending issues`
+      );
 
       // 2. Process each issue through the governance pipeline
       for (const issue of pendingIssues) {
         try {
-          console.info(`[Scheduler] Running pipeline for issue: ${issue.id.slice(0, 8)} - ${issue.title}`);
+          console.info(
+            `[Scheduler] Running pipeline for issue: ${issue.id.slice(0, 8)} - ${issue.title}`
+          );
 
           // Determine workflow type based on category
           const workflowType = this.determineWorkflowType(issue.category);
 
           // Run the pipeline
-          const result = await this.governanceOSBridge.runPipelineForIssue(issue.id, {
-            workflowType,
-          });
+          const result = await this.governanceOSBridge.runPipelineForIssue(
+            issue.id,
+            {
+              workflowType,
+            }
+          );
 
           if (result.success) {
-            this.activityService.log('PIPELINE', 'info', `Pipeline completed for issue: ${issue.title}`, {
-              details: { issueId: issue.id, workflowType, status: result.status },
-              metadata: { tier: 2 },
-            });
+            this.activityService.log(
+              'PIPELINE',
+              'info',
+              `Pipeline completed for issue: ${issue.title}`,
+              {
+                details: {
+                  issueId: issue.id,
+                  workflowType,
+                  status: result.status,
+                },
+                metadata: { tier: 2 },
+              }
+            );
 
             // Emit event for real-time updates
             this.io.emit('governance:pipeline:completed', {
@@ -1034,27 +1324,48 @@ export class SchedulerService {
 
             // Record KPI timing: issue to decision packet
             try {
-              const kpiCollector = this.governanceOSBridge.getGovernanceOS().getKPICollector();
-              const issueDetectedAt = new Date(issue.detected_at || issue.created_at).getTime();
+              const kpiCollector = this.governanceOSBridge
+                .getGovernanceOS()
+                .getKPICollector();
+              const issueDetectedAt = new Date(
+                issue.detected_at || issue.created_at
+              ).getTime();
               const issueToDecisionMs = Date.now() - issueDetectedAt;
-              kpiCollector.recordExecutionTiming('issueToDecisionMs', issueToDecisionMs);
-              console.log(`[Scheduler] Recorded KPI: issue to decision = ${(issueToDecisionMs / 1000 / 60).toFixed(1)} minutes`);
+              kpiCollector.recordExecutionTiming(
+                'issueToDecisionMs',
+                issueToDecisionMs
+              );
+              console.log(
+                `[Scheduler] Recorded KPI: issue to decision = ${(issueToDecisionMs / 1000 / 60).toFixed(1)} minutes`
+              );
             } catch (kpiError) {
-              console.warn('[Scheduler] Failed to record KPI timing:', kpiError);
+              console.warn(
+                '[Scheduler] Failed to record KPI timing:',
+                kpiError
+              );
             }
           } else {
-            console.error(`[Scheduler] Pipeline failed for issue ${issue.id}: status=${result.status}`);
+            console.error(
+              `[Scheduler] Pipeline failed for issue ${issue.id}: status=${result.status}`
+            );
           }
 
           // Small delay between pipeline runs to avoid overloading
           await new Promise(resolve => setTimeout(resolve, 2000));
-
         } catch (error) {
-          console.error(`[Scheduler] Failed to process issue ${issue.id}:`, error);
-          this.activityService.log('PIPELINE', 'error', `Pipeline failed for issue: ${issue.title}`, {
-            details: { issueId: issue.id, error: String(error) },
-            metadata: { tier: 2 },
-          });
+          console.error(
+            `[Scheduler] Failed to process issue ${issue.id}:`,
+            error
+          );
+          this.activityService.log(
+            'PIPELINE',
+            'error',
+            `Pipeline failed for issue: ${issue.title}`,
+            {
+              details: { issueId: issue.id, error: String(error) },
+              metadata: { tier: 2 },
+            }
+          );
 
           // Queue for retry (Gap 3: Pipeline failure retry)
           const workflowType = this.determineWorkflowType(issue.category);
@@ -1071,7 +1382,6 @@ export class SchedulerService {
 
       // 4. Check for high-risk actions that need locking
       await this.processHighRiskActions();
-
     } catch (error) {
       console.error('[Scheduler] Tier 2 task error:', error);
       throw error;
@@ -1086,7 +1396,9 @@ export class SchedulerService {
 
     try {
       // Find approved proposals without voting sessions
-      const proposals = this.db.prepare(`
+      const proposals = this.db
+        .prepare(
+          `
         SELECT * FROM proposals
         WHERE status = 'pending'
         AND id NOT IN (
@@ -1097,7 +1409,9 @@ export class SchedulerService {
           )
         )
         LIMIT 3
-      `).all() as Array<{
+      `
+        )
+        .all() as Array<{
         id: string;
         title: string;
         description: string;
@@ -1108,7 +1422,9 @@ export class SchedulerService {
       for (const proposal of proposals) {
         try {
           // Classify risk level
-          const riskLevel = this.governanceOSBridge.classifyRisk(proposal.category);
+          const riskLevel = this.governanceOSBridge.classifyRisk(
+            proposal.category
+          );
 
           // Create voting session
           const voting = await this.governanceOSBridge.createDualHouseVoting({
@@ -1120,19 +1436,31 @@ export class SchedulerService {
             createdBy: 'scheduler-tier2',
           });
 
-          console.info(`[Scheduler] Created voting session ${voting.id} for proposal ${proposal.id.slice(0, 8)}`);
+          console.info(
+            `[Scheduler] Created voting session ${voting.id} for proposal ${proposal.id.slice(0, 8)}`
+          );
 
-          this.activityService.log('VOTING', 'info', `Voting session created for: ${proposal.title}`, {
-            details: { proposalId: proposal.id, votingId: voting.id },
-            metadata: { tier: 2 },
-          });
-
+          this.activityService.log(
+            'VOTING',
+            'info',
+            `Voting session created for: ${proposal.title}`,
+            {
+              details: { proposalId: proposal.id, votingId: voting.id },
+              metadata: { tier: 2 },
+            }
+          );
         } catch (error) {
-          console.error(`[Scheduler] Failed to create voting for proposal ${proposal.id}:`, error);
+          console.error(
+            `[Scheduler] Failed to create voting for proposal ${proposal.id}:`,
+            error
+          );
         }
       }
     } catch (error) {
-      console.error('[Scheduler] Failed to process proposals for voting:', error);
+      console.error(
+        '[Scheduler] Failed to process proposals for voting:',
+        error
+      );
     }
   }
 
@@ -1144,12 +1472,16 @@ export class SchedulerService {
 
     try {
       // Find critical issues that might need high-risk approval
-      const criticalIssues = this.db.prepare(`
+      const criticalIssues = this.db
+        .prepare(
+          `
         SELECT * FROM issues
         WHERE priority = 'critical'
         AND status = 'in_progress'
         LIMIT 3
-      `).all() as Array<{
+      `
+        )
+        .all() as Array<{
         id: string;
         title: string;
         description: string;
@@ -1161,29 +1493,42 @@ export class SchedulerService {
 
         if (riskLevel === 'HIGH') {
           // Check if already has an approval request
-          const existingApprovals = await this.governanceOSBridge.listAllApprovals({ status: 'locked' });
-          const hasApproval = existingApprovals.actions.some(
-            a => JSON.stringify(a).includes(issue.id)
+          const existingApprovals =
+            await this.governanceOSBridge.listAllApprovals({
+              status: 'locked',
+            });
+          const hasApproval = existingApprovals.actions.some(a =>
+            JSON.stringify(a).includes(issue.id)
           );
 
           if (!hasApproval) {
             try {
-              const approval = await this.governanceOSBridge.createHighRiskApproval({
-                proposalId: issue.id,
-                votingId: '', // Will be linked when voting is created
-                actionDescription: `High-risk action for critical issue: ${issue.title}`,
-                actionType: issue.category,
-              });
+              const approval =
+                await this.governanceOSBridge.createHighRiskApproval({
+                  proposalId: issue.id,
+                  votingId: '', // Will be linked when voting is created
+                  actionDescription: `High-risk action for critical issue: ${issue.title}`,
+                  actionType: issue.category,
+                });
 
-              console.info(`[Scheduler] Created high-risk approval ${approval.id} for issue ${issue.id.slice(0, 8)}`);
+              console.info(
+                `[Scheduler] Created high-risk approval ${approval.id} for issue ${issue.id.slice(0, 8)}`
+              );
 
-              this.activityService.log('APPROVAL', 'warning', `High-risk approval required: ${issue.title}`, {
-                details: { issueId: issue.id, approvalId: approval.id },
-                metadata: { tier: 2, riskLevel: 'HIGH' },
-              });
-
+              this.activityService.log(
+                'APPROVAL',
+                'warning',
+                `High-risk approval required: ${issue.title}`,
+                {
+                  details: { issueId: issue.id, approvalId: approval.id },
+                  metadata: { tier: 2, riskLevel: 'HIGH' },
+                }
+              );
             } catch (error) {
-              console.error(`[Scheduler] Failed to create approval for issue ${issue.id}:`, error);
+              console.error(
+                `[Scheduler] Failed to create approval for issue ${issue.id}:`,
+                error
+              );
             }
           }
         }
@@ -1199,16 +1544,32 @@ export class SchedulerService {
   private determineWorkflowType(category: string): 'A' | 'B' | 'C' | 'D' | 'E' {
     const cat = category.toLowerCase();
 
-    if (cat.includes('ai') || cat.includes('research') || cat.includes('academic')) {
+    if (
+      cat.includes('ai') ||
+      cat.includes('research') ||
+      cat.includes('academic')
+    ) {
       return 'A'; // Academic Activity
     }
-    if (cat.includes('dev') || cat.includes('grant') || cat.includes('developer')) {
+    if (
+      cat.includes('dev') ||
+      cat.includes('grant') ||
+      cat.includes('developer')
+    ) {
       return 'C'; // Developer Support
     }
-    if (cat.includes('partnership') || cat.includes('expansion') || cat.includes('ecosystem')) {
+    if (
+      cat.includes('partnership') ||
+      cat.includes('expansion') ||
+      cat.includes('ecosystem')
+    ) {
       return 'D'; // Ecosystem Expansion
     }
-    if (cat.includes('group') || cat.includes('committee') || cat.includes('working')) {
+    if (
+      cat.includes('group') ||
+      cat.includes('committee') ||
+      cat.includes('working')
+    ) {
       return 'E'; // Working Groups
     }
     // Default to Free Debate
@@ -1240,21 +1601,32 @@ export class SchedulerService {
   /**
    * Manually trigger data cleanup
    */
-  async triggerDataCleanup(): Promise<{ totalDeleted: number; results: { table: string; deletedRows: number }[] }> {
+  async triggerDataCleanup(): Promise<{
+    totalDeleted: number;
+    results: { table: string; deletedRows: number }[];
+  }> {
     if (!this.isRunning) {
       throw new Error('Scheduler is not running');
     }
 
     const report = await this.dataRetention.runCleanup();
 
-    this.activityService.log('SYSTEM_STATUS', 'info', `Manual data cleanup: ${report.totalDeleted} rows deleted`, {
-      details: { results: report.results },
-      metadata: { type: 'data-retention', manual: true },
-    });
+    this.activityService.log(
+      'SYSTEM_STATUS',
+      'info',
+      `Manual data cleanup: ${report.totalDeleted} rows deleted`,
+      {
+        details: { results: report.results },
+        metadata: { type: 'data-retention', manual: true },
+      }
+    );
 
     return {
       totalDeleted: report.totalDeleted,
-      results: report.results.map(r => ({ table: r.table, deletedRows: r.deletedRows })),
+      results: report.results.map(r => ({
+        table: r.table,
+        deletedRows: r.deletedRows,
+      })),
     };
   }
 
