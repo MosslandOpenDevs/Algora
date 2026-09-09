@@ -162,8 +162,6 @@ app.set('trust proxy', 1);
 // 300 req/min is generous for the dashboard; writes layer stricter limits.
 app.use(globalLimiter);
 
-// Server start time for uptime calculation
-const serverStartTime = Date.now();
 
 // Security event logging — forward LLM budget breaches to the structured
 // log so they show up next to request/error lines in the log stream.
@@ -320,47 +318,20 @@ app.get('/health', (req, res) => {
   const db = req.app.locals.db;
   const schedulerService = req.app.locals.schedulerService;
 
-  // Calculate uptime in seconds
-  const uptime = Math.floor((Date.now() - serverStartTime) / 1000);
-
   // Default response if services not initialized
   if (!db) {
     res.json({
       status: 'ok',
       timestamp: new Date().toISOString(),
-      environment: NODE_ENV,
-      uptime,
     });
     return;
   }
 
   try {
-    const today = new Date().toISOString().split('T')[0];
-
-    // Get budget status
-    const budgetConfigs = db
-      .prepare(
-        `
-      SELECT provider, daily_budget_usd FROM budget_config WHERE enabled = 1 AND provider != 'ollama'
-    `
-      )
-      .all() as Array<{ provider: string; daily_budget_usd: number }>;
-
-    const totalDailyBudget = budgetConfigs.reduce(
-      (sum, c) => sum + c.daily_budget_usd,
-      0
-    );
-
-    const usageResult = db
-      .prepare(
-        `
-      SELECT SUM(estimated_cost_usd) as total_spent FROM budget_usage WHERE date = ?
-    `
-      )
-      .get(today) as { total_spent: number | null } | undefined;
-
-    const todaySpent = usageResult?.total_spent || 0;
-    const remaining = Math.max(0, totalDailyBudget - todaySpent);
+    // The budget ledger used to be read here and published in the response.
+    // It is neither read nor published now: this endpoint takes no credential,
+    // and a daily cost cap is not an answer to "is this service running?".
+    // Dropping the two queries also takes two DB round trips off a hot path.
 
     // Get scheduler status
     let schedulerStatus = null;
@@ -410,17 +381,17 @@ app.get('/health', (req, res) => {
       )
       .get() as { total: number; active: number } | undefined;
 
+    // Deliberately narrow. This endpoint takes no credential, so it answers
+    // only "is this service running?" — the cost ledger (daily cap, spend,
+    // remaining), the deploy environment name and the process uptime say
+    // nothing about that and are not published here. Operators read those
+    // from the host.
     res.json({
       status: 'ok',
       timestamp: new Date().toISOString(),
-      environment: NODE_ENV,
-      uptime,
-      budget: {
-        daily: totalDailyBudget,
-        spent: todaySpent,
-        remaining: remaining,
-      },
-      scheduler: schedulerStatus,
+      scheduler: schedulerStatus
+        ? { isRunning: schedulerStatus.isRunning, queueLength: schedulerStatus.queueLength }
+        : null,
       agents: {
         total: agentResult?.total || 0,
         active: agentResult?.active || 0,
@@ -431,8 +402,6 @@ app.get('/health', (req, res) => {
     res.json({
       status: 'ok',
       timestamp: new Date().toISOString(),
-      environment: NODE_ENV,
-      uptime,
     });
   }
 });
