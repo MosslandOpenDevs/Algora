@@ -5,7 +5,12 @@ import { requireAdmin } from '../middleware/auth';
 export const budgetRouter: Router = Router();
 
 // GET /api/budget/status - Get budget status
-budgetRouter.get('/status', (req, res) => {
+//
+// Admin-only. This returns per-provider cost caps, spend, remaining budget and
+// call limits — operating detail, not a public status signal — and the route
+// took no credential before. Operators keep it with the admin key; the public
+// does not get the cost ledger.
+budgetRouter.get('/status', requireAdmin, (req, res) => {
   const db: Database.Database = req.app.locals.db;
 
   try {

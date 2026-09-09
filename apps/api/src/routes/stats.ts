@@ -288,7 +288,7 @@ statsRouter.get('/data-growth', (req, res) => {
 });
 
 // GET /api/stats/system-health - System health metrics
-statsRouter.get('/system-health', (req, res) => {
+statsRouter.get('/system-health', requireAdmin, (req, res) => {
   const db: Database.Database = req.app.locals.db;
   const schedulerService = req.app.locals.schedulerService;
 

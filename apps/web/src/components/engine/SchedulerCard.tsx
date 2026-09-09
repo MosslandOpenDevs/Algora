@@ -6,12 +6,15 @@ import { Clock, Play, ListOrdered, Timer } from 'lucide-react';
 import { safeFormatDate } from '@/lib/utils';
 
 interface SchedulerCardProps {
+  // null everywhere means "not published", never zero. The schedule fields in
+  // particular are no longer served on an unauthenticated endpoint, and a
+  // placeholder here would read as a measurement.
   scheduler: {
     nextTier2: string | null;
-    queueLength: number;
+    queueLength: number | null;
     lastRun?: string | null;
-    interval: number;
-    tier2Hours?: number[];
+    interval: number | null;
+    tier2Hours?: number[] | null;
   };
 }
 
@@ -50,7 +53,7 @@ export function SchedulerCard({ scheduler }: SchedulerCardProps) {
             <span className="text-xs">{t('queueLength')}</span>
           </div>
           <p className="mt-2 text-lg font-semibold text-agora-text">
-            {scheduler.queueLength}
+            {scheduler.queueLength ?? '—'}
           </p>
           <p className="text-xs text-agora-muted">{t('pendingTasks')}</p>
         </div>
@@ -73,9 +76,11 @@ export function SchedulerCard({ scheduler }: SchedulerCardProps) {
           ) : (
             <>
               <p className="mt-2 text-lg font-semibold text-agora-text">
-                {scheduler.tier2Hours?.join(':00, ')}:00
+                {scheduler.tier2Hours?.length ? `${scheduler.tier2Hours.join(':00, ')}:00` : '—'}
               </p>
-              <p className="text-xs text-agora-muted">Daily schedule</p>
+              <p className="text-xs text-agora-muted">
+                {scheduler.tier2Hours?.length ? 'Daily schedule' : 'Not published'}
+              </p>
             </>
           )}
         </div>
@@ -87,7 +92,7 @@ export function SchedulerCard({ scheduler }: SchedulerCardProps) {
             <span className="text-xs">{t('interval')}</span>
           </div>
           <p className="mt-2 text-lg font-semibold text-agora-text">
-            {scheduler.interval}h
+            {scheduler.interval === null ? '—' : `${scheduler.interval}h`}
           </p>
           <p className="text-xs text-agora-muted">{t('tier2Interval')}</p>
         </div>
