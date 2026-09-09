@@ -14,7 +14,6 @@ import {
   Check,
 } from 'lucide-react';
 
-import { BudgetCard } from '@/components/engine/BudgetCard';
 import { TierUsageCard } from '@/components/engine/TierUsageCard';
 import { SchedulerCard } from '@/components/engine/SchedulerCard';
 import { SystemHealthCard } from '@/components/engine/SystemHealthCard';
@@ -66,19 +65,12 @@ export default function EngineRoomPage() {
     refetchInterval: 30000,
   });
 
-  // Use real data from health endpoint, with fallbacks
-  const budgetData = {
-    daily: {
-      limit: health?.budget?.daily || 25.0,
-      spent: health?.budget?.spent || 0,
-      remaining: health?.budget?.remaining || 25.0,
-    },
-    monthly: {
-      limit: (health?.budget?.daily || 25.0) * 30,
-      spent: (health?.budget?.spent || 0) * 30, // Estimate
-      remaining: (health?.budget?.remaining || 25.0) * 30,
-    },
-  };
+  // The cost ledger is no longer published on an unauthenticated endpoint
+  // (/api/budget/status is admin-only now, and the root /health no longer
+  // carries budget), so this page has nothing to render for it and the card
+  // is gone. It used to fall back to literals — a 25.0 cap, 0 spent — which
+  // looked like measurements and were not, the same class of bug as the
+  // "512 MB" and "24.5 MB" literals removed earlier.
 
   const tierUsage = {
     tier0: { calls: tierStats?.tier0 || 0, label: 'Free Operations' },
@@ -87,16 +79,20 @@ export default function EngineRoomPage() {
   };
 
   const schedulerData = {
-    nextTier2: health?.scheduler?.nextTier2 || null,
-    queueLength: health?.scheduler?.queueLength || 0,
+    // nextTier2 / tier2Hours are no longer published: a fixed [6,12,18,23]
+    // fallback rendered a schedule the page had not actually been told about.
+    nextTier2: health?.scheduler?.nextTier2 ?? null,
+    queueLength: health?.scheduler?.queueLength ?? null,
     lastRun: null,
-    interval: 6, // Hours between Tier2 runs
-    tier2Hours: health?.scheduler?.tier2Hours || [6, 12, 18, 23],
+    interval: null,
+    tier2Hours: health?.scheduler?.tier2Hours ?? null,
+    isRunning: health?.scheduler?.isRunning ?? null,
   };
 
   const systemHealth = {
     status: health?.status === 'ok' ? 'running' : health?.status || 'running',
-    uptime: health?.uptime || 0,
+    // Not published on an unauthenticated endpoint any more.
+    uptime: health?.uptime ?? null,
     // Both were literals — 512 and 24.5 — with comments conceding an API was
     // needed. It existed: /api/health carries process.memoryUsage(), and now
     // the database file's size too.
@@ -177,17 +173,17 @@ export default function EngineRoomPage() {
           <p className="font-medium text-agora-text">
             {t(`status.${systemHealth.status}`)}
           </p>
-          <p className="text-sm text-agora-muted">
-            {t('uptime')}: {Math.floor(systemHealth.uptime / 3600)}h {Math.floor((systemHealth.uptime % 3600) / 60)}m
-          </p>
+          {systemHealth.uptime !== null && (
+            <p className="text-sm text-agora-muted">
+              {t('uptime')}: {Math.floor(systemHealth.uptime / 3600)}h{' '}
+              {Math.floor((systemHealth.uptime % 3600) / 60)}m
+            </p>
+          )}
         </div>
       </div>
 
       {/* Main Grid */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        {/* Budget Section */}
-        <BudgetCard budget={budgetData} />
-
         {/* Tier Usage */}
         <TierUsageCard usage={tierUsage} />
 
