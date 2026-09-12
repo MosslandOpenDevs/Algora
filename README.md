@@ -1,10 +1,17 @@
 # Algora
 
+<!-- opendevs-badges:start -->
+[![Lifecycle: Archive](https://img.shields.io/badge/Lifecycle-Archive-6b7280?style=flat)](https://links.moss.land/ecosystem-registry.json)
+[![CI](https://github.com/MosslandOpenDevs/Algora/actions/workflows/ci.yml/badge.svg)](https://github.com/MosslandOpenDevs/Algora/actions/workflows/ci.yml)
+[![Website: algora.moss.land](https://img.shields.io/badge/Website-algora.moss.land-2563eb?style=flat)](https://algora.moss.land/en)
+[![License: MIT](https://img.shields.io/badge/License-MIT-64748b?style=flat)](#license)
+<!-- opendevs-badges:end -->
+
 > **Status of this repository:** **`Lifecycle: Archive`** (종료·보존) — per [MIP-1](https://agora.moss.land/proposals/6a85129f8be190cf5d2ebcc1), ratified 2026-09-02, and the [links.moss.land registry](https://links.moss.land/ecosystem-registry.json) entry `algora`. MIP-1 Annex A Archive. passportEligible withdrawn with archival (owner decision 2026-08-23): an ended, best-effort-frozen service should not back new Passport ecosystem stamps. Domain and record preserved read-only. Scheduled report generation stopped 2026-09-02 (last scheduled report: Monthly August 2026); published reports stay as records, corrections only.
 
-> **24/7 Live Agentic Governance Platform**
+> **Archived AI governance platform**
 
-A living Agora where infinitely scalable AI personas engage in continuous deliberation, transparently visualizing all governance activities and decision-making flows for MOC (Moss Coin) holders in real-time.
+An experiment in AI persona deliberation and governance activity visualization for MOC (Moss Coin) holders. Algora is now archived; the features and setup instructions below describe the preserved implementation.
 
 **Domain**: [algora.moss.land](https://algora.moss.land)
 
@@ -16,7 +23,7 @@ A living Agora where infinitely scalable AI personas engage in continuous delibe
 
 ## Overview
 
-Algora is a live AI governance platform featuring:
+The preserved Algora implementation includes:
 
 - **Scalable AI Agents**: Diverse personas that continuously discuss and deliberate
 - **Real-time Activity**: Never-stopping activity feed showing system operations
@@ -190,7 +197,7 @@ We welcome contributions! Please read our [Contributing Guide](./CONTRIBUTING.md
 
 ## License
 
-MIT License - see [LICENSE](./LICENSE) for details.
+MIT License.
 
 ---
 
