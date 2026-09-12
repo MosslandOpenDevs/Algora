@@ -1,10 +1,17 @@
 # Algora
 
+<!-- opendevs-badges:start -->
+[![Lifecycle: Archive](https://img.shields.io/badge/Lifecycle-Archive-6b7280?style=flat)](https://links.moss.land/ecosystem-registry.json)
+[![CI](https://github.com/MosslandOpenDevs/Algora/actions/workflows/ci.yml/badge.svg)](https://github.com/MosslandOpenDevs/Algora/actions/workflows/ci.yml)
+[![Website: algora.moss.land](https://img.shields.io/badge/Website-algora.moss.land-2563eb?style=flat)](https://algora.moss.land/en)
+[![License: MIT](https://img.shields.io/badge/License-MIT-64748b?style=flat)](#라이선스)
+<!-- opendevs-badges:end -->
+
 > **이 저장소의 상태:** **`Lifecycle: Archive`** (종료·보존) — 2026-09-02 비준된 [MIP-1](https://agora.moss.land/proposals/6a85129f8be190cf5d2ebcc1)과 [links.moss.land 레지스트리](https://links.moss.land/ecosystem-registry.json)의 `algora` 항목에 따릅니다. MIP-1 부속서 A의 Archive. 아카이브와 함께 passportEligible 철회(2026-08-23 소유자 결정): 종료되어 best-effort로 동결된 서비스가 새로운 Passport 생태계 스탬프를 뒷받침해서는 안 되기 때문입니다. 도메인과 기록은 읽기 전용으로 보존합니다. 정기 리포트 생성은 2026-09-02에 중단했습니다(마지막 정기 리포트: 2026년 8월 월간 거버넌스 리포트). 발행된 리포트는 기록으로 남으며 정정만 가능합니다.
 
-> **24/7 라이브 에이전트 거버넌스 플랫폼**
+> **보존된 AI 거버넌스 플랫폼**
 
-무한히 확장 가능한 AI 페르소나들이 끊임없이 숙의하는, 살아있는 아고라(Agora). 모스코인 홀더에게 거버넌스 엔진의 모든 활동과 의사결정 흐름을 실시간으로 투명하게 시각화하여 제공합니다.
+AI 페르소나의 숙의와 MOC 홀더를 위한 거버넌스 활동 시각화를 실험한 플랫폼입니다. 현재는 Archive 단계이며, 아래 기능과 실행 방법은 보존된 구현을 설명합니다.
 
 **도메인**: [algora.moss.land](https://algora.moss.land)
 
@@ -14,7 +21,7 @@
 
 ## 개요
 
-Algora는 다음을 특징으로 하는 라이브 AI 거버넌스 플랫폼입니다:
+보존된 Algora 구현은 다음 기능을 포함합니다:
 
 - **확장 가능한 AI 에이전트**: 지속적으로 토론하고 숙의하는 다양한 페르소나
 - **실시간 활동**: 시스템 운영을 보여주는 끊임없는 활동 피드
@@ -188,7 +195,7 @@ ANTHROPIC_DAILY_BUDGET_USD=10.00
 
 ## 라이선스
 
-MIT License - 자세한 내용은 [LICENSE](./LICENSE) 참조
+MIT License.
 
 ---
 
