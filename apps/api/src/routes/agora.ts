@@ -71,7 +71,15 @@ agoraRouter.get('/sessions/:id', (req, res) => {
 });
 
 // POST /api/agora/sessions - Create new session
-agoraRouter.post('/sessions', writeLimiter, (req, res) => {
+//
+// This and the message route below were left public in 0f91601 for the live
+// showcase. Under MIP-1 Archive (2026-09-02) the Agora record is read-only, so
+// they now need the admin credential like every other write in this file. The
+// message route also lets the caller choose messageType and agentId: an
+// anonymous caller could open an active session on any issue, fill it with
+// 'agent' rows, and leave it for the stale-session harvest to put through
+// completeSession(), the flow that turns a session into a proposal.
+agoraRouter.post('/sessions', writeLimiter, requireAdmin, (req, res) => {
   const db: Database.Database = req.app.locals.db;
   const io = req.app.locals.io;
   const { title, issueId, summonedAgents } = req.body;
@@ -80,10 +88,13 @@ agoraRouter.post('/sessions', writeLimiter, (req, res) => {
     const id = uuidv4();
     const now = new Date().toISOString();
 
+    // updated_at must be ISO too: left to the column default it is SQLite's
+    // space-separated CURRENT_TIMESTAMP, which sorts before any same-day ISO
+    // cutoff, so the stale sweep and harvest saw the new session as idle.
     db.prepare(`
-      INSERT INTO agora_sessions (id, title, issue_id, summoned_agents, created_at)
-      VALUES (?, ?, ?, ?, ?)
-    `).run(id, title, issueId || null, JSON.stringify(summonedAgents || []), now);
+      INSERT INTO agora_sessions (id, title, issue_id, summoned_agents, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).run(id, title, issueId || null, JSON.stringify(summonedAgents || []), now, now);
 
     const session = db.prepare('SELECT * FROM agora_sessions WHERE id = ?').get(id);
 
@@ -98,7 +109,7 @@ agoraRouter.post('/sessions', writeLimiter, (req, res) => {
 });
 
 // POST /api/agora/sessions/:id/message - Add message to session
-agoraRouter.post('/sessions/:id/message', writeLimiter, (req, res) => {
+agoraRouter.post('/sessions/:id/message', writeLimiter, requireAdmin, (req, res) => {
   const db: Database.Database = req.app.locals.db;
   const io = req.app.locals.io;
   const { id } = req.params;

@@ -1,14 +1,18 @@
 /**
  * Socket.IO authorization.
  *
- * The REST twins of these five operations were put behind requireAdmin, but the
- * socket handlers were left open and the handshake middleware was a comment that
+ * The REST twins of the first five of these operations were put behind
+ * requireAdmin, but the socket handlers were left open and the handshake middleware was a comment that
  * called next() for everyone. Anyone who could reach /socket.io/ could trigger
  * LLM inference, start or silence automated debate, and summon or dismiss agents.
  *
  * Connections themselves stay anonymous on purpose: the live showcase is a
  * broadcast-only client (nothing in apps/web emits), so rejecting unauthenticated
  * handshakes would take the public feed down while closing nothing extra.
+ *
+ * agora:sendMessage joined the list under MIP-1 Archive (2026-09-02), together
+ * with its REST twin POST /api/agora/sessions/:id/message: the Agora record is
+ * read-only, so an anonymous client may watch a session but not write to it.
  */
 
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
@@ -24,6 +28,7 @@ import { setupSocketHandlers } from './socket';
 const ADMIN_KEY = 'socket-test-admin-key-9f2b';
 
 const ADMIN_ONLY_EVENTS = [
+  ['agora:sendMessage', { sessionId: 's1', content: 'hello' }],
   ['agora:requestResponse', { sessionId: 's1', agentId: 'a1' }],
   ['agora:startAutomated', { sessionId: 's1' }],
   ['agora:stopAutomated', { sessionId: 's1' }],
@@ -112,6 +117,26 @@ describe('socket connections', () => {
       'agora:history'
     );
   });
+
+  it('ignores a non-string participants request instead of crashing the process', async () => {
+    // better-sqlite3 throws when asked to bind a boolean or an object, and
+    // socket.io dispatches listeners on process.nextTick, so this used to be
+    // an uncaught exception — which exits the API (index.ts). Here it would
+    // surface as an unhandled error and fail the run.
+    socket = await connect();
+    const answered = new Promise(resolve =>
+      socket.once('agora:participants', resolve)
+    );
+    socket.emit('agora:getParticipants', true);
+    socket.emit('agora:getParticipants', {});
+    socket.emit('agora:getParticipants', 'session-public');
+
+    // The first answer is the valid request's: the bad ones got none.
+    await expect(answered).resolves.toMatchObject({
+      sessionId: 'session-public',
+      participants: [],
+    });
+  });
 });
 
 describe('admin-only socket events', () => {
@@ -165,6 +190,60 @@ describe('admin-only socket events', () => {
       'agora:automatedStarted',
     ]);
     expect(received).toBe('error:unauthorized');
+
+    socket.disconnect();
+  });
+});
+
+describe('agora:sendMessage under MIP-1 Archive', () => {
+  const SESSION_ID = 'socket-archive-session';
+
+  function messageCount(): number {
+    const row = db
+      .prepare('SELECT COUNT(*) AS n FROM agora_messages WHERE session_id = ?')
+      .get(SESSION_ID) as { n: number };
+    return row.n;
+  }
+
+  beforeAll(() => {
+    db.prepare(
+      `INSERT INTO agora_sessions (id, title, status) VALUES (?, 'Archived session', 'active')`
+    ).run(SESSION_ID);
+  });
+
+  it('writes nothing for an anonymous client', async () => {
+    const socket = await connect();
+    socket.emit('agora:sendMessage', {
+      sessionId: SESSION_ID,
+      content: 'hello',
+    });
+
+    const received = await firstOf(socket, [
+      'error:unauthorized',
+      'agora:messageSent',
+    ]);
+    expect(received).toBe('error:unauthorized');
+    expect(messageCount()).toBe(0);
+
+    socket.disconnect();
+  });
+
+  it('still lets an admin client post', async () => {
+    const socket = await connect({ token: ADMIN_KEY });
+    const before = messageCount();
+
+    const ack = await new Promise<{ success?: boolean }>(resolve => {
+      socket.once('agora:messageSent', d =>
+        resolve(d as { success?: boolean })
+      );
+      socket.emit('agora:sendMessage', {
+        sessionId: SESSION_ID,
+        content: 'correction',
+      });
+    });
+
+    expect(ack.success).toBe(true);
+    expect(messageCount()).toBe(before + 1);
 
     socket.disconnect();
   });

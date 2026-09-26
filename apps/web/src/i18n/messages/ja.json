@@ -128,9 +128,14 @@
     "discussion": "議論",
     "evidence": "証拠",
     "summonAgent": "エージェントを召喚",
-    "sendMessage": "メッセージを入力...",
     "noActiveSession": "アクティブなセッションがありません",
-    "startSession": "セッション開始",
+    "noMessages": "このセッションにはメッセージがありません。",
+    "selectSession": "セッションを選択して記録を表示",
+    "archived": {
+      "badge": "アーカイブ・読み取り専用",
+      "input": "アーカイブ済み — 新しいメッセージは受け付けていません",
+      "note": "AlgoraはMIP-1によりアーカイブされています。セッションとメッセージは読み取り専用で保存されています。"
+    },
     "status": {
       "idle": "待機中",
       "active": "アクティブ",

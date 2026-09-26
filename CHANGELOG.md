@@ -10,6 +10,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Security
+- **Anonymous callers can no longer write to the Agora record (MIP-1 Archive)** —
+  `POST /api/agora/sessions`, `POST /api/agora/sessions/:id/message` and the
+  `agora:sendMessage` socket event now require the admin credential, like every other
+  Agora write. They were the last anonymous writes into the Agora record: the
+  rate-limiting entry below kept the two routes public for the live showcase behind
+  `writeLimiter` alone (that entry's Agora part is superseded; agent summon/dismiss,
+  alert acknowledge and the wallet-signed flows it lists are still public). The message route also took `messageType` and `agentId` from the
+  request body. An anonymous caller could open an active session on any issue, fill it
+  with `agent` rows, and leave it for the stale-session harvest to run through
+  `completeSession()`, the flow that produces decision packets and proposals. Reads stay
+  public. The Agora page now shows sessions and transcripts read-only: a disabled input
+  with an archive note replaces the message box, and an "Archived · read-only" label
+  replaces the Start Session button. `NewSessionModal` is removed. It posted `topic`
+  where the route reads `title`, so every attempt had failed on `title NOT NULL` since
+  the modal was added. The session route also stamps `updated_at` in ISO now. Left to
+  the column default, it held SQLite's space-separated `CURRENT_TIMESTAMP`, which sorts
+  before any same-day ISO cutoff, so the stale sweep and harvest treated a session
+  created there as idle from its first minute.
+- **An anonymous socket event could crash the API** — `agora:getParticipants` passed its
+  argument to SQLite unchecked. A boolean or object id made better-sqlite3 throw inside
+  socket.io's `process.nextTick` dispatch, where the process-level `uncaughtException`
+  handler exits, so one emit from any client restarted `algora-api` and repeating it kept
+  it down. The event now ignores anything but a string of at most 128 characters, as
+  `agora:join` already did.
 - **Log inspection APIs are admin-only and fail closed** — every `/api/logs/*`
   route now passes through the shared `requireAdmin` guard, including stats,
   file listings, recent entries, search, error summaries, disk usage, and

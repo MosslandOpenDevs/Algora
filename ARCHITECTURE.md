@@ -298,8 +298,8 @@ Tier2 Request → Check Budget →
 
 // Client → Server
 'agora:join'               // Join discussion room
-'agora:send_message'       // Send message
-'agent:summon'             // Request agent summon
+'agora:sendMessage'        // Send message (admin credential)
+'agent:summon'             // Request agent summon (admin credential)
 ```
 
 ### Event Flow

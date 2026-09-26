@@ -61,11 +61,6 @@ export const SessionDetailModal = dynamic(
   { ssr: false, loading: () => <ModalSkeleton /> }
 );
 
-export const NewSessionModal = dynamic(
-  () => import('./agora/NewSessionModal').then(mod => ({ default: mod.NewSessionModal })),
-  { ssr: false, loading: () => <ModalSkeleton /> }
-);
-
 export const AgoraAgentDetailModal = dynamic(
   () => import('./agora/AgentDetailModal').then(mod => ({ default: mod.AgentDetailModal })),
   { ssr: false, loading: () => <ModalSkeleton /> }

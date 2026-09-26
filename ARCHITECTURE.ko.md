@@ -298,8 +298,8 @@ Tier2 요청 → 예산 확인 →
 
 // 클라이언트 → 서버
 'agora:join'               // 토론방 참여
-'agora:send_message'       // 메시지 전송
-'agent:summon'             // 에이전트 소환 요청
+'agora:sendMessage'        // 메시지 전송 (관리자 인증 필요)
+'agent:summon'             // 에이전트 소환 요청 (관리자 인증 필요)
 ```
 
 ### 이벤트 흐름
