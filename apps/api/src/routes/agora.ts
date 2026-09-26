@@ -88,10 +88,13 @@ agoraRouter.post('/sessions', writeLimiter, requireAdmin, (req, res) => {
     const id = uuidv4();
     const now = new Date().toISOString();
 
+    // updated_at must be ISO too: left to the column default it is SQLite's
+    // space-separated CURRENT_TIMESTAMP, which sorts before any same-day ISO
+    // cutoff, so the stale sweep and harvest saw the new session as idle.
     db.prepare(`
-      INSERT INTO agora_sessions (id, title, issue_id, summoned_agents, created_at)
-      VALUES (?, ?, ?, ?, ?)
-    `).run(id, title, issueId || null, JSON.stringify(summonedAgents || []), now);
+      INSERT INTO agora_sessions (id, title, issue_id, summoned_agents, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).run(id, title, issueId || null, JSON.stringify(summonedAgents || []), now, now);
 
     const session = db.prepare('SELECT * FROM agora_sessions WHERE id = ?').get(id);
 

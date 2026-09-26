@@ -18,6 +18,7 @@ import type { Server as SocketServer } from 'socket.io';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { createSchema } from '../db';
+import { isoMinutesAgo } from '../utils/time';
 import { agoraRouter } from './agora';
 
 const ADMIN_KEY = 'agora-route-test-admin-key-7c1d';
@@ -92,6 +93,20 @@ describe('Agora write routes under MIP-1 Archive', () => {
       expect(response.status).toBe(201);
       expect(response.body.session.title).toBe('Operator session');
       expect(count('agora_sessions')).toBe(2);
+    });
+
+    it('stamps updated_at in ISO so a new session does not look idle', async () => {
+      const response = await request(app)
+        .post('/api/agora/sessions')
+        .set('x-admin-key', ADMIN_KEY)
+        .send({ title: 'Fresh session' });
+
+      const { created_at, updated_at } = response.body.session;
+      expect(updated_at).toBe(created_at);
+      // The stale sweep and harvest select `updated_at < isoMinutesAgo(90)`.
+      // SQLite's default 'YYYY-MM-DD HH:MM:SS' passes that test on the same
+      // UTC day because ' ' sorts before 'T'.
+      expect(updated_at > isoMinutesAgo(90)).toBe(true);
     });
   });
 

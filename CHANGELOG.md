@@ -23,7 +23,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   with an archive note replaces the message box, and an "Archived · read-only" label
   replaces the Start Session button. `NewSessionModal` is removed. It posted `topic`
   where the route reads `title`, so every attempt had failed on `title NOT NULL` since
-  the modal was added.
+  the modal was added. The session route also stamps `updated_at` in ISO now. Left to
+  the column default, it held SQLite's space-separated `CURRENT_TIMESTAMP`, which sorts
+  before any same-day ISO cutoff, so the stale sweep and harvest treated a session
+  created there as idle from its first minute.
 - **Log inspection APIs are admin-only and fail closed** — every `/api/logs/*`
   route now passes through the shared `requireAdmin` guard, including stats,
   file listings, recent entries, search, error summaries, disk usage, and
