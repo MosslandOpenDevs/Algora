@@ -128,9 +128,14 @@
     "discussion": "讨论",
     "evidence": "证据",
     "summonAgent": "召唤代理",
-    "sendMessage": "输入消息...",
     "noActiveSession": "暂无活跃会议",
-    "startSession": "开始会议",
+    "noMessages": "此会议中没有消息。",
+    "selectSession": "选择一个会议以查看其记录",
+    "archived": {
+      "badge": "已归档 · 只读",
+      "input": "已归档 — 不再接受新消息",
+      "note": "Algora 已根据 MIP-1 归档。会议和消息以只读方式保存。"
+    },
     "status": {
       "idle": "空闲",
       "active": "活跃",

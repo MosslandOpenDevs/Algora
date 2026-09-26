@@ -2,23 +2,20 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import {
   MessageSquare,
   Users,
-  Send,
-  Plus,
-  Loader2,
+  Archive,
   Languages,
   PanelLeftOpen,
 } from 'lucide-react';
 import { useTranslationToggle } from '@/hooks/useTranslation';
 
-import { fetchAgents, fetchAgoraSessions, fetchSessionWithMessages, sendAgoraMessage, type AgoraSession, type AgoraMessage, type Agent } from '@/lib/api';
+import { fetchAgents, fetchAgoraSessions, fetchSessionWithMessages, type AgoraSession, type AgoraMessage, type Agent } from '@/lib/api';
 import { SessionCard } from '@/components/agora/SessionCard';
 import { ChatMessage } from '@/components/agora/ChatMessage';
 import { ParticipantList } from '@/components/agora/ParticipantList';
-import { NewSessionModal } from '@/components/agora/NewSessionModal';
 import { SessionDetailModal } from '@/components/agora/SessionDetailModal';
 import { AgentDetailModal } from '@/components/agora/AgentDetailModal';
 import { HelpTooltip } from '@/components/guide/HelpTooltip';
@@ -39,10 +36,7 @@ function parseParticipants(summoned_agents: string | null): string[] {
 export default function AgoraPage() {
   const t = useTranslations('Agora');
   const tGuide = useTranslations('Guide.tooltips');
-  const queryClient = useQueryClient();
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const [showNewSession, setShowNewSession] = useState(false);
-  const [message, setMessage] = useState('');
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   const [detailSession, setDetailSession] = useState<AgoraSession | null>(null);
   const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
@@ -77,30 +71,6 @@ export default function AgoraPage() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
-
-  const [isSending, setIsSending] = useState(false);
-
-  const handleSendMessage = async () => {
-    if (!message.trim() || !activeSessionId || isSending) return;
-
-    setIsSending(true);
-    try {
-      await sendAgoraMessage(activeSessionId, message.trim());
-      setMessage('');
-      queryClient.invalidateQueries({ queryKey: ['agora-session', activeSessionId] });
-    } catch (error) {
-      console.error('Failed to send message:', error);
-    } finally {
-      setIsSending(false);
-    }
-  };
-
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSendMessage();
-    }
-  };
 
   const handleAgentClick = (agentId: string) => {
     const agent = agents?.find(a => a.id === agentId || a.name === agentId);
@@ -182,12 +152,6 @@ export default function AgoraPage() {
         <div className="rounded-lg border border-dashed border-agora-border dark:border-agora-dark-border p-4 text-center">
           <MessageSquare className="mx-auto h-8 w-8 text-agora-muted" />
           <p className="mt-2 text-sm text-agora-muted">{t('noActiveSession')}</p>
-          <button
-            onClick={() => { setShowNewSession(true); setShowSessionsSidebar(false); }}
-            className="mt-3 text-sm text-agora-primary hover:underline"
-          >
-            {t('startSession')}
-          </button>
         </div>
       )}
     </div>
@@ -215,14 +179,12 @@ export default function AgoraPage() {
             <PanelLeftOpen className="h-4 w-4 mr-1.5" />
             Sessions
           </Button>
-          <button
-            onClick={() => setShowNewSession(true)}
-            className="flex items-center gap-2 rounded-lg bg-agora-primary px-3 md:px-4 py-2 text-sm font-medium text-slate-900 transition-colors hover:bg-agora-primary/80"
-          >
-            <Plus className="h-4 w-4" />
-            <span className="hidden sm:inline">{t('startSession')}</span>
-            <span className="sm:hidden">New</span>
-          </button>
+          {/* Algora is Archive under MIP-1 (2026-09-02): the API refuses
+              anonymous Agora writes, so there is no session to start. */}
+          <span className="flex items-center gap-1.5 rounded-lg border border-agora-border dark:border-agora-dark-border px-3 py-2 text-xs md:text-sm font-medium text-agora-muted">
+            <Archive className="h-4 w-4" aria-hidden="true" />
+            {t('archived.badge')}
+          </span>
         </div>
       </div>
 
@@ -334,37 +296,27 @@ export default function AgoraPage() {
                   ) : (
                     <div className="text-center py-8 text-agora-muted">
                       <MessageSquare className="mx-auto h-8 w-8 mb-2 opacity-50" />
-                      <p>No messages yet. Start the discussion!</p>
+                      <p>{t('noMessages')}</p>
                     </div>
                   )}
                   <div ref={messagesEndRef} />
                 </div>
               </ScrollArea>
 
-              {/* Input - fixed bottom with iOS safe area */}
+              {/* Input - closed while archived; fixed bottom with iOS safe area */}
               <div className="border-t border-agora-border dark:border-agora-dark-border p-3 md:p-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))] md:pb-4">
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={message}
-                    onChange={(e) => setMessage(e.target.value)}
-                    onKeyPress={handleKeyPress}
-                    placeholder={t('sendMessage')}
-                    className="flex-1 rounded-lg border border-agora-border dark:border-agora-dark-border bg-agora-darker dark:bg-agora-dark-darker px-3 md:px-4 py-2 text-sm md:text-base text-slate-900 dark:text-white placeholder-agora-muted focus:border-agora-primary focus:outline-none"
-                  />
-                  <button
-                    onClick={handleSendMessage}
-                    disabled={!message.trim() || isSending}
-                    aria-label="Send message"
-                    className="flex items-center gap-2 rounded-lg bg-agora-primary px-3 md:px-4 py-2 text-slate-900 transition-colors hover:bg-agora-primary/80 disabled:opacity-50 min-w-[44px] justify-center"
-                  >
-                    {isSending ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Send className="h-4 w-4" />
-                    )}
-                  </button>
-                </div>
+                <input
+                  type="text"
+                  disabled
+                  aria-label={t('archived.input')}
+                  aria-describedby="agora-archived-note"
+                  placeholder={t('archived.input')}
+                  className="w-full cursor-not-allowed rounded-lg border border-agora-border dark:border-agora-dark-border bg-agora-darker dark:bg-agora-dark-darker px-3 md:px-4 py-2 text-sm md:text-base placeholder-agora-muted opacity-60"
+                />
+                <p id="agora-archived-note" className="mt-2 flex items-start gap-1.5 text-xs text-agora-muted">
+                  <Archive className="mt-px h-3.5 w-3.5 flex-shrink-0" aria-hidden="true" />
+                  {t('archived.note')}
+                </p>
               </div>
             </>
           ) : (
@@ -374,7 +326,7 @@ export default function AgoraPage() {
                 {t('noActiveSession')}
               </h3>
               <p className="mt-2 text-sm text-agora-muted">
-                Select a session or start a new one
+                {t('selectSession')}
               </p>
               <div className="flex gap-2 mt-4">
                 <Button
@@ -385,13 +337,6 @@ export default function AgoraPage() {
                   <PanelLeftOpen className="h-4 w-4 mr-1.5" />
                   Browse Sessions
                 </Button>
-                <button
-                  onClick={() => setShowNewSession(true)}
-                  className="flex items-center gap-2 rounded-lg bg-agora-primary px-4 py-2 text-slate-900 transition-colors hover:bg-agora-primary/80"
-                >
-                  <Plus className="h-4 w-4" />
-                  {t('startSession')}
-                </button>
               </div>
             </div>
           )}
@@ -428,16 +373,6 @@ export default function AgoraPage() {
       </div>
 
       {/* Modals */}
-      {showNewSession && (
-        <NewSessionModal
-          onClose={() => setShowNewSession(false)}
-          onCreated={(sessionId) => {
-            setActiveSessionId(sessionId);
-            setShowNewSession(false);
-            queryClient.invalidateQueries({ queryKey: ['agora-sessions'] });
-          }}
-        />
-      )}
       {detailSession && (
         <SessionDetailModal
           session={detailSession}

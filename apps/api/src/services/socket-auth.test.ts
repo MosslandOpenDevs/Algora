@@ -9,6 +9,10 @@
  * Connections themselves stay anonymous on purpose: the live showcase is a
  * broadcast-only client (nothing in apps/web emits), so rejecting unauthenticated
  * handshakes would take the public feed down while closing nothing extra.
+ *
+ * agora:sendMessage joined the list under MIP-1 Archive (2026-09-02), together
+ * with its REST twin POST /api/agora/sessions/:id/message: the Agora record is
+ * read-only, so an anonymous client may watch a session but not write to it.
  */
 
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
@@ -24,6 +28,7 @@ import { setupSocketHandlers } from './socket';
 const ADMIN_KEY = 'socket-test-admin-key-9f2b';
 
 const ADMIN_ONLY_EVENTS = [
+  ['agora:sendMessage', { sessionId: 's1', content: 'hello' }],
   ['agora:requestResponse', { sessionId: 's1', agentId: 'a1' }],
   ['agora:startAutomated', { sessionId: 's1' }],
   ['agora:stopAutomated', { sessionId: 's1' }],
@@ -165,6 +170,52 @@ describe('admin-only socket events', () => {
       'agora:automatedStarted',
     ]);
     expect(received).toBe('error:unauthorized');
+
+    socket.disconnect();
+  });
+});
+
+describe('agora:sendMessage under MIP-1 Archive', () => {
+  const SESSION_ID = 'socket-archive-session';
+
+  function messageCount(): number {
+    const row = db
+      .prepare('SELECT COUNT(*) AS n FROM agora_messages WHERE session_id = ?')
+      .get(SESSION_ID) as { n: number };
+    return row.n;
+  }
+
+  beforeAll(() => {
+    db.prepare(
+      `INSERT INTO agora_sessions (id, title, status) VALUES (?, 'Archived session', 'active')`
+    ).run(SESSION_ID);
+  });
+
+  it('writes nothing for an anonymous client', async () => {
+    const socket = await connect();
+    socket.emit('agora:sendMessage', { sessionId: SESSION_ID, content: 'hello' });
+
+    const received = await firstOf(socket, [
+      'error:unauthorized',
+      'agora:messageSent',
+    ]);
+    expect(received).toBe('error:unauthorized');
+    expect(messageCount()).toBe(0);
+
+    socket.disconnect();
+  });
+
+  it('still lets an admin client post', async () => {
+    const socket = await connect({ token: ADMIN_KEY });
+    const before = messageCount();
+
+    const ack = await new Promise<{ success?: boolean }>(resolve => {
+      socket.once('agora:messageSent', d => resolve(d as { success?: boolean }));
+      socket.emit('agora:sendMessage', { sessionId: SESSION_ID, content: 'correction' });
+    });
+
+    expect(ack.success).toBe(true);
+    expect(messageCount()).toBe(before + 1);
 
     socket.disconnect();
   });

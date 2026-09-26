@@ -118,9 +118,14 @@
     "discussion": "Discussion",
     "evidence": "Evidence",
     "summonAgent": "Summon Agent",
-    "sendMessage": "Type a message...",
     "noActiveSession": "No active session",
-    "startSession": "Start Session",
+    "noMessages": "No messages in this session.",
+    "selectSession": "Select a session to read its record",
+    "archived": {
+      "badge": "Archived · read-only",
+      "input": "Archived — new messages are closed",
+      "note": "Algora is archived under MIP-1. Sessions and messages are preserved read-only."
+    },
     "status": {
       "idle": "Idle",
       "active": "Active",

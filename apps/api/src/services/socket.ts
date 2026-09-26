@@ -58,7 +58,7 @@ setInterval(() => {
  * Events that change server state. Their REST twins were put behind requireAdmin
  * in 0f91601; the socket path was left open, so the same operations were
  * reachable with no credential at all. Connections stay anonymous — the public
- * feed is broadcast-only — but these five require the admin key.
+ * feed is broadcast-only — but these six require the admin key.
  */
 function requireAdminSocket(socket: Socket, event: string): boolean {
   if (socket.data.isAdmin === true) return true;
@@ -119,9 +119,11 @@ export function setupSocketHandlers(
       console.info(`Client ${socket.id} left agora session: ${sessionId}`);
     });
 
-    // Handle human message in agora
+    // Handle human message in agora. Admin-only like its REST twin: under
+    // MIP-1 Archive (2026-09-02) the Agora record is read-only.
     socket.on('agora:sendMessage', async (data: { sessionId: string; content: string }) => {
       if (!allowMessage(socket)) return;
+      if (!requireAdminSocket(socket, 'agora:sendMessage')) return;
       if (!agoraService || !data?.sessionId || !data?.content) return;
       if (typeof data.content !== 'string' || data.content.length > MAX_MESSAGE_CHARS) {
         socket.emit('agora:messageSent', { success: false, error: 'Message too long' });

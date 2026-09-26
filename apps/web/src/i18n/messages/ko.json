@@ -118,9 +118,14 @@
     "discussion": "토론",
     "evidence": "증거",
     "summonAgent": "에이전트 소환",
-    "sendMessage": "메시지를 입력하세요...",
     "noActiveSession": "활성 세션 없음",
-    "startSession": "세션 시작",
+    "noMessages": "이 세션에는 메시지가 없습니다.",
+    "selectSession": "세션을 선택해 기록을 확인하세요",
+    "archived": {
+      "badge": "아카이브 · 읽기 전용",
+      "input": "아카이브됨 — 새 메시지를 받지 않습니다",
+      "note": "Algora는 MIP-1에 따라 아카이브되었습니다. 세션과 메시지는 읽기 전용으로 보존됩니다."
+    },
     "status": {
       "idle": "유휴",
       "active": "활성",
