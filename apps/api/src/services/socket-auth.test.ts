@@ -1,8 +1,8 @@
 /**
  * Socket.IO authorization.
  *
- * The REST twins of these five operations were put behind requireAdmin, but the
- * socket handlers were left open and the handshake middleware was a comment that
+ * The REST twins of the first five of these operations were put behind
+ * requireAdmin, but the socket handlers were left open and the handshake middleware was a comment that
  * called next() for everyone. Anyone who could reach /socket.io/ could trigger
  * LLM inference, start or silence automated debate, and summon or dismiss agents.
  *
@@ -117,6 +117,26 @@ describe('socket connections', () => {
       'agora:history'
     );
   });
+
+  it('ignores a non-string participants request instead of crashing the process', async () => {
+    // better-sqlite3 throws when asked to bind a boolean or an object, and
+    // socket.io dispatches listeners on process.nextTick, so this used to be
+    // an uncaught exception — which exits the API (index.ts). Here it would
+    // surface as an unhandled error and fail the run.
+    socket = await connect();
+    const answered = new Promise(resolve =>
+      socket.once('agora:participants', resolve)
+    );
+    socket.emit('agora:getParticipants', true);
+    socket.emit('agora:getParticipants', {});
+    socket.emit('agora:getParticipants', 'session-public');
+
+    // The first answer is the valid request's: the bad ones got none.
+    await expect(answered).resolves.toMatchObject({
+      sessionId: 'session-public',
+      participants: [],
+    });
+  });
 });
 
 describe('admin-only socket events', () => {
@@ -193,7 +213,10 @@ describe('agora:sendMessage under MIP-1 Archive', () => {
 
   it('writes nothing for an anonymous client', async () => {
     const socket = await connect();
-    socket.emit('agora:sendMessage', { sessionId: SESSION_ID, content: 'hello' });
+    socket.emit('agora:sendMessage', {
+      sessionId: SESSION_ID,
+      content: 'hello',
+    });
 
     const received = await firstOf(socket, [
       'error:unauthorized',
@@ -210,8 +233,13 @@ describe('agora:sendMessage under MIP-1 Archive', () => {
     const before = messageCount();
 
     const ack = await new Promise<{ success?: boolean }>(resolve => {
-      socket.once('agora:messageSent', d => resolve(d as { success?: boolean }));
-      socket.emit('agora:sendMessage', { sessionId: SESSION_ID, content: 'correction' });
+      socket.once('agora:messageSent', d =>
+        resolve(d as { success?: boolean })
+      );
+      socket.emit('agora:sendMessage', {
+        sessionId: SESSION_ID,
+        content: 'correction',
+      });
     });
 
     expect(ack.success).toBe(true);
