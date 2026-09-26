@@ -119,6 +119,26 @@ describe('resolveCompletedVotings', () => {
     expect(statusOf(db, 'p-real')).toBe('passed');
   });
 
+  it('rejects a tally that fell short of quorum even when for leads', () => {
+    // One weight-1 vote against the default voting power of 100 is below the
+    // 10% quorum. finalizeVoting() rejects this as no_quorum; the scheduled
+    // path must not pass it.
+    seedExpiredVoting(db, 'p-thin', null);
+    db.prepare(
+      `INSERT INTO votes (id, proposal_id, voter, choice, weight) VALUES (?, ?, ?, ?, ?)`
+    ).run('v-thin', 'p-thin', 'alice', 'for', 1);
+    const tally = governance.voting.calculateTally('p-thin');
+    expect(tally.quorum_reached).toBe(false);
+    db.prepare('UPDATE proposals SET tally = ? WHERE id = ?').run(
+      JSON.stringify(tally),
+      'p-thin'
+    );
+
+    governance.proposals.resolveCompletedVotings();
+
+    expect(statusOf(db, 'p-thin')).toBe('rejected');
+  });
+
   it('rejects an all-abstain tally instead of passing it by passive consensus', () => {
     seedExpiredVoting(db, 'p-abstain', weightedTally(0, 0));
 

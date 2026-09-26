@@ -25,7 +25,6 @@ const PIPELINE_JOBS = [
   'proposalBackfill',
   'proposalQueue',
   'votingResolution',
-  'agoraStaleCleanup',
 ];
 
 function startScheduler(): SchedulerService {
@@ -35,6 +34,31 @@ function startScheduler(): SchedulerService {
   const scheduler = new SchedulerService(db, io, new ActivityService(db, io));
   scheduler.start();
   return scheduler;
+}
+
+/** Stand-in Agora service that records how the stale-session job called it. */
+function stubAgora() {
+  const calls = {
+    harvest: 0,
+    sweeps: [] as Array<Record<string, unknown> | undefined>,
+  };
+  const service = {
+    harvestStaleSessions: async () => {
+      calls.harvest++;
+      return { harvested: 0, failed: 0, ids: [] };
+    },
+    cleanupStaleSessions: (opts?: Record<string, unknown>) => {
+      calls.sweeps.push(opts);
+      return { cleaned: 0, ids: [] };
+    },
+  };
+  return { calls, service };
+}
+
+async function runStaleMaintenance(scheduler: SchedulerService): Promise<void> {
+  await (
+    scheduler as unknown as { runAgoraStaleMaintenance(): Promise<void> }
+  ).runAgoraStaleMaintenance();
 }
 
 describe('SchedulerService governance pipeline gate', () => {
@@ -52,7 +76,7 @@ describe('SchedulerService governance pipeline gate', () => {
     vi.unstubAllEnvs();
   });
 
-  it('schedules none of the pipeline jobs when GOVERNANCE_PIPELINE_ENABLED is unset', () => {
+  it("schedules none of the pipeline jobs unless GOVERNANCE_PIPELINE_ENABLED is 'true'", () => {
     vi.stubEnv('GOVERNANCE_PIPELINE_ENABLED', '');
 
     scheduler = startScheduler();
@@ -62,10 +86,11 @@ describe('SchedulerService governance pipeline gate', () => {
     for (const job of PIPELINE_JOBS) {
       expect(status.activeIntervals).not.toContain(job);
     }
-    // Neither boot kick may fire the queue or the harvest behind the gate.
+    // The queue's tracked boot kick must not fire behind the gate either.
     expect(status.activeIntervals).not.toContain('proposalQueue:boot');
-    expect(status.activeIntervals).not.toContain('agoraStaleCleanup:boot');
-    // Retention cleanup is not a governance write and keeps running.
+    // The stale-session sweep keeps running so sessions orphaned by a
+    // restart are closed; only its harvest is gated (next test).
+    expect(status.activeIntervals).toContain('agoraStaleCleanup');
     expect(status.activeIntervals).toContain('dataCleanup');
   });
 
@@ -79,5 +104,31 @@ describe('SchedulerService governance pipeline gate', () => {
     for (const job of PIPELINE_JOBS) {
       expect(status.activeIntervals).toContain(job);
     }
+  });
+
+  it('sweeps stale Agora sessions without harvesting them into proposals when the gate is off', async () => {
+    vi.stubEnv('GOVERNANCE_PIPELINE_ENABLED', '');
+    scheduler = startScheduler();
+    const { calls, service } = stubAgora();
+    scheduler.setAgoraService(service);
+
+    await runStaleMaintenance(scheduler);
+
+    expect(calls.harvest).toBe(0);
+    expect(calls.sweeps).toHaveLength(1);
+    // Nothing is left waiting for a harvest that will never come.
+    expect(calls.sweeps[0]).not.toHaveProperty('preserveHarvestable');
+  });
+
+  it('harvests before sweeping when the gate is on', async () => {
+    vi.stubEnv('GOVERNANCE_PIPELINE_ENABLED', 'true');
+    scheduler = startScheduler();
+    const { calls, service } = stubAgora();
+    scheduler.setAgoraService(service);
+
+    await runStaleMaintenance(scheduler);
+
+    expect(calls.harvest).toBe(1);
+    expect(calls.sweeps[0]).toHaveProperty('preserveHarvestable');
   });
 });

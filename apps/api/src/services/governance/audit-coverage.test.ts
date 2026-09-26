@@ -85,8 +85,10 @@ describe('proposal lifecycle audit coverage', () => {
   });
 
   it('records finalization when the scheduler resolves a voting', () => {
-    // resolveCompletedVotings delegates to VotingService.finalizeVoting, so the
-    // scheduled path produces the same audit entry the manual endpoint does.
+    // resolveCompletedVotings does not call VotingService.finalizeVoting; it
+    // decides from the stored tally and appends its own PROPOSAL_FINALIZED
+    // entry (actor 'voting-resolver'). The tally is stored the way castVote
+    // stores it, so this proposal really carries.
     const proposal = newProposal(governance);
     const endedAnHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
     db.prepare(
@@ -95,10 +97,18 @@ describe('proposal lifecycle audit coverage', () => {
     db.prepare(
       `INSERT INTO votes (id, proposal_id, voter, choice, weight) VALUES (?, ?, 'alice', 'for', 60)`
     ).run('v1', proposal.id);
+    db.prepare('UPDATE proposals SET tally = ? WHERE id = ?').run(
+      JSON.stringify(governance.voting.calculateTally(proposal.id)),
+      proposal.id
+    );
 
     governance.proposals.resolveCompletedVotings();
 
-    expect(auditTypes(governance, proposal.id)).toContain('PROPOSAL_FINALIZED');
+    const entry = governance.audit
+      .getBySubject(proposal.id)
+      .find(e => e.type === 'PROPOSAL_FINALIZED');
+    expect(entry?.actor).toBe('voting-resolver');
+    expect(JSON.parse(entry!.payload).status).toBe('passed');
   });
 
   it('keeps the chain verifiable across the whole lifecycle', () => {

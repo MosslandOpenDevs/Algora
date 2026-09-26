@@ -29,9 +29,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   detecting issues, opening Agora sessions, minting about 20 agent-authored proposals a
   day and resolving them: 436 reached `passed` between ratification and 2026-09-26, none
   with a vote cast. Issue detection and the scheduler's Tier 2, proposal backfill,
-  proposal queue, voting resolution, passive consensus and Agora harvest jobs now start
-  only with `GOVERNANCE_PIPELINE_ENABLED=true`. Signal collection, chatter, KPI snapshots,
-  budget alerts and retention cleanup are not governance writes and are unchanged.
+  proposal queue, voting resolution and passive consensus jobs, plus the Agora
+  stale-session harvest, now run only with `GOVERNANCE_PIPELINE_ENABLED=true`. The hourly
+  stale-session sweep keeps running so sessions orphaned by a restart are closed. Signal
+  collection, chatter, KPI snapshots and budget alerts are unchanged, and retention
+  cleanup still deletes governance-type `activity_log` rows after 30 days
+  (`proposal_history` and `audit_log` are not purged).
 - **Scheduled report generation is off by default (MIP-1 Archive, 2026-09-02)** — Algora is
   classified Archive under MIP-1 ("development ended; records preserved read-only"), so the
   scheduler no longer generates weekly/monthly governance reports on its own. The last
@@ -63,9 +66,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **An expired vote with no votes no longer passes** — `resolveCompletedVotings` passed any
   proposal whose voting window closed without a recorded tally ("passive consensus"), and
   treated an all-abstain or unparseable tally the same way. That is how all 884 proposals
-  passed by 2026-09-26 got there with no vote. A proposal now passes only when its tally's
-  `for` weight exceeds `against`; anything else resolves `rejected`, matching the manual
-  finalize endpoint's no-quorum rule.
+  passed by 2026-09-26 got there with no vote. A proposal now passes only when its stored
+  tally reached quorum and its `for` weight exceeds `against`, the same test the manual
+  finalize endpoint applies; anything else resolves `rejected`.
 - **Monthly reports did not state the period they covered** — the weekly
   template has always printed `**Period:** …`; the monthly one printed only the
   month name and a generation timestamp, so nothing in the document said which

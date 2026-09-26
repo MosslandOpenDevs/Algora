@@ -635,9 +635,10 @@ export class ProposalService {
    * Resolve completed votings: transition voting → passed/rejected based on voting period end.
    * Also handles linked issue status updates.
    *
-   * A proposal passes only on a recorded tally whose `for` weight beats its
-   * `against` weight. No tally means nobody voted, and that is rejected — the
-   * same outcome VotingService.finalizeVoting() gives a vote without quorum.
+   * A proposal passes only on a recorded tally that reached quorum and whose
+   * `for` weight beats its `against` weight — the same test
+   * VotingService.finalizeVoting() applies (its approval threshold is a simple
+   * majority). No tally means nobody voted, and that is rejected too.
    * This used to pass by "passive consensus" instead, which is how every one
    * of the 884 proposals passed by 2026-09-26 got there without a vote.
    */
@@ -662,12 +663,16 @@ export class ProposalService {
       try {
         // Absent, empty or unparseable tallies all resolve to rejected: silence
         // is not consent, and an unreadable tally must still not wedge the
-        // queue.
+        // queue. A tally VotingService marked as short of quorum is rejected
+        // too, as finalizeVoting() would; plain-number legacy tallies carry no
+        // quorum flag and are judged on weight alone.
         let passed = false;
         if (proposal.tally) {
           try {
             const tally = JSON.parse(proposal.tally) as Record<string, unknown>;
-            passed = tallyWeight(tally.for) > tallyWeight(tally.against);
+            passed =
+              tally.quorum_reached !== false &&
+              tallyWeight(tally.for) > tallyWeight(tally.against);
           } catch {
             // Unparseable tally: leave `passed` false.
           }

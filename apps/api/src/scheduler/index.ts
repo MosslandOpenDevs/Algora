@@ -505,15 +505,16 @@ export class SchedulerService {
 
       // Schedule voting resolution (every 6 hours)
       this.scheduleVotingResolution();
-
-      // Stale Agora session cleanup (every hour). Its harvest step completes
-      // sessions through the full flow, which creates proposals.
-      this.scheduleAgoraStaleCleanup();
     } else {
       console.info(
         '[Scheduler] Governance pipeline is off (MIP-1 Archive, 2026-09-02): no Tier 2 runs, proposal backfill, proposal queue, voting resolution, passive consensus or Agora harvest'
       );
     }
+
+    // Stale Agora session cleanup (every hour). Runs either way: a deploy
+    // restart orphans any in-flight session, and only this sweep closes it.
+    // Its harvest step, which creates proposals, follows the pipeline gate.
+    this.scheduleAgoraStaleCleanup();
 
     this.activityService.log('SYSTEM_STATUS', 'info', 'Scheduler started', {
       details: { config: this.config },
@@ -1084,7 +1085,12 @@ export class SchedulerService {
       // real completion flow (summary → decision packet → governance
       // integration → proposal) instead of being silently discarded by the
       // cheap sweep below. Bounded, so the rest wait for the next hour.
-      if (this.agoraService.harvestStaleSessions) {
+      // Completion creates proposals, so it is part of the governance
+      // pipeline and stays off under MIP-1 Archive.
+      const harvesting =
+        this.config.governancePipelineEnabled &&
+        !!this.agoraService.harvestStaleSessions;
+      if (harvesting && this.agoraService.harvestStaleSessions) {
         const harvest = await this.agoraService.harvestStaleSessions({
           maxIdleMinutes: 90,
         });
@@ -1101,9 +1107,12 @@ export class SchedulerService {
       // Anything the (bounded) harvest could not reach stays active until a
       // later run, unless it has been stuck for 6h — then it is closed
       // regardless so a permanently failing session cannot linger forever.
+      // With no harvest there is nothing to preserve sessions for.
       const result = this.agoraService.cleanupStaleSessions({
         maxIdleMinutes: 90,
-        preserveHarvestable: { minMessages: 5, hardCloseAfterMinutes: 360 },
+        ...(harvesting && {
+          preserveHarvestable: { minMessages: 5, hardCloseAfterMinutes: 360 },
+        }),
       });
       if (result.cleaned > 0) {
         this.activityService.log(
