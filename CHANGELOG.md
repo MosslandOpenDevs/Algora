@@ -24,6 +24,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Rate-limiting on public interactive endpoints** — wallet verify/refresh, token vote, delegation create/revoke (+ its typed-data), agent summon/dismiss, Agora session create/message, and alert acknowledge are kept public (the live showcase needs them) but now sit behind `writeLimiter` (20 writes/min/IP) to throttle spam/abuse.
 
 ### Changed
+- **The governance pipeline is off by default (MIP-1 Archive)** — stopping the report
+  schedule left every other governance writer running, so the archived service kept
+  detecting issues, opening Agora sessions, minting about 20 agent-authored proposals a
+  day and resolving them: 436 reached `passed` between ratification and 2026-09-26, none
+  with a vote cast. Issue detection and the scheduler's Tier 2, proposal backfill,
+  proposal queue, voting resolution and passive consensus jobs, plus the Agora
+  stale-session harvest, now run only with `GOVERNANCE_PIPELINE_ENABLED=true`. The hourly
+  stale-session sweep keeps running so sessions orphaned by a restart are closed. Signal
+  collection, chatter, KPI snapshots and budget alerts are unchanged, and retention
+  cleanup still deletes governance-type `activity_log` rows after 30 days
+  (`proposal_history` and `audit_log` are not purged).
 - **Scheduled report generation is off by default (MIP-1 Archive, 2026-09-02)** — Algora is
   classified Archive under MIP-1 ("development ended; records preserved read-only"), so the
   scheduler no longer generates weekly/monthly governance reports on its own. The last
@@ -52,6 +63,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Mossland ecosystem wayfinding bar** — Algora was the only sister site without an outbound ecosystem bar (bridge.moss.land and ao.moss.land already link the family; only inbound links existed here). A new `EcosystemBar` (`components/cross-link/EcosystemBar.tsx`, Server Component) mounts once in the root layout after `NpcCityStrip`, rendering the same set in the same order as the other two sites — BRIDGE (Governance OS) · **Algora** (AI Deliberation Lab, current, non-link) · MOSS.AO (Agentic Orchestrator) — which completes the three-site wayfinding loop. New `Ecosystem` i18n namespace in **all four** locales, with role copy aligned to the in-product canon (`Navigation.governance`, the layout's SEO taglines: `AI 熟議ラボ` / `AI 审议实验室`). Carries the accessibility pattern from MOSS.AO's pre-merge review (agentic-orchestrator PR #2950): a real space text node between site name and role so the accessible name reads "BRIDGE Governance OS" rather than "BRIDGEGovernance OS", and new-tab disclosure on the external links (aria-hidden `↗` + localized sr-only text). `rel="noopener"` per the `NpcCityStrip` precedent, so sister sites keep referrer attribution.
 
 ### Fixed
+- **An expired vote with no votes no longer passes** — `resolveCompletedVotings` passed any
+  proposal whose voting window closed without a recorded tally ("passive consensus"), and
+  treated an all-abstain or unparseable tally the same way. That is how all 884 proposals
+  passed by 2026-09-26 got there with no vote. A proposal now passes only when its stored
+  tally reached quorum and its `for` weight exceeds `against`, the same test the manual
+  finalize endpoint applies; anything else resolves `rejected`.
 - **Monthly reports did not state the period they covered** — the weekly
   template has always printed `**Period:** …`; the monthly one printed only the
   month name and a generation timestamp, so nothing in the document said which

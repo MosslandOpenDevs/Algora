@@ -6,8 +6,8 @@
  * { weight, count } objects, so `forVotes > againstVotes` compared
  * "[object Object]" to itself — always false — and every proposal that had
  * actually received a vote resolved to rejected regardless of the result.
- * proposal.test.ts covers the plain-number shape and the passive-consensus and
- * expiry rules; this file pins the object shape that production really writes.
+ * proposal.test.ts covers the plain-number shape and the no-vote and expiry
+ * rules; this file pins the object shape that production really writes.
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
@@ -119,12 +119,32 @@ describe('resolveCompletedVotings', () => {
     expect(statusOf(db, 'p-real')).toBe('passed');
   });
 
-  it('treats an all-abstain tally as passive consensus', () => {
+  it('rejects a tally that fell short of quorum even when for leads', () => {
+    // One weight-1 vote against the default voting power of 100 is below the
+    // 10% quorum. finalizeVoting() rejects this as no_quorum; the scheduled
+    // path must not pass it.
+    seedExpiredVoting(db, 'p-thin', null);
+    db.prepare(
+      `INSERT INTO votes (id, proposal_id, voter, choice, weight) VALUES (?, ?, ?, ?, ?)`
+    ).run('v-thin', 'p-thin', 'alice', 'for', 1);
+    const tally = governance.voting.calculateTally('p-thin');
+    expect(tally.quorum_reached).toBe(false);
+    db.prepare('UPDATE proposals SET tally = ? WHERE id = ?').run(
+      JSON.stringify(tally),
+      'p-thin'
+    );
+
+    governance.proposals.resolveCompletedVotings();
+
+    expect(statusOf(db, 'p-thin')).toBe('rejected');
+  });
+
+  it('rejects an all-abstain tally instead of passing it by passive consensus', () => {
     seedExpiredVoting(db, 'p-abstain', weightedTally(0, 0));
 
     governance.proposals.resolveCompletedVotings();
 
-    expect(statusOf(db, 'p-abstain')).toBe('passed');
+    expect(statusOf(db, 'p-abstain')).toBe('rejected');
   });
 
   it('leaves a voting that has not expired yet alone', () => {

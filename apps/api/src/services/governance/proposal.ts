@@ -635,9 +635,12 @@ export class ProposalService {
    * Resolve completed votings: transition voting → passed/rejected based on voting period end.
    * Also handles linked issue status updates.
    *
-   * The outcome itself is decided by VotingService.finalizeVoting() — the same call
-   * the manual finalize endpoint makes — so weight-based tallies, quorum and the
-   * approval threshold are applied identically however a vote gets closed.
+   * A proposal passes only on a recorded tally that reached quorum and whose
+   * `for` weight beats its `against` weight — the same test
+   * VotingService.finalizeVoting() applies (its approval threshold is a simple
+   * majority). No tally means nobody voted, and that is rejected too.
+   * This used to pass by "passive consensus" instead, which is how every one
+   * of the 884 proposals passed by 2026-09-26 got there without a vote.
    */
   resolveCompletedVotings(): { resolved: number; passed: number; rejected: number; errors: string[] } {
     const result = { resolved: 0, passed: 0, rejected: 0, errors: [] as string[] };
@@ -658,18 +661,20 @@ export class ProposalService {
 
     for (const proposal of expiredVotings) {
       try {
-        // Parse the recorded tally if there is one; with no tally the proposal
-        // carries by passive consensus, and an unparseable one must not wedge
-        // the queue.
-        let passed = true;
+        // Absent, empty or unparseable tallies all resolve to rejected: silence
+        // is not consent, and an unreadable tally must still not wedge the
+        // queue. A tally VotingService marked as short of quorum is rejected
+        // too, as finalizeVoting() would; plain-number legacy tallies carry no
+        // quorum flag and are judged on weight alone.
+        let passed = false;
         if (proposal.tally) {
           try {
             const tally = JSON.parse(proposal.tally) as Record<string, unknown>;
-            const forVotes = tallyWeight(tally.for);
-            const againstVotes = tallyWeight(tally.against);
-            passed = forVotes + againstVotes === 0 || forVotes > againstVotes;
+            passed =
+              tally.quorum_reached !== false &&
+              tallyWeight(tally.for) > tallyWeight(tally.against);
           } catch {
-            // Unparseable tally: leave `passed` at its passive-consensus default.
+            // Unparseable tally: leave `passed` false.
           }
         }
 

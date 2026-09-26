@@ -114,20 +114,22 @@ describe('resolveCompletedVotings', () => {
     ({ service, emitted } = makeService(db));
   });
 
-  it('resolves a same-day-expired voting with no votes as passed (passive consensus) and resolves the issue', () => {
+  it('rejects a same-day-expired voting with no votes rather than passing it by passive consensus', () => {
+    // No tally means nobody voted. This used to resolve 'passed', which is how
+    // every agent-authored proposal in production passed without a vote.
     seedIssue(db, 'issue-1', 'pending_vote');
     seedProposal(db, { id: 'p1', votingEnds: SAME_DAY_PAST, issueId: 'issue-1' });
 
     const result = service.resolveCompletedVotings();
 
     expect(result.resolved).toBe(1);
-    expect(result.passed).toBe(1);
-    expect(result.rejected).toBe(0);
-    expect(proposalStatus(db, 'p1')).toBe('passed');
+    expect(result.passed).toBe(0);
+    expect(result.rejected).toBe(1);
+    expect(proposalStatus(db, 'p1')).toBe('rejected');
 
     const issue = issueStatus(db, 'issue-1');
-    expect(issue.status).toBe('resolved');
-    expect(issue.resolved_at).not.toBeNull();
+    expect(issue.status).toBe('detected');
+    expect(issue.resolved_at).toBeNull();
 
     expect(emitted.some(e => e.event === 'issue:updated')).toBe(true);
     expect(emitted.some(e => e.event === 'proposal:status_changed')).toBe(true);
@@ -193,17 +195,22 @@ describe('resolveCompletedVotings', () => {
     expect(proposalStatus(db, 'p7')).toBe('voting');
   });
 
-  it('treats an unparseable tally as passed rather than wedging the queue', () => {
+  it('rejects an unparseable tally rather than wedging the queue', () => {
     seedProposal(db, { id: 'p8', votingEnds: SAME_DAY_PAST, tally: 'not-json' });
 
     const result = service.resolveCompletedVotings();
 
-    expect(result.passed).toBe(1);
-    expect(proposalStatus(db, 'p8')).toBe('passed');
+    expect(result.resolved).toBe(1);
+    expect(result.passed).toBe(0);
+    expect(proposalStatus(db, 'p8')).toBe('rejected');
   });
 
   it('records the voting → passed transition in proposal_history', () => {
-    seedProposal(db, { id: 'p9', votingEnds: SAME_DAY_PAST });
+    seedProposal(db, {
+      id: 'p9',
+      votingEnds: SAME_DAY_PAST,
+      tally: JSON.stringify({ for: 3, against: 1 }),
+    });
 
     service.resolveCompletedVotings();
 

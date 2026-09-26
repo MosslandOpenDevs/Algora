@@ -481,8 +481,17 @@ async function bootstrap() {
     issueDetection.setGovernanceOSBridge(governanceOSBridge);
     app.locals.issueDetection = issueDetection;
 
-    // Start issue detection (runs after signal collectors have initial data)
-    setTimeout(() => issueDetection.start(), 60000); // Start after 1 minute
+    // Start issue detection (runs after signal collectors have initial data).
+    // It is the head of the governance pipeline — every new issue it records
+    // at high/critical priority opens an Agora session that ends in a
+    // proposal — so it follows the scheduler's MIP-1 Archive gate.
+    if (schedulerService.getStatus().config.governancePipelineEnabled) {
+      setTimeout(() => issueDetection.start(), 60000); // Start after 1 minute
+    } else {
+      console.info(
+        '[IssueDetection] Off (MIP-1 Archive, 2026-09-02); set GOVERNANCE_PIPELINE_ENABLED=true to resume'
+      );
+    }
 
     // Initialize governance service
     const governance = new GovernanceService(db, io);
