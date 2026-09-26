@@ -7,7 +7,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-64748b?style=flat)](#라이선스)
 <!-- opendevs-badges:end -->
 
-> **이 저장소의 상태:** **`Lifecycle: Archive`** (종료·보존) — 2026-09-02 비준된 [MIP-1](https://agora.moss.land/proposals/6a85129f8be190cf5d2ebcc1)과 [links.moss.land 레지스트리](https://links.moss.land/ecosystem-registry.json)의 `algora` 항목에 따릅니다. MIP-1 부속서 A의 Archive. 아카이브와 함께 passportEligible 철회(2026-08-23 소유자 결정): 종료되어 best-effort로 동결된 서비스가 새로운 Passport 생태계 스탬프를 뒷받침해서는 안 되기 때문입니다. 도메인과 기록은 읽기 전용으로 보존합니다. 정기 리포트 생성은 2026-09-02에 중단했습니다(마지막 정기 리포트: 2026년 8월 월간 거버넌스 리포트). 발행된 리포트는 기록으로 남으며 정정만 가능합니다.
+> **이 저장소의 상태:** **`Lifecycle: Archive`** (종료·보존) — 2026-09-02 비준된 [MIP-1](https://agora.moss.land/proposals/6a85129f8be190cf5d2ebcc1)과 [links.moss.land 레지스트리](https://links.moss.land/ecosystem-registry.json)의 `algora` 항목에 따릅니다. MIP-1 부속서 A의 Archive. 아카이브와 함께 passportEligible 철회(2026-08-23 소유자 결정): 종료되어 best-effort로 동결된 서비스가 새로운 Passport 생태계 스탬프를 뒷받침해서는 안 되기 때문입니다. 도메인과 기록은 읽기 전용으로 보존합니다. 정기 리포트 생성은 2026-09-02에 중단했습니다(마지막 정기 리포트: 2026년 8월 월간 거버넌스 리포트). 발행된 리포트는 기록으로 남으며 정정만 가능합니다. 자동 거버넌스 파이프라인(이슈 탐지, Agora 자동 세션, 제안 생성, 투표 종결)도 기본값으로 꺼져 있습니다. 비준 이후 이 파이프라인이 `passed`로 종결한 제안에는 투표가 한 건도 없습니다.
 
 > **보존된 AI 거버넌스 플랫폼**
 

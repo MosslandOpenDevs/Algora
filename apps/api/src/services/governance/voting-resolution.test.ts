@@ -6,8 +6,8 @@
  * { weight, count } objects, so `forVotes > againstVotes` compared
  * "[object Object]" to itself — always false — and every proposal that had
  * actually received a vote resolved to rejected regardless of the result.
- * proposal.test.ts covers the plain-number shape and the passive-consensus and
- * expiry rules; this file pins the object shape that production really writes.
+ * proposal.test.ts covers the plain-number shape and the no-vote and expiry
+ * rules; this file pins the object shape that production really writes.
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
@@ -119,12 +119,12 @@ describe('resolveCompletedVotings', () => {
     expect(statusOf(db, 'p-real')).toBe('passed');
   });
 
-  it('treats an all-abstain tally as passive consensus', () => {
+  it('rejects an all-abstain tally instead of passing it by passive consensus', () => {
     seedExpiredVoting(db, 'p-abstain', weightedTally(0, 0));
 
     governance.proposals.resolveCompletedVotings();
 
-    expect(statusOf(db, 'p-abstain')).toBe('passed');
+    expect(statusOf(db, 'p-abstain')).toBe('rejected');
   });
 
   it('leaves a voting that has not expired yet alone', () => {

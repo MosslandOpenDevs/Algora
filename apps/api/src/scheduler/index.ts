@@ -30,6 +30,7 @@ export interface SchedulerConfig {
   monthlyReportDay: number; // Day of month (1-28)
   monthlyReportHour: number; // Hour to run (0-23)
   reportGenerationEnabled: boolean; // Weekly/monthly schedule; off by default since 2026-09-02 (MIP-1 Archive)
+  governancePipelineEnabled: boolean; // Jobs that open, advance or close proposals; off by default (MIP-1 Archive)
   dataCleanupHour: number; // Hour to run daily data cleanup (0-23)
 }
 
@@ -105,6 +106,9 @@ export class SchedulerService {
       reportGenerationEnabled:
         config?.reportGenerationEnabled ??
         process.env.REPORT_SCHEDULER_ENABLED === 'true',
+      governancePipelineEnabled:
+        config?.governancePipelineEnabled ??
+        process.env.GOVERNANCE_PIPELINE_ENABLED === 'true',
       dataCleanupHour: config?.dataCleanupHour ?? 3, // 03:00 daily
     };
 
@@ -459,9 +463,6 @@ export class SchedulerService {
     // Start Tier 1 tasks (agent chatter)
     this.startTier1();
 
-    // Schedule Tier 2 tasks
-    this.scheduleTier2();
-
     // Scheduled report generation is off by default: Algora is Archive under
     // MIP-1 (ratified 2026-09-02). Published reports stay as read-only records
     // and the manual routes remain for corrections. Set
@@ -483,20 +484,36 @@ export class SchedulerService {
     // Schedule KPI snapshots
     this.scheduleKPISnapshots();
 
-    // Schedule passive consensus processing
-    this.schedulePassiveConsensusProcessing();
+    // The governance pipeline is off by default for the same reason as the
+    // report schedule: under MIP-1 Archive (2026-09-02) these jobs kept
+    // opening proposals and closing their votes with no human involved —
+    // 436 proposals resolved 'passed' between ratification and 2026-09-26,
+    // none of them carrying a vote. Every job below opens, advances or closes
+    // a governance record. Set GOVERNANCE_PIPELINE_ENABLED=true to resume.
+    if (this.config.governancePipelineEnabled) {
+      // Tier 2: pipeline runs, voting sessions, high-risk approvals
+      this.scheduleTier2();
 
-    // Schedule proposal backfill (Gap 4)
-    this.scheduleProposalBackfill();
+      // Schedule passive consensus processing
+      this.schedulePassiveConsensusProcessing();
 
-    // Schedule proposal queue processing (every hour)
-    this.scheduleProposalQueueProcessing();
+      // Schedule proposal backfill (Gap 4)
+      this.scheduleProposalBackfill();
 
-    // Schedule voting resolution (every 6 hours)
-    this.scheduleVotingResolution();
+      // Schedule proposal queue processing (every hour)
+      this.scheduleProposalQueueProcessing();
 
-    // Schedule stale Agora session cleanup (every hour)
-    this.scheduleAgoraStaleCleanup();
+      // Schedule voting resolution (every 6 hours)
+      this.scheduleVotingResolution();
+
+      // Stale Agora session cleanup (every hour). Its harvest step completes
+      // sessions through the full flow, which creates proposals.
+      this.scheduleAgoraStaleCleanup();
+    } else {
+      console.info(
+        '[Scheduler] Governance pipeline is off (MIP-1 Archive, 2026-09-02): no Tier 2 runs, proposal backfill, proposal queue, voting resolution, passive consensus or Agora harvest'
+      );
+    }
 
     this.activityService.log('SYSTEM_STATUS', 'info', 'Scheduler started', {
       details: { config: this.config },

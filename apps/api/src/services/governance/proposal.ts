@@ -635,9 +635,11 @@ export class ProposalService {
    * Resolve completed votings: transition voting → passed/rejected based on voting period end.
    * Also handles linked issue status updates.
    *
-   * The outcome itself is decided by VotingService.finalizeVoting() — the same call
-   * the manual finalize endpoint makes — so weight-based tallies, quorum and the
-   * approval threshold are applied identically however a vote gets closed.
+   * A proposal passes only on a recorded tally whose `for` weight beats its
+   * `against` weight. No tally means nobody voted, and that is rejected — the
+   * same outcome VotingService.finalizeVoting() gives a vote without quorum.
+   * This used to pass by "passive consensus" instead, which is how every one
+   * of the 884 proposals passed by 2026-09-26 got there without a vote.
    */
   resolveCompletedVotings(): { resolved: number; passed: number; rejected: number; errors: string[] } {
     const result = { resolved: 0, passed: 0, rejected: 0, errors: [] as string[] };
@@ -658,18 +660,16 @@ export class ProposalService {
 
     for (const proposal of expiredVotings) {
       try {
-        // Parse the recorded tally if there is one; with no tally the proposal
-        // carries by passive consensus, and an unparseable one must not wedge
-        // the queue.
-        let passed = true;
+        // Absent, empty or unparseable tallies all resolve to rejected: silence
+        // is not consent, and an unreadable tally must still not wedge the
+        // queue.
+        let passed = false;
         if (proposal.tally) {
           try {
             const tally = JSON.parse(proposal.tally) as Record<string, unknown>;
-            const forVotes = tallyWeight(tally.for);
-            const againstVotes = tallyWeight(tally.against);
-            passed = forVotes + againstVotes === 0 || forVotes > againstVotes;
+            passed = tallyWeight(tally.for) > tallyWeight(tally.against);
           } catch {
-            // Unparseable tally: leave `passed` at its passive-consensus default.
+            // Unparseable tally: leave `passed` false.
           }
         }
 
